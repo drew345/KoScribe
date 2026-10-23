@@ -184,6 +184,39 @@ that review remained visible. Zero/negative/future event timestamps are UNKNOWN.
 Only signed relative deltas leave the process. Timing adds no external reads
 and does not filter, defer, or exempt any event.
 
+## Independent recording, Stage 1
+
+Andrew chose review first, then tap the intended field and Insert. The debug
+RESELECT arm starts a separate recording session with no destination capture.
+It returns before accessibility target handling and passive editor callbacks.
+Own host stability, microphone proof, screen-off/lock, interruption, destruction,
+and a 15-second session deadline still govern cleanup. All non-OFF builds block
+commit and Copy. Default/release remains OFF until replacement gates pass.
+
+Stage 1 provides recording -> Stop -> readonly fixed English review -> Cancel.
+It does not implement editable review, translation, destination selection, or
+insertion. Build with `-PkoscribeStartupArm=RESELECT`; preserve the verified APK
+separately before resetting ordinary build output to OFF.
+
+After Andrew prepares the empty Kakao self-chat and visible SwiftKey, run only:
+
+```powershell
+adb -d shell am instrument --user 0 -w -r -e class 'com.koscribe.smoke.KakaoReselectRecordingSmokeTest#unboundRecordingOverThreeSecondsStopsReviewsAndCancels' -e reselectReady true com.koscribe.smoke/com.koscribe.smoke.KoScribeTestRunner
+```
+
+The sole opt-in flag is mutually exclusive with all older external test flags.
+The smoke checks zero product destination captures, a fresh own-microphone proof,
+recording surviving 3.2 seconds after that proof, Stop/review/Cancel, ended cleanup,
+and the same empty focused field/visible SwiftKey during and after the flow.
+Only the smoke reads the external focused editor; it never mutates that editor.
+Counters supplement source review rather than proving absence of every possible
+editor read. Check exact-app RECORD_AUDIO AppOps after execution. Never use a
+whole suite, Copy, confirmation, Send/Enter, chat traversal, or screenshot here.
+
+The planned later destination check needs its own fresh transaction and full
+event/input guards; the Stage 1 unconditional RESELECT callback exits must be
+replaced with phase-aware handling before that check can exist.
+
 Run while Andrew is not using the phone; app switches can correctly invalidate a session. Instrumentation completion can remove the fixture and return to a previous real app. Do not take post-test full-screen screenshots on the assumption that the synthetic editor is still visible. Prefer exact fixture assertions and code-only traces; capture pixels only after independently verifying the current foreground is an owned synthetic screen.
 
 References: [AOSP instrumentation target restart](https://source.android.com/docs/core/tests/development/instrumentation), [UiAutomation flag](https://developer.android.com/reference/android/app/UiAutomation#FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES), [flagged acquisition](https://developer.android.com/reference/android/app/Instrumentation#getUiAutomation(int)).

@@ -1,5 +1,12 @@
 # Phase 1 device feasibility prototype
 
+The default OFF flow below is the original prototype. Andrew subsequently chose
+independent recording/review followed by tapping the intended field and Insert.
+The debug RESELECT candidate is being tested in stages; see PROGRESS.md and
+INSTRUMENTATION.md for its current build and exact opt-in tests. Current real-app
+authorization permits no insertion or sending. The general sequence below is
+not permission to rerun the completed external insertion trial or whole suites.
+
 This is a sample-only Android app for checking the bubble, microphone lifecycle,
 SwiftKey coexistence, and safe text insertion on the Galaxy A35. It has no
 `INTERNET` permission, API key, speech recognizer, or translation request. The

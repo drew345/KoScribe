@@ -49,7 +49,8 @@ class KakaoExternalDraftSmokeTest {
         val draftReady = InstrumentationRegistry.getArguments().getString("externalDraftReady") == "true"
         val recordCancelReady =
             InstrumentationRegistry.getArguments().getString("externalRecordCancelReady") == "true"
-        val startupReady = listOf("startupHoldReady", "startupCollapseReady", "startupPanelReady", "overlayReady")
+        val startupReady = listOf("startupHoldReady", "startupCollapseReady", "startupPanelReady",
+            "overlayReady", "reselectReady")
             .any { InstrumentationRegistry.getArguments().getString(it) == "true" }
         assumeTrue("EXTERNAL_TEST_REQUIRES_ONE_EXPLICIT_OPT_IN",
             draftReady.xor(recordCancelReady) && !startupReady)

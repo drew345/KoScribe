@@ -28,7 +28,8 @@ internal class OverlayRecordingPanel(
     private val onReady: () -> Unit,
     private val onStopEntry: () -> Unit,
     private val onReview: () -> Unit,
-    private val onCancel: () -> Unit
+    private val onCancel: () -> Unit,
+    private val sessionTimeoutMs: Long = 8_000L
 ) {
     private enum class Stage { PREPARING, RECORDING, REVIEW, CLOSED }
 
@@ -91,7 +92,7 @@ internal class OverlayRecordingPanel(
             host.addView(viewport, LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, interiorHeight
             ))
-            main.postDelayed(sessionDeadline, 8_000)
+            main.postDelayed(sessionDeadline, sessionTimeoutMs)
             host.post {
                 if (stage != Stage.CLOSED) {
                     if (hostStable()) beginRecording() else fail("OVERLAY_HOST_CHANGED_BEFORE_MIC")

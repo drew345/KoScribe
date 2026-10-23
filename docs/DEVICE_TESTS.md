@@ -526,3 +526,52 @@ explicit destination transaction. It must not preserve invalidated eligibility,
 rearm sessions, or waive any captured-target event. Next staged tests remain
 non-inserting; full acceptance is still pending. See IMPLEMENTATION for the
 concrete design and PROGRESS for the current installed build.
+
+## Independent recording Stage 1 — overnight checkpoint
+
+Andrew selected review first, then tap the intended field and Insert, and asked
+to stop at the next good checkpoint. Sol 6 Extra High implemented the debug
+RESELECT first stage; Astra Extra High independently reviewed it. The final
+review correction stops app-owned passive caret/composition processing in this
+arm. No destination exists during recording. This does not exempt an event in
+an existing destination transaction; later fresh destination checks must have
+their full guards restored with phase-aware callback handling.
+
+Final reviewed SHA-256 values:
+
+- Service: `7F4B25B528B1A2E0C8D9B8D66A68DC8D96857CD5B18597DDB40E67752CC03705`.
+- Panel: `5A8C4F0BC54C33B873BCF3FF9FB82A0B41C345E20F40AA464A7030C7ABB2E98D`.
+- Scoped smoke: `00ABDE290C531E36E3D0CC4536F95AFCFF0D706236A72BAA9548572B1D345538`.
+- Installed product: `C0CC7F44848E350D9F645565A3FE5CD2DDF760BF844A19F6585DBA5422C7D69B`.
+- Installed smoke: `9130F582FBFBF486EC799531F6F972A30FFC47E41333699D5FFF9D7BE007C3B3`.
+
+Candidate and default OFF assemblies, 29 JVM tests (zero failures/errors), lint
+(zero errors, app 18/smoke 3 warnings), and signatures passed. Two new state
+tests cover stale callbacks, repeated Stop, and recording ownership. Andrew
+prepared the empty Kakao self-chat with SwiftKey visible; installation succeeded
+and the service reconnected without new permission grants.
+
+One exact `unboundRecordingOverThreeSecondsStopsReviewsAndCancels` gate with
+sole `reselectReady=true` passed in 6.652 seconds. After positive own-recorder
+reads and non-null unsilenced configuration, recording continued another 3.2s.
+Stop showed the readonly fixed English sample; Cancel ended the session.
+The same empty focused Kakao editor and selected/visible SwiftKey were verified
+during recording, after the delay, at review, and immediately/1.2s after cleanup.
+The product observed zero destination captures; external preservation reads
+belonged only to the bounded smoke test.
+
+Final own diagnostics: RESELECT_CANCELLED, one unbound recording proof, zero
+destination captures, no cleanup pending, and ordered microphone proof -> Stop
+entry -> proved stopped -> user Cancel. Exact-app RECORD_AUDIO AppOps showed
+ended use of 4.176 seconds. SwiftKey remained selected and visible.
+
+This is one successful bounded recording/readonly-review/Cancel flow. It does
+not establish speech recognition, audio intelligibility, editable review,
+translation, destination revalidation, insertion, long-session reliability,
+or lock/interruption behavior on this device. All insertion and Copy paths are
+blocked in this arm. No sending, chat-history traversal, screenshot, audio
+retention, API call, or permission change occurred. Stage 2 was not started.
+
+The tested APKs remain installed and saved under ignored
+`app/build/reselect-stage1`; ordinary app-debug.apk output is OFF. Work stopped
+at this checkpoint with tomorrow's next steps in PROGRESS and IMPLEMENTATION.

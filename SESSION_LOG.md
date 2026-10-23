@@ -239,3 +239,29 @@
   RESELECT implementation and non-inserting tests. No early editor capture,
   no inherited invalidated eligibility, and no actual insertion authorization
   implied by this workflow choice. README/AGENTS/IMPLEMENTATION updated.
+
+## 2026-10-23 — Overnight Stage 1 checkpoint
+
+- Andrew asked to stop at the next good checkpoint and document tomorrow's
+  restart. Completed only RESELECT Stage 1; no editable-review Stage 2 work.
+- Sol 6 Extra High implemented independent recording ownership, callback gates,
+  lifecycle cleanup, and a 15-second deadline. Astra Extra High reviewed the
+  exact source and required removal of passive caret/composition processing
+  in RESELECT; that correction was made and cleared before installation.
+- Candidate and default OFF builds, 29 JVM tests, both lints (zero errors;
+  app 18/smoke 3 warnings), and APK signatures passed. Andrew restored the
+  empty Kakao self-chat and SwiftKey for one exact non-inserting phone gate.
+- Gate passed in 6.652 s: own positive unsilenced reads, >3.2s recording after
+  proof, Stop, readonly fixed sample, Cancel. Destination captures stayed zero;
+  original empty focused field and visible SwiftKey checks passed throughout
+  and after cleanup. Mic ended after 4.176 s; cleanup pending false.
+- No insertion, Copy, sending, API call, retained recording, permission change,
+  conversation traversal, or screenshot. Stage 1 is a bounded microphone/UI
+  feasibility result, not ASR, editable review, or insertion acceptance.
+- Installed RESELECT product C0CC7F44... and smoke 9130F582... are saved under
+  ignored app/build/reselect-stage1. Ordinary local APK output rebuilt as OFF.
+  Full hashes and review evidence are in DEVICE_TESTS; exact gate in
+  INSTRUMENTATION. PROGRESS is the authoritative restart note.
+- Tomorrow: independently owned editable English review after microphone Stop,
+  then ready controls. Later explicit destination check must restore full
+  phase-aware guards. Actual external insertion remains outside current scope.

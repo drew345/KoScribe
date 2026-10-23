@@ -31,7 +31,9 @@ The original Phase 1 Activity remains in the default OFF build. Device tests
 now demonstrate service-owned microphone capture in the existing expanded
 accessibility bubble, including unsilenced own-recorder reads and direct Cancel.
 The original captured destination still invalidates during longer recordings.
-The selected revision will separate recording/review from destination capture.
+RESELECT Stage 1 now separates recording from destination capture and passed
+one >3-second recording -> Stop -> readonly review -> Cancel device gate.
+Editable review and the fresh destination step remain to be implemented.
 Never keep the microphone recording simply to keep a bubble alive.
 
 Andrew selected OpenAI cloud speech recognition for the first version and
@@ -69,13 +71,29 @@ the reviewed result for a new explicit attempt does not carry eligibility forwar
 Never retry an ambiguous commit. Manual Copy is a separate explicit recovery
 action, not an automatic fallback.
 
-Implement this in API-free stages. First prove independent recording -> Stop ->
-readonly sample review -> Cancel beyond the observed 2.6-second window event.
-Then add editable English review and the explicit fresh destination check. A
+Implement this in API-free stages. Independent recording -> Stop -> readonly
+sample review -> Cancel passed beyond the observed 2.6-second window event.
+Next add editable English review and the explicit fresh destination check. A
 separate debug RESELECT arm must block insertion/Copy during current real-app
 tests and label its action `Check destination (no insert)`. OFF/release defaults
 remain unchanged until the new path is reviewed and tested. No real-app insertion
 is authorized by selecting this workflow alone.
+
+For the next editable-review stage, the current recommendation is a dedicated
+own Activity after microphone Stop, with a new unbound draft owner rather than
+the old target-bound SessionActivity contract. Dismiss it before Andrew selects
+the destination. Standard Activity/EditText focus is simpler than making the
+service overlay editable; the bubble remains recording/Insert entry. This is
+a proposal for the next stage, not implemented or tested yet.
+
+If an editable overlay is chosen, clear both NOT_FOCUSABLE and ALT_FOCUSABLE_IM,
+wait for actual own-window/EditText focus before requesting SwiftKey, and later
+relinquish that input before destination selection. Android documents these
+[keyboard focus requirements](https://developer.android.com/develop/ui/views/touch-and-input/keyboard-input/visibility).
+Never use delayed global IME toggles. For target API 36,
+[`hideSoftInputFromWindow`](https://developer.android.com/reference/android/view/inputmethod/InputMethodManager#hideSoftInputFromWindow(android.os.IBinder,%20int))
+returning true is not evidence that the keyboard hid; inspect own window insets
+if that state is required. Actual SwiftKey editing/return remains a device gate.
 
 ## Credential approach selected by Andrew
 
@@ -142,7 +160,7 @@ security design to carry into implementation review.
 | --- | --- | --- |
 | 0: Planning | Settle UX, credentials, models, speech provider, installation and latency goals. | Andrew approves implementation plan. |
 | 1: Device feasibility | Minimal bubble, explicit microphone start/stop, hardcoded sample insertion; no API needed. | On A35: SwiftKey stays selected, original text preserved, no send, focus changes fail safely; KakaoTalk/Instagram/SMS tested. |
-| 2: Speech and credentials | Keystore-backed user key, OpenAI recording/transcription, cancel, editable English review and EN insertion. | Accurate transcripts; edits are preserved; destination safely restored after review; mic stops on every exit; errors recover; no secret/audio logs. |
+| 2: Speech and credentials | Keystore-backed user key, OpenAI recording/transcription, cancel, editable English review and EN insertion. | Accurate transcripts; edits are preserved; explicit fresh destination safely verified after review; mic stops on every exit; errors recover; no secret/audio logs. |
 | 3: Korean translation | Confirmed English -> explicit 해요체/반말 translation -> safe insertion. | User-reviewed corpus; correct meaning/tone; measured Stop-to-transcript and confirmation-to-insertion latency, plus cost. |
 | 4: Daily-use reliability | Bubble placement, settings/status, coexistence with Wispr, battery/restart behavior, signed personal installation. | Real-app acceptance matrix, release APK/Git secret scan, independent Astra review, Andrew's daily-use test. |
 
@@ -158,9 +176,11 @@ same-app conversation switch and switch-back; rotation/lock; editor disappears;
 password/PIN fields; mic in use; both bubbles present; unsupported editors;
 network loss; cancel then start another recording; repeated Stop; out-of-order
 responses; ambiguous commit; service restart/killed or permissions revoked.
-Also: edit transcript with SwiftKey, return to original destination, switch
-conversation during review, cancel review, repeated confirmation, and verify
-only the final confirmed English is translated/inserted.
+Also: edit transcript with SwiftKey, explicitly choose the destination after
+review, switch conversation during review versus after capture, cancel review,
+repeat confirmation, and verify only final confirmed English is processed.
+Navigation during unbound recording/review must not create insertion eligibility;
+navigation after a destination capture still invalidates that transaction.
 No test sends a real message automatically.
 
 Translation corpus should include requests, apologies, scheduling, negation,

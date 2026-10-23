@@ -52,7 +52,8 @@ class KakaoStartupIsolationSmokeTest {
             .count { arguments.getString(it) == "true" }
         val olderExternalFlag = arguments.getString("externalDraftReady") == "true" ||
             arguments.getString("externalRecordCancelReady") == "true" ||
-            arguments.getString("overlayReady") == "true"
+            arguments.getString("overlayReady") == "true" ||
+            arguments.getString("reselectReady") == "true"
         assumeTrue("STARTUP_PROBE_REQUIRES_ONE_EXPLICIT_FLAG",
             selected == 1 && !olderExternalFlag)
         assertTrue("WRONG_INSTRUMENTATION_PACKAGE",

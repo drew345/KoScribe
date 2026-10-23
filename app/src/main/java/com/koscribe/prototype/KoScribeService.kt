@@ -59,6 +59,9 @@ class KoScribeService : AccessibilityService() {
     private var overlayScreenReceiver: BroadcastReceiver? = null
     private var overlayHeartbeat: Runnable? = null
     private var overlayInputGeneration: Int? = null
+    private val unboundRecording = UnboundRecordingState()
+    @Volatile private var unboundRecordingProofCount = 0
+    @Volatile private var destinationCaptureCount = 0
     private enum class ObservationCode {
         NOT_CHECKED, LOCKED, NO_INPUT_METHOD, INPUT_NOT_STARTED, NO_EDITOR_INFO,
         NO_INPUT_CONNECTION, UNSUPPORTED_EDITOR_TYPE, NO_FOCUSED_APP_WINDOW,
@@ -228,6 +231,8 @@ class KoScribeService : AccessibilityService() {
             "Experiment arm: ${startupExperiment.name}\n" +
             "Experiment capture count: $experimentCaptureCount\n" +
             "Experiment phase: $experimentPhase\n" +
+            "Unbound recording proof count: $unboundRecordingProofCount\n" +
+            "Destination capture count: $destinationCaptureCount\n" +
             "Overlay cleanup pending: ${overlayCleanupPending != null}\n" +
             "Own UI milestones (callback uptime vs capture completion / first content occurrence):\n" +
             ownMilestoneDiagnostics() + "\n" +
@@ -245,12 +250,14 @@ class KoScribeService : AccessibilityService() {
         private val composition = CompositionEvidence()
 
         override fun onStartInput(attribute: EditorInfo, restarting: Boolean) {
+            if (startupExperiment == StartupExperiment.RESELECT) return
             generation++
             composition.reset()
             inputStarted(attribute)
         }
 
         override fun onFinishInput() {
+            if (startupExperiment == StartupExperiment.RESELECT) return
             composition.reset()
             inputFinished()
             // Do not call the default implementation: it can clear composition
@@ -261,6 +268,7 @@ class KoScribeService : AccessibilityService() {
             oldSelStart: Int, oldSelEnd: Int, newSelStart: Int, newSelEnd: Int,
             candidatesStart: Int, candidatesEnd: Int
         ) {
+            if (startupExperiment == StartupExperiment.RESELECT) return
             composition.update(newSelStart, newSelEnd, candidatesStart, candidatesEnd)
         }
 
@@ -314,6 +322,7 @@ class KoScribeService : AccessibilityService() {
     override fun onCreateInputMethod(): InputMethod = TrackingInputMethod(this)
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
+        if (startupExperiment == StartupExperiment.RESELECT) return // No destination exists during recording.
         val deliveredUptimeMs = SystemClock.uptimeMillis()
         val id = pendingId ?: return
         val session = guard.session(id) ?: return
@@ -651,9 +660,13 @@ class KoScribeService : AccessibilityService() {
         "LOCAL_CONTENT_${relation}_$kind"
     }.getOrDefault("LOCAL_CONTENT_UNKNOWN")
 
-    override fun onInterrupt() { pendingId?.let { invalidate(it, "SERVICE_INTERRUPTED") } }
+    override fun onInterrupt() {
+        unboundRecording.current()?.id?.let { cancelUnboundRecording(it, "SERVICE_INTERRUPTED") }
+        pendingId?.let { invalidate(it, "SERVICE_INTERRUPTED") }
+    }
 
     override fun onDestroy() {
+        unboundRecording.endActive()
         stopOverlayOwnership()
         overlayCleanupPending?.close()
         capturedTargetChildWindows = null
@@ -762,6 +775,10 @@ class KoScribeService : AccessibilityService() {
     }
 
     private fun startMode(mode: OutputMode) {
+        if (startupExperiment == StartupExperiment.RESELECT) {
+            startUnboundRecording(mode)
+            return
+        }
         if (pendingId != null || SessionActivity.isVisible || overlayCleanupPending != null) {
             status = "Finish or cancel the current review before starting another session."
             if (startupExperiment != StartupExperiment.OVERLAY || pendingId == null)
@@ -876,6 +893,95 @@ class KoScribeService : AccessibilityService() {
                 cancelSession(id)
             }
         }, 1_500)
+    }
+
+    /** Debug-only destination-free session. No target APIs are called until a later explicit action. */
+    private fun startUnboundRecording(mode: OutputMode) {
+        if (pendingId != null || unboundRecording.current() != null ||
+            SessionActivity.isVisible || overlayCleanupPending != null) {
+            status = "Finish or cancel the current recording first."
+            renderBubble()
+            return
+        }
+        if ((getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked) {
+            status = "Unlock before recording."
+            renderBubble()
+            return
+        }
+        val host = bubble?.takeIf { expanded && it.isAttachedToWindow && it.width > 0 && it.height > 0 }
+        if (host == null) {
+            status = "Recording bubble is unavailable."
+            renderBubble()
+            return
+        }
+        val draft = unboundRecording.begin(mode) ?: return
+        val id = draft.id
+        experimentPhase = "RESELECT_PREPARING"
+        note("RESELECT_MODE_SELECTED_${mode.name}")
+        lateinit var owner: OverlayRecordingPanel
+        owner = OverlayRecordingPanel(this, host, mode,
+            onFailure = { code -> cancelUnboundRecording(id, code) },
+            onReady = {
+                if (unboundRecording.owns(id)) {
+                    if (!owner.hostStable()) cancelUnboundRecording(id, "RESELECT_HOST_CHANGED_AT_MIC_PROOF")
+                    else if (unboundRecording.microphoneProved(id)) {
+                        unboundRecordingProofCount++
+                        experimentPhase = "RESELECT_RECORDING_PROVED"
+                        note("RESELECT_MIC_READ_POSITIVE_UNSILENCED")
+                    }
+                }
+            },
+            onStopEntry = { if (unboundRecording.owns(id)) note("RESELECT_STOP_ENTRY") },
+            onReview = {
+                if (unboundRecording.microphoneStoppedForReview(id)) {
+                    experimentPhase = "RESELECT_READ_ONLY_REVIEW"
+                    note("RESELECT_MIC_PROVED_STOPPED")
+                }
+            },
+            onCancel = { cancelUnboundRecording(id, "USER_CANCELLED") },
+            sessionTimeoutMs = 15_000L
+        )
+        overlayPanel = owner
+        if (!owner.showAndStart()) {
+            cancelUnboundRecording(id, "RESELECT_HOST_UNAVAILABLE")
+            return
+        }
+        if (!unboundRecording.owns(id)) return
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                if (intent.action == Intent.ACTION_SCREEN_OFF)
+                    cancelUnboundRecording(id, "RESELECT_SCREEN_OFF")
+            }
+        }
+        try {
+            registerReceiver(receiver, IntentFilter(Intent.ACTION_SCREEN_OFF), Context.RECEIVER_NOT_EXPORTED)
+            overlayScreenReceiver = receiver
+        } catch (_: Exception) {
+            cancelUnboundRecording(id, "RESELECT_SCREEN_RECEIVER_FAILED")
+            return
+        }
+        val heartbeat = object : Runnable {
+            override fun run() {
+                if (!unboundRecording.owns(id) || overlayPanel !== owner) return
+                if ((getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked)
+                    return cancelUnboundRecording(id, "RESELECT_LOCKED")
+                if (!owner.hostStable()) return cancelUnboundRecording(id, "RESELECT_HOST_CHANGED")
+                owner.pollMic()
+                if (unboundRecording.owns(id) && overlayPanel === owner) main.postDelayed(this, 250)
+            }
+        }
+        overlayHeartbeat = heartbeat
+        main.post(heartbeat)
+    }
+
+    private fun cancelUnboundRecording(id: String, reason: String) {
+        if (!unboundRecording.end(id)) return
+        stopOverlayOwnership()
+        experimentPhase = "RESELECT_CANCELLED"
+        note("RESELECT_ENDED_${reason}")
+        status = if (overlayCleanupPending != null) "Microphone cleanup uncertain. Restart the service."
+            else "Recording cancelled."
+        renderBubble()
     }
 
     private fun startOverlaySession(id: String, mode: OutputMode) {
@@ -1108,6 +1214,7 @@ class KoScribeService : AccessibilityService() {
     )
 
     private fun observeEditor(): Observation? {
+        if (startupExperiment == StartupExperiment.RESELECT) destinationCaptureCount++
         observationCode = ObservationCode.NOT_CHECKED
         val locked = (getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked
         if (locked) return refuse(ObservationCode.LOCKED)
@@ -1203,6 +1310,8 @@ class KoScribeService : AccessibilityService() {
 
     private fun renderBubble() {
         if (!::windowManager.isInitialized) return
+        if (startupExperiment == StartupExperiment.RESELECT && unboundRecording.current() != null)
+            return // Keep the existing window unchanged until this recording ends.
         if (startupExperiment == StartupExperiment.OVERLAY && pendingId != null &&
             overlayPanel != null) return // Keep the captured host window unchanged until terminal cleanup.
         bubble?.let { try { windowManager.removeView(it) } catch (_: Exception) { } }

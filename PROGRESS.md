@@ -17,8 +17,9 @@ and all insertion guards remain in place. No API integration or paid API call
 has occurred. Phase 1 acceptance is not complete.
 Private repository created and visibility verified:
 https://github.com/drew345/KoScribe . Initial planning commit was pushed to
-`main`; the Phase 1 baseline was later pushed as `cfdd6fb`. This checkpoint
-contains the reviewed device-test fixes; local `main` tracks `origin/main`.
+`main`; the Phase 1 baseline was later pushed as `cfdd6fb`. Reviewed device-test
+fixes, eight synthetic results, and the permission audit were pushed as
+`76fd0b4`; local `main` tracks `origin/main`.
 
 ## Confirmed this session
 
@@ -58,6 +59,7 @@ opt-in test, citing the earlier real-app interaction restriction. No external
 test file was created and no Kakao draft was changed. See the concrete scope in
 `docs/EXTERNAL_DRAFT_TEST_PROPOSAL.md`; explicit approval of this test-scope
 extension is now required. Do not reroute the rejected action.
+The explicit scoped-approval question has been submitted and is awaiting Andrew.
 The final independently reviewed modal guard is installed: uninterrupted exact
 panel ownership, strict alternating visibility, fresh original root/editor on
 every reappearance, and a separately verified return to the captured target.

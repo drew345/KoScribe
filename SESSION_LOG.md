@@ -138,3 +138,8 @@
   permissions; added background/recovery checks to device acceptance. The
   fixture-only keep-screen-on update passed smoke assembly/lint after the eight
   device passes; that fixture update is not installed and product APK is unchanged.
+- Astra Extra High independently checked the permission audit. Verified the
+  GitHub repository is private; staged-path/secret-pattern checks passed.
+  Published the reviewed source, synthetic tests, and documentation as
+  `76fd0b4`. Requested explicit approval of the narrowly scoped unsent self-chat
+  exception; no rejected real-app action was retried or rerouted.

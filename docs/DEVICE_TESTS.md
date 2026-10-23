@@ -2,7 +2,8 @@
 
 Status: eight normal synthetic cross-app checks passed on the final modal guard
 on 2026-10-23, including edited English review return and Korean/emoji insertion.
-External-app tests and actual SwiftKey keystroke editing remain pending.
+First Kakao flow safely refused insertion; other external-app checks and actual
+SwiftKey keystroke editing remain pending.
 
 ## Environment to verify
 
@@ -31,7 +32,7 @@ inferences from unit tests.
 | Choose 요 / 반말 / EN; selected mode visible | All three fixed-sample paths passed | Pending | Pending | Pending |
 | Microphone starts; Stop/Cancel/background/lock stop it | Pending | Pending | Pending | Pending |
 | Review/edit English with SwiftKey; return to original field | Edited-content return passed with IME visible; actual keypresses pending | Pending | Pending | Pending |
-| Empty/beginning/middle/end insertion; existing text preserved | Empty and middle passed with SwiftKey visible; middle exact preservation repeated | Pending | Pending | Pending |
+| Empty/beginning/middle/end insertion; existing text preserved | Empty and middle passed with SwiftKey visible; middle exact preservation repeated | Empty draft unchanged after guard refusal; insertion unverified | Pending | Pending |
 | Existing Korean, English, emoji; composition preserved/refused | Exact Korean/English/emoji preserved; known active composition refused separately | Pending | Pending | Pending |
 | Selected text or unknown caret refuses automatic insertion | Selected range refused; exact draft preserved | Pending | Pending | Pending |
 | Changed text/field/app/conversation (including switch-back) refuses | Pending | Pending | Pending | Pending |
@@ -225,6 +226,34 @@ test does not establish compatibility with another app.
 - A modal may hide accessibility content events. Same-view conversation changes
   that restore identical observed field state remain unobservable. These tests
   do not resolve that limitation or establish KakaoTalk/Instagram/SMS compatibility.
+
+## First opt-in Kakao preflight
+
+After Andrew explicitly approved one unsent self-chat sample, Sol added the
+separate default-skipped test; Astra reviewed it and smoke assembly/lint passed.
+The first opted-in invocation stopped at `KAKAO_SELECTION_NOT_KNOWN_EMPTY`
+before any KoScribe button, recording, confirmation, or draft mutation. Empty,
+editable, nonpassword text-field checks had passed; numeric caret endpoints
+were not logged, so this alone does not establish their exact values.
+Review found the test's node-only 0/0 requirement stricter than the already
+approved production empty-caret/input-connection rule. Sol aligned only the
+test's empty-node check with that rule; Astra rereviewed the final source and
+assembly/lint passed. Exact result checks still require known collapsed
+selection. The second preflight then stopped at SWIFTKEY_NOT_VISIBLE before
+any product action. Scoped input-method metadata confirmed the keyboard hidden;
+Andrew restored it.
+
+The subsequent flow reached recording, Stop, review, and confirmation, then
+timed out at KAKAO_RESULT_NOT_EXACT. The test repeatedly verified the original
+field identity and unchanged empty/hinted state. Code-only service trace showed
+OBS_VERIFIED_EMPTY_CARET and MODE_SELECTED_POLITE, followed immediately by
+CONTENT_FLAGS_4 and first invalidation TARGET_CONTENT_CHANGED_OTHER_NODE during
+recording startup. Later lifecycle/modal/confirmation invalidations followed;
+no commit was requested for this session (the earlier commit in the trace was
+from the previous synthetic run). Microphone stopped after 2.516 seconds and
+SwiftKey stayed selected. No Send, screenshot, chat-history traversal, or field
+text logging occurred. This is a conservative product refusal, not a missing
+permission or a successful Kakao insertion. Do not rerun this confirmed session.
 
 Observation methods evolved from screencap/state queries to scoped fixture
 assertions and code-only traces; the current screenshot precautions above apply.

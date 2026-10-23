@@ -1,6 +1,6 @@
-# Approved empty-editor caret rule — device test pending
+# Approved empty-editor caret rule
 
-The Galaxy A35 local test editor is focused and empty, but the first mode tap returned `OBS_NODE_CARET_MISMATCH`. A code-only device probe reported `CARET_EMPTY_PROBE_CY_NY_HY`: the input connection is empty at zero, the node reports the `-1/-1` pair, and the node is empty or showing a hint. An independent AOSP review found that an empty `TextView` can expose this pair through accessibility. Andrew approved the exact narrow rule on 2026-10-23. The implementation and boundary tests now exist, but insertion with this case is still unverified on the phone.
+The original Galaxy A35 empty local-editor attempt returned `OBS_NODE_CARET_MISMATCH`. A code-only probe reported `CARET_EMPTY_PROBE_CY_NY_HY`: the input connection is empty at zero, the node reports the `-1/-1` pair, and the node is empty or showing a hint. An independent AOSP review found that an empty `TextView` can expose this pair through accessibility. Andrew approved the exact narrow rule on 2026-10-23. It is implemented and boundary-tested; subsequent synthetic empty-field insertion passed on the A35. See `DEVICE_TESTS.md` for current results. KakaoTalk compatibility remains unverified.
 
 Proposed rule inside `observeEditor`, after the existing text-type, password, surrounding-text, known-offset, and collapsed-selection checks:
 

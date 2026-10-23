@@ -143,3 +143,21 @@
   Published the reviewed source, synthetic tests, and documentation as
   `76fd0b4`. Requested explicit approval of the narrowly scoped unsent self-chat
   exception; no rejected real-app action was retried or rerouted.
+- Andrew answered the subsequent explicit exception request: "Approve this one
+  unsent self-chat test." Sol resumed the single opt-in test implementation
+  under that new authorization; independent Astra review precedes execution.
+- Sol added the opt-in Kakao test; Astra reviewed both initial and corrected
+  versions. Two preflights stopped before product actions: node-only 0/0 was
+  stricter than the approved product empty-caret policy, then SwiftKey was
+  hidden. After Andrew restored it, the flow reached confirmation but refused
+  on another target node's content-change event. The focused draft stayed empty,
+  no commit was requested for that session, microphone stopped, and SwiftKey
+  remained selected. No retry after confirmation. Product guards unchanged;
+  further diagnosis must use code-only metadata within the privacy scope.
+- Prepared a diagnostic-only update: relative uptime around capture and the
+  first content event, cached panel state, and fixed source categories. No new
+  cross-app inspection or guard change. Added a mutually exclusive recording/
+  Stop/Cancel test with no confirmation path. Astra review, both builds, 27
+  unit tests, lint (0 errors; app 15/smoke 3 warnings), and APK signature checks
+  passed. New diagnostic APKs are not installed or run; further real-app
+  diagnostic authorization is the next step.

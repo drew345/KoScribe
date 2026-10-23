@@ -65,6 +65,13 @@ class KoScribeService : AccessibilityService() {
     private var traceSequence = 0
     private val invalidationCodes = mutableSetOf<String>()
     private var lastInvalidationCode: String? = null
+    private var captureStartUptimeMs: Long? = null
+    private var captureCompleteUptimeMs: Long? = null
+    private var firstTargetContentTimingLogged = false
+    @Volatile
+    private var firstTargetContentTimeCode: String? = null
+    @Volatile
+    private var firstTargetContentStateCode: String? = null
 
     private fun note(code: String) {
         synchronized(trace) {
@@ -90,9 +97,57 @@ class KoScribeService : AccessibilityService() {
         guard.invalidate(id)
     }
 
+    /** First captured-target content event only; uptime, fixed codes, and cached panel state. */
+    private fun noteFirstTargetContentTiming(
+        event: AccessibilityEvent, sourceKind: String, deliveredUptimeMs: Long,
+        session: SessionGuard.Session
+    ) {
+        if (firstTargetContentTimingLogged || session.invalidated) return
+        firstTargetContentTimingLogged = true
+        val start = captureStartUptimeMs
+        val complete = captureCompleteUptimeMs
+        val occurred = event.eventTime
+        val validEventTime = occurred > 0L && occurred <= deliveredUptimeMs
+        fun deltaFrom(reference: Long?): String = when {
+            !validEventTime || reference == null -> "UNKNOWN"
+            occurred < reference -> "BEFORE_${reference - occurred}"
+            occurred > reference -> "AFTER_${occurred - reference}"
+            else -> "AT_0"
+        }
+        val relative = when {
+            occurred == 0L -> "UNKNOWN_ZERO"
+            occurred < 0L -> "UNKNOWN_NEGATIVE"
+            occurred > deliveredUptimeMs -> "UNKNOWN_FUTURE"
+            start == null || complete == null -> "CAPTURE_UNKNOWN"
+            occurred < start -> "BEFORE"
+            occurred <= complete -> "DURING"
+            else -> "AFTER"
+        }
+        val deliveryDelay = when {
+            occurred <= 0L -> "UNKNOWN"
+            deliveredUptimeMs < occurred -> "FUTURE_${occurred - deliveredUptimeMs}"
+            else -> (deliveredUptimeMs - occurred).toString()
+        }
+        val captureDuration = if (start != null && complete != null && complete >= start)
+            (complete - start).toString() else "UNKNOWN"
+        val timeCode = "FIRST_CONTENT_TIME_CD_${captureDuration}" +
+            "_ES_${deltaFrom(start)}_EC_${deltaFrom(complete)}" +
+            "_REL_${relative}_DELAY_${deliveryDelay}"
+        val stateCode = "FIRST_CONTENT_STATE_SRC_${sourceKind}_FLAGS_${event.contentChangeTypes}" +
+            "_VISIBLE_${if (SessionActivity.isVisible) 1 else 0}" +
+            "_REVIEW_${if (reviewVisible) 1 else 0}_RETURN_${if (returningToEditor) 1 else 0}" +
+            "_GATE_${modalOcclusion?.diagnosticCode() ?: "NONE"}"
+        firstTargetContentTimeCode = timeCode
+        firstTargetContentStateCode = stateCode
+        note(timeCode)
+        note(stateCode)
+    }
+
     fun diagnostics(): String = synchronized(trace) {
         "Last observation: ${observationCode.name}\n" +
             "First invalidation: ${lastInvalidationCode ?: "none"}\n" +
+            "First content timing: ${firstTargetContentTimeCode ?: "none"}\n" +
+            "First content state: ${firstTargetContentStateCode ?: "none"}\n" +
             "Recent guard events (codes only):\n" +
             if (trace.isEmpty()) "none" else trace.joinToString("\n")
     }
@@ -168,6 +223,7 @@ class KoScribeService : AccessibilityService() {
     override fun onCreateInputMethod(): InputMethod = TrackingInputMethod(this)
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
+        val deliveredUptimeMs = SystemClock.uptimeMillis()
         val id = pendingId ?: return
         val session = guard.session(id) ?: return
         if (event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED) {
@@ -192,6 +248,7 @@ class KoScribeService : AccessibilityService() {
                     else -> "TARGET_CONTENT_CHANGED_$sourceKind"
                 }
                 if (event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
+                    noteFirstTargetContentTiming(event, sourceKind, deliveredUptimeMs, session)
                     note("CONTENT_FLAGS_${event.contentChangeTypes}")
                     if (session.target.packageName == this.packageName &&
                         session.target.viewId == "$packageName:id/local_test_editor")
@@ -481,13 +538,20 @@ class KoScribeService : AccessibilityService() {
             renderBubble()
             return
         }
+        val captureStart = SystemClock.uptimeMillis()
         val target = observeEditor()
+        val captureComplete = SystemClock.uptimeMillis()
         if (target == null) {
             status = "Editor refused: ${observationCode.name}. Open KoScribe for diagnostic codes."
             renderBubble()
             return
         }
         val session = guard.begin(mode, target.snapshot, SystemClock.elapsedRealtime()) ?: return
+        captureStartUptimeMs = captureStart
+        captureCompleteUptimeMs = captureComplete
+        firstTargetContentTimingLogged = false
+        firstTargetContentTimeCode = null
+        firstTargetContentStateCode = null
         pendingId = session.id
         invalidationCodes.clear()
         lastInvalidationCode = null

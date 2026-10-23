@@ -52,30 +52,45 @@ fixes, eight synthetic results, and the permission audit were pushed as
 
 ## Next action
 
-Resolve the automatic approval block before adding a real-app unsent-draft test.
-Andrew confirmed an empty KakaoTalk self-chat composer ready with SwiftKey
-visible. Automatic review nevertheless rejected both attempts to add a separate
-opt-in test, citing the earlier real-app interaction restriction. No external
-test file was created and no Kakao draft was changed. See the concrete scope in
-`docs/EXTERNAL_DRAFT_TEST_PROPOSAL.md`; explicit approval of this test-scope
-extension is now required. Do not reroute the rejected action.
-The explicit scoped-approval question has been submitted and is awaiting Andrew.
+Obtain approval for additional Kakao self-chat diagnostics, starting with the
+reviewed recording -> Stop -> Cancel method in `docs/INSTRUMENTATION.md`.
+The code-only timing update and that separate no-confirmation method passed
+Astra review, both builds, 27 unit tests, lint, and APK signature verification.
+They are not installed or device-tested. Product guard behavior is unchanged.
+Prepared product APK SHA-256:
+`67FDAE782F8A71010BCD0457BCF545DAF1D9D6547A925826A09D9E9FD138E2C6`.
+After approval, install both fresh APKs and verify service connection before the
+exact diagnostic method. Do not run the old confirmation method or full suite.
+Retained first-content fields belong to the latest successful capture; do not
+attribute old diagnostics to a preflight failure.
+
+Diagnose the first actual Kakao flow's conservative refusal using code-only
+metadata. Andrew explicitly approved the opt-in unsent self-chat exception;
+Sol implemented it, Astra reviewed it, and build/lint passed. Two initial
+preflights made no product action (test caret check corrected to match the
+approved production rule, then hidden SwiftKey restored by Andrew). The actual
+flow reached confirmation but refused on TARGET_CONTENT_CHANGED_OTHER_NODE
+(content flags 4 during recording startup). Original empty field remained
+unchanged; no commit was requested for that session. Microphone stopped and
+SwiftKey remains selected. Do not rerun this confirmed session. Scope/result:
+`docs/EXTERNAL_DRAFT_TEST_PROPOSAL.md`, `docs/DEVICE_TESTS.md`.
 The final independently reviewed modal guard is installed: uninterrupted exact
 panel ownership, strict alternating visibility, fresh original root/editor on
 every reappearance, and a separately verified return to the captured target.
 All existing content/navigation/caret/context/one-commit checks remain. Fixed
 height and no-move-animation experiments were reverted. The narrowed service
 integration passed automatic approval after an earlier broader helper change
-was rejected; that service-code block is resolved. The separate external-test
-block above remains unresolved.
+was rejected; that service-code block is resolved. The external-test automatic
+approval block also cleared after Andrew's explicit scoped authorization.
 The edited-review smoke uses a scoped synthetic text action with SwiftKey
 visible; actual SwiftKey keystroke/composition editing still needs manual
 verification. Same-view semantic conversation reuse while hidden remains
 unobservable. Do not claim real-app compatibility from synthetic passes.
 The compact pill has no white surround; final icon is deferred. Microphone is
 stopped and SwiftKey remains selected. A fixture-only keep-screen-on flag was
-reviewed after the eight passes; smoke assembly/lint passed, but that fixture-only
-update has not been installed. The tested product APK is unchanged.
+reviewed after the eight passes; smoke assembly/lint passed and the updated
+test APK was installed for that trial. The newer timing/Cancel diagnostic APKs
+described above remain uninstalled; the phone still has the tested product.
 SwiftKey remains selected and Wispr remains enabled. Follow `docs/PHASE1.md`
 and `docs/DEVICE_TESTS.md`.
 No API key is needed for Phase 1.
@@ -86,7 +101,7 @@ separate draw-over-apps grant. KoScribe has no battery exemption, unlike install
 Wispr/DictoKey. Samsung per-app sleep lists and long-idle/reboot reliability
 remain unverified; no phone setting was changed. Notification/foreground-service
 features are absent from this prototype and must not be mistaken for missing
-required grants. Android grants are separate from the external-test approval block.
+required grants. Android grants did not cause the later Kakao guard refusal.
 
 ## Verification so far
 

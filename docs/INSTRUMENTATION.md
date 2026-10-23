@@ -123,6 +123,67 @@ the expanded bubble. Add a matched settling condition only if the observations
 make it useful. A refused panel startup is not a completed recording/Stop/Cancel
 flow, even when the final preservation assertions succeed.
 
+## Nonfocusable startup candidate (authorized 2026-10-23)
+
+The debug-only OVERLAY build replaces Activity startup with recording controls
+inside the already-expanded nonfocusable bubble window. It keeps that window's
+attachment, token, position, flags, and measured viewport; only its own child
+controls change during the active session. No window add/remove/update is part
+of recording startup. The same original target is captured once;
+it must remain focused and identifiable throughout. Visibility is required
+before and after the panel; the panel intentionally covers part of the screen.
+Missing/changed/ambiguous
+target, content/selection/input transitions, lock, and ownership loss cancel
+terminally and stop the microphone. The modal Activity gate is not used as an
+overlay exception. OFF/default/release keeps the ordinary editable Activity.
+
+This bounded candidate displays the selected mode, recording status, Stop,
+and Cancel. Stop requires positive reads and its own non-null recorder
+configuration reporting unsilenced capture, then releases the microphone and
+shows readonly fixed English with Cancel. It does not demonstrate speech
+recognition, editable review, translation, or insertion. All non-OFF builds
+hard-block insertion and clipboard recovery. The compact window does not cover
+the whole screen; external target/focus/input changes retain terminal refusal.
+An eight-second cancellation deadline ends the session. Cleanup
+exceptions are reported as uncertain, block new capture, and trigger bounded
+release retries; the deadline is not proof of microphone release.
+
+Build with `-PkoscribeStartupArm=OVERLAY :app:assembleDebug` and preserve the
+verified APK/hash separately under ignored build output. Use only one exact
+method in `com.koscribe.smoke.KakaoOverlayRecordingSmokeTest`, with the sole
+`-e overlayReady true` flag. Never combine it with older external/startup flags
+or run an unfiltered class/suite. Both methods verify the installed OVERLAY arm,
+fresh capture, same original empty focused Kakao field and selected/visible
+SwiftKey during recording and immediately/1.2 seconds after cleanup:
+
+```powershell
+adb -d shell am instrument --user 0 -w -r -e class 'com.koscribe.smoke.KakaoOverlayRecordingSmokeTest#nonfocusableOverlayRecordsStopsAndCancelsWithoutDraftMutation' -e overlayReady true com.koscribe.smoke/com.koscribe.smoke.KoScribeTestRunner
+adb -d shell am instrument --user 0 -w -r -e class 'com.koscribe.smoke.KakaoOverlayRecordingSmokeTest#nonfocusableOverlayCancelDuringRecordingReleasesOwnerAndPreservesDraft' -e overlayReady true com.koscribe.smoke/com.koscribe.smoke.KoScribeTestRunner
+```
+
+Run separately and inspect each result before proceeding. Root operates the
+phone; implementation/review agents do not. Inspect only focused-field/root
+metadata, IME identity, own controls, and bounded fixed-code diagnostics. Check
+the exact app's RECORD_AUDIO AppOps after each run to establish capture ended.
+No confirmation, Copy, insertion, Send, Enter, chat traversal, screenshot,
+permission change, or automatic target recapture is authorized by these tests.
+Record exact installed APK, measured result, and limitations in DEVICE_TESTS.
+
+The OVERLAY first-child-window diagnostic privately snapshots at most 16 direct
+child windows at capture and first target CHILDREN event, using IDs/types only.
+It exports fixed add/remove/retain/type/order counts and exact own-host matches;
+incomplete data remains unknown. It never retrieves child roots, titles, or
+view trees. IDs clear at session end. Both snapshots are delivery-time data and
+cannot prove event cause or harmlessness. The refusal remains unconditional.
+
+The first CHILDREN event also records relative occurrence/delivery timing to
+capture start/completion, own Stop entry, and
+REVIEW_CHILDREN_POPULATED_CALLBACK. That last callback follows microphone
+release and construction of the readonly review controls; it is not evidence
+that review remained visible. Zero/negative/future event timestamps are UNKNOWN.
+Only signed relative deltas leave the process. Timing adds no external reads
+and does not filter, defer, or exempt any event.
+
 Run while Andrew is not using the phone; app switches can correctly invalidate a session. Instrumentation completion can remove the fixture and return to a previous real app. Do not take post-test full-screen screenshots on the assumption that the synthetic editor is still visible. Prefer exact fixture assertions and code-only traces; capture pixels only after independently verifying the current foreground is an owned synthetic screen.
 
 References: [AOSP instrumentation target restart](https://source.android.com/docs/core/tests/development/instrumentation), [UiAutomation flag](https://developer.android.com/reference/android/app/UiAutomation#FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES), [flagged acquisition](https://developer.android.com/reference/android/app/Instrumentation#getUiAutomation(int)).

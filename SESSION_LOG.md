@@ -216,3 +216,26 @@
   to OFF. Evidence implicates the panel-launch transition in this comparison,
   without identifying the other node or proving its change harmless. Next is
   lifecycle/recovery design evaluation; keep all insertion guards unchanged.
+
+## 2026-10-23 — Nonfocusable recording and explicit destination selection
+
+- Andrew authorized fixing startup with no-insertion testing. Sol implemented
+  a service-owned nonfocusable recording panel; Astra reviewed microphone proof,
+  cleanup ownership, terminal guards, opt-in tests, and focused-only retrieval.
+- A second overlay window refused on target child-window flag512. Reusing the
+  existing expanded bubble then reached positive unsilenced microphone reads.
+  Direct Cancel passed; one run executed Stop but review still cancelled.
+- Bounded window metadata snapshots matched, while final event timing proved a
+  fresh event 2.625s after capture, before Stop, delivered 5ms later. Cause and
+  harmlessness remain unknown. No whitelist/grace/recapture was introduced.
+- Every cleanup check preserved the empty Kakao field and SwiftKey. Mic stopped;
+  no insertion, sending, clipboard, chat traversal, API, or audio retention.
+  Existing27 unit tests, builds/lint/signatures passed; precise results/hashes
+  are in DEVICE_TESTS. Capture-only E5CD28... APK remains installed; normal
+  local build output is OFF. GitHub remains private.
+- Andrew selected the new interaction: finish review, tap intended field, then
+  Insert. Recording/review will be independent of a destination; explicit Insert
+  later creates a fresh guarded transaction. Root/Sol/Astra agreed staged
+  RESELECT implementation and non-inserting tests. No early editor capture,
+  no inherited invalidated eligibility, and no actual insertion authorization
+  implied by this workflow choice. README/AGENTS/IMPLEMENTATION updated.

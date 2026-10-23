@@ -22,6 +22,15 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   recording-panel startup. Controlled no-insertion baseline/collapse/panel
   comparisons are within scope; keep the same focused-field privacy limits,
   existing guards, and original capture. Never rearm an invalidated session.
+- Andrew subsequently authorized fixing recording-panel startup and testing
+  without inserting or sending. A nonfocusable overlay candidate is in scope;
+  retain terminal invalidation, original target continuity, and microphone
+  cleanup. This does not reopen the completed insertion trial.
+- After the window diagnostics, Andrew explicitly selected: finish review,
+  tap the intended destination field, then tap Insert. Implement recording/
+  review and destination insertion as separate transactions. Do not capture
+  a destination during recording; only a later explicit insertion action
+  creates a fresh guarded capture. Current real-app tests remain non-inserting.
 - Once implementation is authorized, use subagents for coding with
   `gpt-6-sol` / `xhigh` (Extra High), and independent checking with
   `gpt-6-astra` / `xhigh`. Explicit model overrides require fresh-context
@@ -39,12 +48,13 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
 - Per message: open bubble, choose `요`, `반말`, or `EN` to begin recording,
   then Stop. Keep the selected output mode visible during recording.
 - Initially show an editable English transcript for every message. Translate
-  only after confirmation; Korean modes use `Translate & insert`, EN uses
-  `Insert English`. Add an option to skip review only in a later phase.
+  only after confirmation; prepare the result before destination selection.
+  Add an option to skip review only in a later phase.
 - Korean modes are conversational 해요체 and casual 반말. Do not add a
   습니다 mode. English output is secondary, but approved in the selector.
-- After transcript confirmation/translation, insert immediately only when the
-  intended editor is verified safe. Preserve
+- After transcript confirmation/translation, Andrew taps the intended field
+  and then Insert. Capture/check that explicit destination afresh and insert
+  only when verified safe. Never inherit an invalidated transaction. Preserve
   existing text. Refuse uncertain selection, changed target, or ambiguous
   insertion; keep the result available for explicit recovery.
 - Never send messages, activate editor actions, emulate Enter, or tap Send.

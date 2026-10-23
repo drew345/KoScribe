@@ -13,19 +13,20 @@ messaging-app acceptance and actual SwiftKey typing remain pending.
 
 ## Agreed interaction
 
-1. Focus a message field and tap the floating bubble.
+1. Tap the floating bubble.
 2. Tap one of three visible choices to start recording:
    - **요**: polite conversational Korean (해요체).
    - **반말**: casual Korean.
    - **EN**: English dictation without Korean translation.
 3. Speak; the chosen label remains visible. Tap **Stop**.
 4. Review the captured **English text**. Correct it with **Edit**, then choose
-   **Translate & insert** (Korean modes) or **Insert English** (EN). **Cancel**
+   **Translate** (Korean modes) or **Use English** (EN). **Cancel**
    discards the session. Review appears for every message initially; a skip
    option can be added later.
-5. Translate the confirmed text and insert the result immediately if the
-   original focused field is safe. EN skips translation.
-   If it cannot be verified, preserve the result for explicit copy/retry.
+5. When the result is ready, tap the intended message field, then tap **Insert**
+   on the bubble. KoScribe captures and checks that destination afresh before
+   insertion. EN skips translation. If the check fails, keep the result for an
+   explicit new destination attempt; never silently retarget or retry a commit.
 6. Review/edit in the destination app and press Send yourself.
 
 Each message requires an explicit mode choice. No hidden gesture determines
@@ -33,6 +34,11 @@ politeness. There is no 습니다 output mode. The English review is editable te
 not an image; there is no required second preview of the Korean result. Cancel,
 error recovery, the bubble icon, placement, and the supporting settings screen
 still need detailed design.
+
+The separate destination-selection step was chosen after the A35 startup
+diagnostics on 2026-10-23. Recording/review will no longer depend on an earlier
+editor binding. This revised workflow is being implemented; real-app tests
+remain non-inserting until their separate scope is agreed.
 
 ## Initial device and apps
 

@@ -6,8 +6,10 @@ import android.app.KeyguardManager
 import android.content.ClipData
 import android.content.ClipDescription
 import android.content.ClipboardManager
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
@@ -52,6 +54,11 @@ class KoScribeService : AccessibilityService() {
     private var targetRootNode: AccessibilityNodeInfo? = null
     private val returnContinuity = ReturnContinuity()
     private var modalOcclusion: ModalOcclusionGate? = null
+    private var overlayPanel: OverlayRecordingPanel? = null
+    private var overlayCleanupPending: OverlayRecordingPanel? = null
+    private var overlayScreenReceiver: BroadcastReceiver? = null
+    private var overlayHeartbeat: Runnable? = null
+    private var overlayInputGeneration: Int? = null
     private enum class ObservationCode {
         NOT_CHECKED, LOCKED, NO_INPUT_METHOD, INPUT_NOT_STARTED, NO_EDITOR_INFO,
         NO_INPUT_CONNECTION, UNSUPPORTED_EDITOR_TYPE, NO_FOCUSED_APP_WINDOW,
@@ -84,6 +91,15 @@ class KoScribeService : AccessibilityService() {
     private var firstTargetContentTimeCode: String? = null
     @Volatile
     private var firstTargetContentStateCode: String? = null
+    private data class ChildWindowSnapshot(val orderedIds: List<Int>, val types: Map<Int, Int>)
+    private var capturedTargetChildWindows: ChildWindowSnapshot? = null
+    private var capturedHostWindowId: Int? = null
+    @Volatile private var firstTargetChildDeltaCode: String? = null
+    private var overlayStopEntryUptimeMs: Long? = null
+    private var overlayReviewChildrenCallbackUptimeMs: Long? = null
+    private var firstTargetChildEventUptimeMs: Long? = null
+    private var firstTargetChildCallbackUptimeMs: Long? = null
+    private var firstTargetChildEventTimeStatus = "NOT_OBSERVED"
 
     private fun note(code: String) {
         synchronized(trace) {
@@ -115,6 +131,22 @@ class KoScribeService : AccessibilityService() {
             "_FIRST_CONTENT_${relativeUptime(at, firstTargetContentEventUptimeMs)}"
     }
 
+    /** Event occurrence is Android uptime; only signed differences are exported. */
+    private fun firstTargetChildTimingDiagnostics(): String {
+        val callback = firstTargetChildCallbackUptimeMs ?: return "NOT_OBSERVED"
+        val occurred = firstTargetChildEventUptimeMs
+        fun delta(reference: Long?): String =
+            if (occurred == null) "UNKNOWN" else relativeUptime(occurred, reference)
+        val delay = if (occurred == null) "UNKNOWN"
+            else (callback - occurred).toString()
+        return "STATUS_${firstTargetChildEventTimeStatus}" +
+            "_CAPTURE_START_${delta(captureStartUptimeMs)}" +
+            "_CAPTURE_COMPLETE_${delta(captureCompleteUptimeMs)}" +
+            "_STOP_ENTRY_${delta(overlayStopEntryUptimeMs)}" +
+            "_REVIEW_CHILDREN_POPULATED_CALLBACK_${delta(overlayReviewChildrenCallbackUptimeMs)}" +
+            "_DELIVERY_DELAY_${delay}"
+    }
+
     private fun refuse(code: ObservationCode): Observation? {
         observationCode = code
         note("OBS_${code.name}")
@@ -129,6 +161,12 @@ class KoScribeService : AccessibilityService() {
             if (lastInvalidationCode == null) lastInvalidationCode = code
         }
         guard.invalidate(id)
+        if (startupExperiment == StartupExperiment.OVERLAY && pendingId == id) {
+            experimentPhase = "OVERLAY_INVALIDATED"
+            cancelSession(id)
+            status = "Overlay session refused: $code. Start again from the bubble."
+            renderBubble()
+        }
     }
 
     /** First captured-target content event only; uptime, fixed codes, and cached panel state. */
@@ -185,9 +223,12 @@ class KoScribeService : AccessibilityService() {
             "First invalidation: ${lastInvalidationCode ?: "none"}\n" +
             "First content timing: ${firstTargetContentTimeCode ?: "none"}\n" +
             "First content state: ${firstTargetContentStateCode ?: "none"}\n" +
+            "First child-window delta: ${firstTargetChildDeltaCode ?: "none"}\n" +
+            "First child-window timing: ${firstTargetChildTimingDiagnostics()}\n" +
             "Experiment arm: ${startupExperiment.name}\n" +
             "Experiment capture count: $experimentCaptureCount\n" +
             "Experiment phase: $experimentPhase\n" +
+            "Overlay cleanup pending: ${overlayCleanupPending != null}\n" +
             "Own UI milestones (callback uptime vs capture completion / first content occurrence):\n" +
             ownMilestoneDiagnostics() + "\n" +
             "Recent guard events (codes only):\n" +
@@ -231,6 +272,10 @@ class KoScribeService : AccessibilityService() {
         val session = guard.session(id) ?: return
         note(if (info.packageName == session.target.packageName) "INPUT_STARTED_TARGET_APP"
             else if (info.packageName == packageName) "INPUT_STARTED_OWN_APP" else "INPUT_STARTED_OTHER_APP")
+        if (startupExperiment == StartupExperiment.OVERLAY) {
+            invalidate(id, "OVERLAY_INPUT_RESTART")
+            return
+        }
         if (returningToEditor) {
             if (info.packageName == session.target.packageName &&
                 info.fieldId == session.target.editorFieldId) {
@@ -252,6 +297,10 @@ class KoScribeService : AccessibilityService() {
     private fun inputFinished() {
         val id = pendingId ?: return
         note("INPUT_FINISHED")
+        if (startupExperiment == StartupExperiment.OVERLAY) {
+            invalidate(id, "OVERLAY_INPUT_FINISHED")
+            return
+        }
         if (returningToEditor && !returnContinuity.finishedInput()) invalidate(id, "INPUT_FINISH_SEQUENCE")
     }
 
@@ -269,8 +318,12 @@ class KoScribeService : AccessibilityService() {
         val id = pendingId ?: return
         val session = guard.session(id) ?: return
         if (event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED) {
-            onWindowsChanged(event, session)
+            onWindowsChanged(event, session, deliveredUptimeMs)
             return
+        }
+        if (startupExperiment == StartupExperiment.OVERLAY) {
+            verifyOverlayTarget(id)
+            if (pendingId != id) return
         }
         val packageName = event.packageName?.toString() ?: return
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED ||
@@ -278,7 +331,7 @@ class KoScribeService : AccessibilityService() {
             event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
             if (packageName == session.target.packageName &&
                 event.windowId == session.target.windowId) {
-                val sourceKind = when (event.source) {
+                val sourceKind = when (event.getSource(0)) {
                     null -> "NO_SOURCE"
                     targetNode -> "EDITOR"
                     targetRootNode -> "ROOT"
@@ -294,7 +347,7 @@ class KoScribeService : AccessibilityService() {
                     note("CONTENT_FLAGS_${event.contentChangeTypes}")
                     if (session.target.packageName == this.packageName &&
                         session.target.viewId == "$packageName:id/local_test_editor")
-                        note(localFixtureContentSource(event.source))
+                        note(localFixtureContentSource(event.getSource(0)))
                 }
                 invalidate(id, reason)
             }
@@ -302,13 +355,13 @@ class KoScribeService : AccessibilityService() {
         }
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED) {
             if (packageName == session.target.packageName &&
-                event.windowId == session.target.windowId && event.source == targetNode) {
+                event.windowId == session.target.windowId && event.getSource(0) == targetNode) {
                 note("TARGET_EDITOR_FOCUSED")
                 if (!returningToEditor && modalOcclusion?.hasAcquiredFocus == true)
                     invalidate(id, "TARGET_FOCUSED_DURING_PANEL")
             }
             if (packageName == session.target.packageName &&
-                event.windowId == session.target.windowId && event.source != targetNode) {
+                event.windowId == session.target.windowId && event.getSource(0) != targetNode) {
                 invalidate(id, "TARGET_FOCUS_NODE")
             }
             return
@@ -316,7 +369,7 @@ class KoScribeService : AccessibilityService() {
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             if (packageName == session.target.packageName &&
                 event.windowId == session.target.windowId) {
-                val sourceKind = when (event.source) {
+                val sourceKind = when (event.getSource(0)) {
                     null -> "NO_SOURCE"
                     targetRootNode -> "ROOT"
                     else -> "OTHER_NODE"
@@ -341,7 +394,25 @@ class KoScribeService : AccessibilityService() {
         }
     }
 
-    private fun onWindowsChanged(event: AccessibilityEvent, session: SessionGuard.Session) {
+    private fun onWindowsChanged(
+        event: AccessibilityEvent, session: SessionGuard.Session, callbackEntryUptimeMs: Long
+    ) {
+        if (startupExperiment == StartupExperiment.OVERLAY) {
+            if (event.windowId == session.target.windowId && event.windowChanges != 0) {
+                if (event.windowChanges and AccessibilityEvent.WINDOWS_CHANGE_CHILDREN != 0) {
+                    noteFirstTargetChildTiming(event, callbackEntryUptimeMs, session)
+                    try { noteFirstTargetChildDelta(session) }
+                    catch (_: Exception) { firstTargetChildDeltaCode = "CHILD_DELTA_INCOMPLETE_DIAGNOSTIC_EXCEPTION" }
+                }
+                note(if (overlayPanel?.hostStable() == true)
+                    "OVERLAY_HOST_AT_TARGET_EVENT_SAME" else "OVERLAY_HOST_AT_TARGET_EVENT_UNVERIFIED")
+                note("OVERLAY_TARGET_WINDOW_FLAGS_${event.windowChanges}")
+                invalidate(session.id, "OVERLAY_TARGET_WINDOW_CHANGED")
+                return
+            }
+            verifyOverlayTarget(session.id)
+            return
+        }
         val changes = event.windowChanges
         val id = session.id
         val currentWindows = windows
@@ -387,7 +458,7 @@ class KoScribeService : AccessibilityService() {
             it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.isFocused
         }
         if (focusedApps.size > 1) invalidate(id, "MULTIPLE_FOCUSED_WINDOWS")
-        val focusedPackage = focusedApps.singleOrNull()?.root?.packageName?.toString()
+        val focusedPackage = focusedApps.singleOrNull()?.getRoot(0)?.packageName?.toString()
         if (focusedPackage != null && focusedPackage != packageName &&
             focusedPackage != session.target.packageName) invalidate(id, "OTHER_FOCUSED_APP")
         if (!returningToEditor && modalOcclusion?.hasAcquiredFocus == true) {
@@ -400,21 +471,21 @@ class KoScribeService : AccessibilityService() {
 
     private fun focusedPanelWindowId(currentWindows: List<AccessibilityWindowInfo>): Int? =
         currentWindows.filter { it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.isFocused }
-            .singleOrNull()?.takeIf { it.root?.packageName?.toString() == packageName }?.id
+            .singleOrNull()?.takeIf { it.getRoot(0)?.packageName?.toString() == packageName }?.id
 
     /** Used only after explicit confirmation; both target package and window must match. */
     private fun focusedReturnWindowId(
         currentWindows: List<AccessibilityWindowInfo>, target: EditorSnapshot
     ): Int? = currentWindows.filter { it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.isFocused }
         .singleOrNull()?.takeIf {
-            it.id == target.windowId && it.root?.packageName?.toString() == target.packageName
+            it.id == target.windowId && it.getRoot(0)?.packageName?.toString() == target.packageName
         }?.id
 
     /** Compare fresh identities without reading the destination's text while it is covered. */
     private fun reappearedTargetIdentity(
         targetWindow: AccessibilityWindowInfo?, original: EditorSnapshot
     ): Pair<Boolean, Boolean> = runCatching {
-        val root = targetWindow?.root ?: return@runCatching false to false
+        val root = targetWindow?.getRoot(0) ?: return@runCatching false to false
         val rootMatches = root.refresh() && root == targetRootNode &&
             root.windowId == original.windowId && root.packageName?.toString() == original.packageName
         if (!rootMatches) return@runCatching false to false
@@ -440,7 +511,7 @@ class KoScribeService : AccessibilityService() {
         val focus = when {
             focusedApps.isEmpty() -> "NONE"
             focusedApps.size > 1 -> "MULTIPLE"
-            else -> when (focusedApps[0].root?.packageName?.toString()) {
+            else -> when (focusedApps[0].getRoot(0)?.packageName?.toString()) {
                 packageName -> "OWN"
                 session.target.packageName -> "TARGET"
                 null -> "NO_ROOT"
@@ -448,14 +519,14 @@ class KoScribeService : AccessibilityService() {
             }
         }
         val targetWindow = currentWindows.firstOrNull { it.id == session.target.windowId }
-        val currentRoot = targetWindow?.root
+        val currentRoot = targetWindow?.getRoot(0)
         val root = when {
             targetWindow == null -> "ABSENT"
             currentRoot == null -> "NO_ROOT"
             currentRoot == targetRootNode -> "SAME"
             else -> "DIFFERENT"
         }
-        val source = when (event.source) {
+        val source = when (event.getSource(0)) {
             null -> "NONE"
             targetNode -> "EDITOR"
             targetRootNode -> "ROOT"
@@ -466,6 +537,90 @@ class KoScribeService : AccessibilityService() {
         return "TARGET_WINDOW_${phase}_F${event.windowChanges}_PANEL_${panel}_${review}_FOCUS_${focus}_ROOT_${root}_SOURCE_${source}" +
             "_GATE_${modalOcclusion?.diagnosticCode() ?: "NONE"}"
     }
+
+    /** Window relations only: getChild never reads the child window's root or view tree. */
+    private fun childWindowSnapshot(window: AccessibilityWindowInfo?): ChildWindowSnapshot? {
+        if (window == null) return null
+        return try {
+            val count = window.childCount
+            if (count !in 0..16) return null
+            val order = ArrayList<Int>(count)
+            val types = HashMap<Int, Int>(count)
+            for (index in 0 until count) {
+                val child = window.getChild(index) ?: return null
+                if (child.id < 0 || types.put(child.id, child.type) != null) return null
+                order.add(child.id)
+            }
+            ChildWindowSnapshot(order, types)
+        } catch (_: Exception) { null }
+    }
+
+    private fun ownHostWindowId(): Int? = runCatching {
+        bubble?.createAccessibilityNodeInfo()?.windowId?.takeIf { it >= 0 }
+    }.getOrNull()
+
+    /** One first target-children event; record before any window metadata query. */
+    private fun noteFirstTargetChildTiming(
+        event: AccessibilityEvent, callbackEntryUptimeMs: Long, session: SessionGuard.Session
+    ) {
+        if (firstTargetChildCallbackUptimeMs != null || session.invalidated) return
+        firstTargetChildCallbackUptimeMs = callbackEntryUptimeMs
+        val occurred = event.eventTime
+        firstTargetChildEventTimeStatus = when {
+            occurred == 0L -> "UNKNOWN_ZERO"
+            occurred < 0L -> "UNKNOWN_NEGATIVE"
+            occurred > callbackEntryUptimeMs -> "UNKNOWN_FUTURE"
+            else -> "VALID"
+        }
+        firstTargetChildEventUptimeMs = occurred.takeIf {
+            it > 0L && it <= callbackEntryUptimeMs
+        }
+        note("FIRST_TARGET_CHILD_TIME_${firstTargetChildEventTimeStatus}")
+    }
+
+    /** First target child-window event only; raw IDs never leave process memory. */
+    private fun noteFirstTargetChildDelta(session: SessionGuard.Session) {
+        if (firstTargetChildDeltaCode != null || session.invalidated) return
+        val summary = try {
+            val original = capturedTargetChildWindows
+            val current = childWindowSnapshot(windows.singleOrNull { it.id == session.target.windowId })
+            if (original == null || current == null) {
+                "CHILD_DELTA_INCOMPLETE_CAPTURE_${if (original == null) 1 else 0}" +
+                    "_CURRENT_${if (current == null) 1 else 0}"
+            } else {
+                val added = current.types.keys - original.types.keys
+                val removed = original.types.keys - current.types.keys
+                val retained = original.types.keys intersect current.types.keys
+                fun kind(id: Int, type: Int): String = when {
+                    capturedHostWindowId != null && id == capturedHostWindowId -> "OWN_HOST"
+                    type == AccessibilityWindowInfo.TYPE_INPUT_METHOD -> "IME_TYPE"
+                    type == AccessibilityWindowInfo.TYPE_APPLICATION -> "APP_TYPE"
+                    type == AccessibilityWindowInfo.TYPE_SYSTEM -> "SYSTEM_TYPE"
+                    type == AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY -> "OVERLAY_TYPE"
+                    else -> "OTHER_TYPE"
+                }
+                val categories = listOf("OWN_HOST", "IME_TYPE", "APP_TYPE",
+                    "SYSTEM_TYPE", "OVERLAY_TYPE", "OTHER_TYPE")
+                fun counts(ids: Set<Int>, types: Map<Int, Int>): String =
+                    categories.joinToString("_") { category ->
+                        "${category}_${ids.count { id -> kind(id, types.getValue(id)) == category }}"
+                    }
+                val order = when {
+                    added.isNotEmpty() || removed.isNotEmpty() -> "UNKNOWN_SET_CHANGED"
+                    original.orderedIds == current.orderedIds -> "SAME"
+                    else -> "CHANGED"
+                }
+                "CHILD_DELTA_ADD_${added.size}_REMOVE_${removed.size}_RETAIN_${retained.size}" +
+                    "_TYPE_CHANGED_${retained.count { original.types[it] != current.types[it] }}" +
+                    "_ORDER_$order" +
+                    "_HOST_ID_${if (capturedHostWindowId == null) "UNKNOWN" else "KNOWN"}" +
+                    "_ADD_${counts(added, current.types)}_REMOVE_${counts(removed, original.types)}"
+            }
+        } catch (_: Exception) { "CHILD_DELTA_INCOMPLETE_DIAGNOSTIC_EXCEPTION" }
+        firstTargetChildDeltaCode = summary
+        note(summary)
+    }
+
 
     /** Fixed categories for the synthetic editor only; never export source IDs or text. */
     private fun localFixtureContentSource(source: AccessibilityNodeInfo?): String = runCatching {
@@ -499,10 +654,15 @@ class KoScribeService : AccessibilityService() {
     override fun onInterrupt() { pendingId?.let { invalidate(it, "SERVICE_INTERRUPTED") } }
 
     override fun onDestroy() {
+        stopOverlayOwnership()
+        overlayCleanupPending?.close()
+        capturedTargetChildWindows = null
+        capturedHostWindowId = null
         pendingId?.let { guard.cancel(it); guard.end(it) }
         targetNode = null
         targetRootNode = null
         modalOcclusion = null
+        overlayInputGeneration = null
         bubble?.let { try { windowManager.removeView(it) } catch (_: Exception) { } }
         bubble = null
         instance = WeakReference(null)
@@ -515,7 +675,12 @@ class KoScribeService : AccessibilityService() {
     fun cancelSession(id: String) {
         guard.cancel(id)
         if (pendingId != id) return
+        if (startupExperiment == StartupExperiment.OVERLAY) stopOverlayOwnership()
         guard.end(id)
+        if (startupExperiment == StartupExperiment.OVERLAY) {
+            capturedTargetChildWindows = null
+            capturedHostWindowId = null
+        }
         pendingId = null
         if (startupExperiment != StartupExperiment.OFF) experimentPhase = "CANCELLED"
         reviewVisible = false
@@ -524,7 +689,9 @@ class KoScribeService : AccessibilityService() {
         targetNode = null
         targetRootNode = null
         modalOcclusion = null
-        status = "Session cancelled."
+        overlayInputGeneration = null
+        status = if (overlayCleanupPending != null) "Overlay cleanup uncertain. Restart the service."
+            else "Session cancelled."
         renderBubble()
     }
 
@@ -595,9 +762,10 @@ class KoScribeService : AccessibilityService() {
     }
 
     private fun startMode(mode: OutputMode) {
-        if (pendingId != null || SessionActivity.isVisible) {
+        if (pendingId != null || SessionActivity.isVisible || overlayCleanupPending != null) {
             status = "Finish or cancel the current review before starting another session."
-            renderBubble()
+            if (startupExperiment != StartupExperiment.OVERLAY || pendingId == null)
+                renderBubble()
             return
         }
         val captureStart = SystemClock.uptimeMillis()
@@ -620,14 +788,27 @@ class KoScribeService : AccessibilityService() {
         firstTargetContentTimingLogged = false
         firstTargetContentTimeCode = null
         firstTargetContentStateCode = null
+        if (startupExperiment == StartupExperiment.OVERLAY) {
+            capturedTargetChildWindows = target.windowChildren
+            capturedHostWindowId = ownHostWindowId()
+            firstTargetChildDeltaCode = null
+            overlayStopEntryUptimeMs = null
+            overlayReviewChildrenCallbackUptimeMs = null
+            firstTargetChildEventUptimeMs = null
+            firstTargetChildCallbackUptimeMs = null
+            firstTargetChildEventTimeStatus = "NOT_OBSERVED"
+        }
         pendingId = session.id
         invalidationCodes.clear()
         lastInvalidationCode = null
         note("MODE_SELECTED_${mode.name}")
         targetNode = target.node
         targetRootNode = target.root
-        modalOcclusion = ModalOcclusionGate(session.target.windowId)
+        modalOcclusion = if (startupExperiment == StartupExperiment.OVERLAY) null
+            else ModalOcclusionGate(session.target.windowId)
         returnContinuity.capture(target.generation)
+        if (startupExperiment == StartupExperiment.OVERLAY)
+            overlayInputGeneration = target.generation
         recoveryText = null
         reviewVisible = false
         returningToEditor = false
@@ -637,7 +818,8 @@ class KoScribeService : AccessibilityService() {
             scheduleExperimentHold(session.id)
             return
         }
-        if (startupExperiment != StartupExperiment.PANEL) {
+        if (startupExperiment != StartupExperiment.PANEL &&
+            startupExperiment != StartupExperiment.OVERLAY) {
             if (startupExperiment == StartupExperiment.COLLAPSE)
                 experimentPhase = "COLLAPSE_REQUESTED"
             expanded = false
@@ -648,6 +830,11 @@ class KoScribeService : AccessibilityService() {
         if (startupExperiment == StartupExperiment.COLLAPSE) {
             experimentPhase = if (bubble != null) "COLLAPSED_HOLD" else "COLLAPSE_ADD_FAILED_HOLD"
             scheduleExperimentHold(session.id)
+            return
+        }
+        if (startupExperiment == StartupExperiment.OVERLAY) {
+            ownTransition = false // No modal visibility/bounds exception belongs to this arm.
+            startOverlaySession(session.id, mode)
             return
         }
         val intent = Intent(this, SessionActivity::class.java).apply {
@@ -689,6 +876,150 @@ class KoScribeService : AccessibilityService() {
                 cancelSession(id)
             }
         }, 1_500)
+    }
+
+    private fun startOverlaySession(id: String, mode: OutputMode) {
+        if (pendingId != id) return
+        experimentPhase = "OVERLAY_HOST_REUSE_REQUESTED"
+        val host = bubble?.takeIf { expanded && it.isAttachedToWindow && it.width > 0 && it.height > 0 }
+        if (host == null) {
+            invalidate(id, "OVERLAY_EXPANDED_HOST_UNAVAILABLE")
+            return
+        }
+        lateinit var owner: OverlayRecordingPanel
+        owner = OverlayRecordingPanel(this, host, mode,
+            onFailure = { code -> if (pendingId == id) invalidate(id, code) },
+            onReady = {
+                if (pendingId == id) {
+                    if (!owner.hostStable()) invalidate(id, "OVERLAY_HOST_CHANGED_AT_MIC_PROOF")
+                    else {
+                        experimentPhase = "OVERLAY_RECORDING_PROVED"
+                        note("OVERLAY_HOST_WINDOW_SAME")
+                        note("OVERLAY_MIC_READ_POSITIVE_UNSILENCED")
+                    }
+                }
+            },
+            onStopEntry = {
+                if (pendingId == id && overlayStopEntryUptimeMs == null) {
+                    overlayStopEntryUptimeMs = SystemClock.uptimeMillis()
+                    note("OVERLAY_STOP_ENTRY_CALLBACK")
+                }
+            },
+            onReview = {
+                if (pendingId == id) {
+                    if (overlayReviewChildrenCallbackUptimeMs == null) {
+                        overlayReviewChildrenCallbackUptimeMs = SystemClock.uptimeMillis()
+                        note("OVERLAY_REVIEW_CHILDREN_POPULATED_CALLBACK")
+                    }
+                    experimentPhase = "OVERLAY_READ_ONLY_REVIEW"
+                    note("OVERLAY_MIC_PROVED_STOPPED")
+                }
+            },
+            onCancel = { if (pendingId == id) cancelSession(id) }
+        )
+        overlayPanel = owner
+        if (!owner.showAndStart()) {
+            if (pendingId == id) invalidate(id, "OVERLAY_HOST_REUSE_FAILED")
+            return
+        }
+        if (pendingId != id) return // A synchronous microphone refusal may already have ended it.
+        experimentPhase = "OVERLAY_HOST_REUSED"
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                if (intent.action == Intent.ACTION_SCREEN_OFF && pendingId == id)
+                    invalidate(id, "OVERLAY_SCREEN_OFF")
+            }
+        }
+        try {
+            registerReceiver(receiver, IntentFilter(Intent.ACTION_SCREEN_OFF), Context.RECEIVER_NOT_EXPORTED)
+            overlayScreenReceiver = receiver
+        } catch (_: Exception) {
+            invalidate(id, "OVERLAY_SCREEN_RECEIVER_FAILED")
+            return
+        }
+        val heartbeat = object : Runnable {
+            override fun run() {
+                if (pendingId != id || overlayPanel !== owner) return
+                verifyOverlayTarget(id)
+                if (pendingId == id && overlayPanel === owner && !owner.hostStable())
+                    invalidate(id, "OVERLAY_HOST_CHANGED")
+                if (pendingId == id && overlayPanel === owner) owner.pollMic()
+                if (pendingId == id && overlayPanel === owner) main.postDelayed(this, 250)
+            }
+        }
+        overlayHeartbeat = heartbeat
+        main.post(heartbeat)
+    }
+
+    /** Focus and identity only: never read target text, history, or an IME tree. */
+    private fun verifyOverlayTarget(id: String) {
+        if (pendingId != id || startupExperiment != StartupExperiment.OVERLAY) return
+        if (overlayPanel?.hostStable() != true)
+            return invalidate(id, "OVERLAY_HOST_CHANGED")
+        val session = guard.session(id) ?: return invalidate(id, "OVERLAY_SESSION_MISSING")
+        if (session.invalidated) return invalidate(id, "OVERLAY_ALREADY_INVALID")
+        if ((getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked)
+            return invalidate(id, "OVERLAY_LOCKED")
+        val method = inputMethod as? TrackingInputMethod
+            ?: return invalidate(id, "OVERLAY_INPUT_METHOD_MISSING")
+        val editorInfo = method.currentInputEditorInfo
+            ?: return invalidate(id, "OVERLAY_EDITOR_INFO_MISSING")
+        if (!method.currentInputStarted || method.currentInputConnection == null ||
+            method.generation != overlayInputGeneration ||
+            editorInfo.packageName != session.target.packageName ||
+            editorInfo.fieldId != session.target.editorFieldId)
+            return invalidate(id, "OVERLAY_INPUT_BINDING_CHANGED")
+        val current = windows
+        val focusedApps = current.filter {
+            it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.isFocused
+        }
+        val focused = focusedApps.singleOrNull()
+            ?: return invalidate(id, "OVERLAY_FOCUS_AMBIGUOUS")
+        if (focused.id != session.target.windowId)
+            return invalidate(id, "OVERLAY_FOCUSED_WINDOW_CHANGED")
+        val originalWindow = current.singleOrNull { it.id == session.target.windowId }
+            ?: return invalidate(id, "OVERLAY_TARGET_WINDOW_MISSING")
+        if (originalWindow.type != AccessibilityWindowInfo.TYPE_APPLICATION || !originalWindow.isFocused)
+            return invalidate(id, "OVERLAY_TARGET_WINDOW_UNFOCUSED")
+        val root = originalWindow.getRoot(0)
+            ?: return invalidate(id, "OVERLAY_TARGET_ROOT_MISSING")
+        if (root != targetRootNode || root.packageName?.toString() != session.target.packageName)
+            return invalidate(id, "OVERLAY_TARGET_ROOT_CHANGED")
+        val editor = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+            ?: return invalidate(id, "OVERLAY_EDITOR_FOCUS_MISSING")
+        if (editor != targetNode || !editor.isFocused || !editor.isEditable || !editor.isEnabled ||
+            editor.isPassword ||
+            editor.windowId != session.target.windowId ||
+            editor.packageName?.toString() != session.target.packageName ||
+            editor.viewIdResourceName != session.target.viewId ||
+            editor.className?.toString() != session.target.className ||
+            editor.inputType != session.target.inputType ||
+            (editor.uniqueId?.takeIf(String::isNotBlank) ?: "source-node") !=
+                session.target.uniqueNodeId)
+            invalidate(id, "OVERLAY_EDITOR_CHANGED")
+    }
+
+    private fun stopOverlayOwnership() {
+        overlayHeartbeat?.let(main::removeCallbacks)
+        overlayHeartbeat = null
+        overlayScreenReceiver?.let { runCatching { unregisterReceiver(it) } }
+        overlayScreenReceiver = null
+        val owner = overlayPanel
+        owner?.close()
+        overlayPanel = null
+        if (owner?.hasPendingCleanup() == true) {
+            note("OVERLAY_CLEANUP_UNCERTAIN")
+            overlayCleanupPending = owner
+            var retriesRemaining = 20
+            main.postDelayed(object : Runnable {
+                override fun run() {
+                    if (overlayCleanupPending !== owner) return
+                    owner.close()
+                    if (!owner.hasPendingCleanup()) overlayCleanupPending = null
+                    else if (--retriesRemaining > 0) main.postDelayed(this, 500)
+                }
+            }, 500)
+        }
     }
 
     private fun attemptInsertion(id: String) {
@@ -772,7 +1103,8 @@ class KoScribeService : AccessibilityService() {
         val root: AccessibilityNodeInfo,
         val connection: android.accessibilityservice.InputMethod.AccessibilityInputConnection,
         val generation: Int,
-        val compositionState: CompositionState
+        val compositionState: CompositionState,
+        val windowChildren: ChildWindowSnapshot?
     )
 
     private fun observeEditor(): Observation? {
@@ -791,7 +1123,7 @@ class KoScribeService : AccessibilityService() {
         }
         if (focusedWindows.isEmpty()) return refuse(ObservationCode.NO_FOCUSED_APP_WINDOW)
         if (focusedWindows.size > 1) return refuse(ObservationCode.MULTIPLE_FOCUSED_APP_WINDOWS)
-        val root = focusedWindows.single().root ?: return refuse(ObservationCode.NO_FOCUSED_NODE)
+        val root = focusedWindows.single().getRoot(0) ?: return refuse(ObservationCode.NO_FOCUSED_NODE)
         if (!root.refresh()) return refuse(ObservationCode.NO_FOCUSED_NODE)
         val focus = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
             ?: return refuse(ObservationCode.NO_FOCUSED_NODE)
@@ -844,7 +1176,9 @@ class KoScribeService : AccessibilityService() {
         if (!snapshot.isSafe()) return refuse(ObservationCode.SNAPSHOT_INVALID)
         observationCode = ObservationCode.READY
         note("OBS_READY_${composition.name}")
-        return Observation(snapshot, focus, root, connection, method.generation, composition)
+        return Observation(snapshot, focus, root, connection, method.generation, composition,
+            if (startupExperiment == StartupExperiment.OVERLAY)
+                childWindowSnapshot(focusedWindows.single()) else null)
     }
 
     private fun safeInputType(type: Int): Boolean {
@@ -869,6 +1203,8 @@ class KoScribeService : AccessibilityService() {
 
     private fun renderBubble() {
         if (!::windowManager.isInitialized) return
+        if (startupExperiment == StartupExperiment.OVERLAY && pendingId != null &&
+            overlayPanel != null) return // Keep the captured host window unchanged until terminal cleanup.
         bubble?.let { try { windowManager.removeView(it) } catch (_: Exception) { } }
         val holder = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL

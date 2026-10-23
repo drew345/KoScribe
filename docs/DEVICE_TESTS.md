@@ -397,3 +397,132 @@ selected/visible and microphone stopped. The new smoke runner remains installed.
 The ordinary local APK output was rebuilt with OFF so the normal install path
 does not point to PANEL. Separate probe APKs and the preserved original are
 ignored build artifacts; they are not committed.
+
+## Nonfocusable recording startup correction
+
+Andrew authorized fixing startup and testing without insertion or sending.
+Sol implemented a debug OVERLAY candidate; Astra independently reviewed source,
+including target continuity, recorder-specific audio evidence, terminal
+cancellation, retained cleanup ownership, and focused-only accessibility reads.
+The first candidate added a nonfocusable full-screen accessibility window
+containing a compact recording card. All insertion/Copy paths were disabled.
+
+Both builds, 27 existing JVM tests, lint (zero errors; app 18/smoke 3 warnings),
+and APK signatures passed. Reviewed source hashes:
+
+- Service: `BFE86F9A0BD7C6EDB2A6816005E2FD5FFE7FD7C9B878B91564B2F2ABEFF94234`.
+- Panel: `C61A5C4E110F5D674A17A2FC40B73F7C617E2894920E3646EBAE5D7D350BD814`.
+- Scoped smoke: `A62893069D9D8465CD4D1247E72D88457EF0FEFE719D31779CB2C3B30E163F10`.
+- Product APK: `D6DC9053D6D8C45056F0B24F035897F292693558DD05AC215E3CF17189C71B67`.
+- Smoke APK: `B5DF3D7F590F90566F98F731C46FFECCDACFB45B27E98EB0E62ACBD9CB6580BE`.
+
+Installation succeeded and the service reconnected with SwiftKey still visible.
+One exact Stop/Cancel attempt failed `OVERLAY_MIC_PROOF_OR_STOP_NOT_AVAILABLE`
+in 5.917 s. Fresh capture count was 1, observation READY; first invalidation was
+`OVERLAY_TARGET_WINDOW_CHANGED`, flags 512 (`WINDOWS_CHANGE_CHILDREN`). No first
+content event was recorded before cancellation. This is not evidence that the
+earlier content-event issue was solved. The original guard also rejects child
+window structure changes; no exception was added.
+
+Failure cleanup verified the original empty focused field immediately and after
+1.2 seconds, with SwiftKey selected/visible. Exact-app RECORD_AUDIO AppOps showed
+capture ended after 136 ms; no cleanup remained pending. Stop/review were not
+reached. This does not prove unsilenced input or successful recording startup.
+The second direct-Cancel method was not run against the same failing build.
+No insertion, confirmation, Copy, Send/Enter, chat traversal, screenshots, API
+calls, audio retention, permission changes, or user preparation occurred.
+
+The next architectural correction reuses the existing expanded bubble window
+for recording controls, preserving its token and attachment after capture.
+This avoids deliberately adding/removing windows during the guarded session;
+all invalidation rules remain. Its outcome must be measured separately.
+
+### Reusing the expanded bubble window
+
+Sol replaced the second window with controls inside the already-expanded bubble,
+using a fixed-height internal viewport. Astra reviewed service
+`569112F6D60B84F7EFCACD5BA9065DEBFC9AF6C6A2FD2C606B9498E12B0975FE`, panel
+`FB88617228AE4E0A1195C90D46B74522E28372217A8BC6ED2EA38ED202905009`, and the
+unchanged scoped smoke. Build, 27 JVM tests, lint, and signature passed. Installed
+product APK: `F84E0E0DB57E985AB510416C474255321CD81A653C78E28A146035022EAA0A0D`.
+
+The exact Stop/Cancel attempt reached a visible Stop control and verified the
+same empty focused Kakao editor plus selected/visible SwiftKey during recording.
+Own diagnostics confirmed the original host window, positive microphone reads,
+and non-null recorder-specific unsilenced configuration. This is limited capture
+evidence, not audibility/transcription quality.
+
+A later target-window CHILDREN change (512) invalidated the session while the
+own host was still verified unchanged. The subsequent Stop click returned false;
+the test failed `PRODUCT_BUTTON_CLICK_FAILED` in 6.399 s. Stop/review did not
+complete. The original field stayed empty immediately and after 1.2 seconds,
+SwiftKey stayed visible, AppOps reported capture ended after 2.558 s, and cleanup
+was not pending. No first-content event was recorded before invalidation; this
+does not establish absence of later content events.
+
+The separate direct-Cancel test then passed on the same F84E APK in 3.555 s.
+Fresh capture count advanced to 2, first invalidation was none, own microphone
+proof succeeded, and the original empty field/SwiftKey checks passed during
+recording and after cancellation. AppOps reported capture ended after 1.537 s;
+cleanup was not pending. This validates direct cancellation, not the longer
+Stop/review path. Old trace entries from capture 1 are not capture-2 failures.
+
+Startup now reaches verified capture, but the complete flow remains blocked by
+an unidentified window relationship change. A bounded window-metadata-only
+comparison is the next diagnostic; it must retain unconditional refusal.
+
+### Child-window metadata comparison
+
+Astra reviewed service `7052D1C1817C9625C58FB640B00DE65A741021E15CA25C548541868C5B6332DD`.
+Only up to 16 direct child-window IDs/types were sampled privately at capture
+and the first CHILDREN event. No child roots, titles, view descendants, or
+content were queried. Raw IDs clear when the session ends; only fixed counts
+remain. Exceptions/incomplete snapshots cannot bypass refusal. Assembly/lint
+and signature verification passed. Product APK:
+`11FF0E59D5CCD4E085B25FCED42188FC2F4980FCF87DDD38B591542E32A4E11B`.
+
+One scoped Stop/Cancel run reached positive/unsilenced capture and executed
+Stop: `OVERLAY_MIC_PROVED_STOPPED` confirmed cleanup without exception before
+review controls were populated. It then refused target CHILDREN (512) while
+the same own host remained verified. The test failed
+`READ_ONLY_REVIEW_NOT_AVAILABLE` in 12.438 s. Complete sampled child lists had
+ADD 0, REMOVE 0, RETAIN 2, TYPE_CHANGED 0, ORDER SAME. This does not establish
+that no transient change occurred, or that the system event was harmless.
+
+The original empty-field/SwiftKey preservation checks passed after cleanup.
+AppOps reported capture ended after 2.529 s; cleanup pending was false. This
+establishes executed Stop, not a completed review flow. No insertion or sending
+occurred. A final timing refinement will compare event occurrence/delivery with
+capture and own Stop/review milestones, retaining all refusals and adding no
+target reads.
+
+### Final window-event timing and selected workflow
+
+Astra reviewed timing-only service
+`A430541EEC2CF3BE893870AD981034A3CF91A91F3F85FCC87F2417AE1341D762`
+and panel `66424814DFABA94DC96D2C991A9687DBFDEB9E56208713CE9EE9E831063E5184`.
+Build/lint/signature passed; installed APK:
+`E5CD28F9B5BB36DBA44069644D89F191B26C42C0C829BB0016E558EE737DF73E`.
+
+One exact Stop diagnostic failed `PRODUCT_BUTTON_DISAPPEARED` in 4.572 s.
+Verified capture preceded a target CHILDREN event at capture-start +2,646 ms,
+capture-complete +2,625 ms, with 5 ms delivery delay. Neither Stop-entry nor
+review-populated callback was observed. This is not a pre-capture queued event;
+an executed Stop/review transition is not necessary to produce the refusal.
+The host remained unchanged, and both complete child snapshots again matched
+(retain 2, add/remove/type changes 0, same order). Cause and harmlessness remain
+unestablished. Identical repeats are exhausted.
+
+Original empty field and SwiftKey checks passed after cleanup. Microphone use
+ended after 2.605 s; cleanup pending was false. No insertion, sending, clipboard
+operation, chat/view-tree traversal, screenshot, API call, audio retention,
+permission change, or additional phone preparation occurred in these tests.
+Final normal OFF assembly/unit/lint also passed and ordinary local APK output
+was reset to OFF; the separately saved capture-only OVERLAY APK remains installed.
+
+Andrew then explicitly chose: after review, tap the intended field, then Insert.
+The accepted revision separates an unbound recording/review session from a new
+explicit destination transaction. It must not preserve invalidated eligibility,
+rearm sessions, or waive any captured-target event. Next staged tests remain
+non-inserting; full acceptance is still pending. See IMPLEMENTATION for the
+concrete design and PROGRESS for the current installed build.

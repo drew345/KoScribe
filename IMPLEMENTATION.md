@@ -6,10 +6,11 @@ Planning baseline: 2026-10-23. Andrew authorized Phase 1 implementation on
 ## Confirmed product choices
 
 Use the three-mode bubble flow in `README.md`. Every message initially gets an
-editable English transcript review after Stop. Korean modes offer Edit,
-Translate & insert, and Cancel; EN offers Edit, Insert English, and Cancel.
-Translate only confirmed English. After translation, insert immediately when
-safe without requiring a second Korean preview. A skip-English-review option
+editable English transcript review after Stop. Translate only confirmed English;
+EN skips translation. Andrew subsequently selected a separate destination step:
+after review/result preparation, tap the intended message field and then Insert.
+That explicit action begins a fresh guarded insertion transaction. Recording
+and review do not bind a destination. A skip-English-review option
 is deferred until later. Keep SwiftKey and never send. Test on the A35 with
 Wispr Flow still installed.
 
@@ -26,9 +27,11 @@ compatibility with every editor. Prototype an accessibility overlay to avoid
 unnecessary draw-over-other-apps access; retain a conventional application
 overlay as an alternative only if needed and disclosed.
 
-Phase 1 opens a visible Activity to own microphone recording and English
-review; the bubble remains the entry point. Bubble-only recording and Android
-microphone foreground-service restrictions remain later device/design work.
+The original Phase 1 Activity remains in the default OFF build. Device tests
+now demonstrate service-owned microphone capture in the existing expanded
+accessibility bubble, including unsilenced own-recorder reads and direct Cancel.
+The original captured destination still invalidates during longer recordings.
+The selected revision will separate recording/review from destination capture.
 Never keep the microphone recording simply to keep a bubble alive.
 
 Andrew selected OpenAI cloud speech recognition for the first version and
@@ -51,13 +54,28 @@ not commands to control the app. Keep prior chats and field contents local.
 English edits invalidate earlier derived results. Do not translate provisional
 or unconfirmed English in the initial review flow.
 
-The review/edit UI must preserve the intended destination separately from its
-own text editor. A user editing the transcript with SwiftKey must never cause
-the Korean result to be inserted back into KoScribe's review field. Restoring
-the destination after a deliberate review transition requires fresh identity,
-focus, selection, and context checks. If return cannot be verified, keep the
-result for explicit recovery. Do not weaken navigation checks merely because
-the flow includes a review screen.
+The revised recording/review session has no destination eligibility to preserve.
+It owns its microphone, visible controls, transient reviewed content, cancellation,
+and timeout. Window changes in an unrelated composer cannot invalidate a
+destination transaction that has not begun. Lock, lost own UI/service ownership,
+microphone failure, and explicit Cancel still terminate capture safely.
+
+After result preparation, make the bubble nonfocusable so Andrew can choose
+the composer. His later explicit Insert action starts a new short transaction
+with all existing editor checks; no Activity/focus transition may occur between
+that capture and commit. KoScribe's own review editor is never an insertion
+destination. A failed/invalidated destination attempt ends permanently; keeping
+the reviewed result for a new explicit attempt does not carry eligibility forward.
+Never retry an ambiguous commit. Manual Copy is a separate explicit recovery
+action, not an automatic fallback.
+
+Implement this in API-free stages. First prove independent recording -> Stop ->
+readonly sample review -> Cancel beyond the observed 2.6-second window event.
+Then add editable English review and the explicit fresh destination check. A
+separate debug RESELECT arm must block insertion/Copy during current real-app
+tests and label its action `Check destination (no insert)`. OFF/release defaults
+remain unchanged until the new path is reviewed and tested. No real-app insertion
+is authorized by selecting this workflow alone.
 
 ## Credential approach selected by Andrew
 
@@ -88,8 +106,10 @@ security design to carry into implementation review.
 
 ## Safe insertion contract
 
-1. Bind each recording/result to an unexpired session identifier, output mode,
-   and editor session. Cancelled/superseded/restarted sessions cannot insert.
+1. Bind dictated/reviewed content to an unexpired content-session identifier and
+   mode. Bind a separate insertion transaction to a fresh editor capture only
+   after explicit destination selection. Cancelled/superseded/restarted
+   transactions cannot insert; they cannot be rearmed or silently replaced.
 2. Exclude password/PIN and unsupported nontext editors before reading context.
    Before committing, reacquire and verify the current app/editor, focus,
    unlocked state, caret, and necessary surrounding context. Field identifiers

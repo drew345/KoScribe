@@ -2,7 +2,7 @@ package com.koscribe.prototype
 
 /** Build-time Phase 1 startup isolation. Release builds always use OFF. */
 internal enum class StartupExperiment {
-    OFF, HOLD, COLLAPSE, PANEL;
+    OFF, HOLD, COLLAPSE, PANEL, OVERLAY;
 
     companion object {
         val configured: StartupExperiment by lazy {

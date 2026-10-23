@@ -156,6 +156,61 @@ No SMS/contact/notification-listener access or replacement keyboard is required
 by the implemented product. The audit found no basis to request secure-settings
 write access or to disable Samsung Auto Blocker.
 
+## Nonfocusable recording startup (2026-10-23)
+
+The controlled startup experiment implicated the Activity-launch transition;
+it did not establish that the target content event was harmless. The next
+candidate keeps the original editor focused using a nonfocusable accessibility
+overlay. Android explicitly documents that even a full-screen touchable
+[`TYPE_ACCESSIBILITY_OVERLAY`](https://developer.android.com/reference/android/view/WindowManager.LayoutParams#TYPE_ACCESSIBILITY_OVERLAY)
+preserves accessibility introspection of covered windows.
+[`FLAG_NOT_FOCUSABLE`](https://developer.android.com/reference/android/view/WindowManager.LayoutParams#FLAG_NOT_FOCUSABLE)
+leaves input focus with the underlying window. A compact card on a transparent
+touch-consuming scrim can therefore retain SwiftKey while outside taps cancel.
+Actual Samsung event behavior still requires measurement. Editable review is
+a separate focus transition and is not proved by a capture-only startup probe.
+
+The first full-screen candidate refused on `WINDOWS_CHANGE_CHILDREN` (512).
+Android defines this as a child-window relationship change, not a view-content
+change; its provenance was not established. The next candidate reuses the
+already-expanded bubble window and changes only its own controls after capture.
+It retains all structural/content invalidations. Avoiding a deliberate window
+replacement is an architectural hypothesis, not an exception for flag 512.
+
+Root/source retrieval now uses `getRoot(0)` and `getSource(0)` where applicable:
+Android 16's default methods request neighboring-node prefetch, while explicit
+zero flags preserve the focused-only inspection boundary. These substitutions
+do not change identity comparisons or refusal policy. See AOSP
+[`AccessibilityWindowInfo`](https://raw.githubusercontent.com/aosp-mirror/platform_frameworks_base/android16-release/core/java/android/view/accessibility/AccessibilityWindowInfo.java)
+and [`AccessibilityRecord`](https://raw.githubusercontent.com/aosp-mirror/platform_frameworks_base/android16-release/core/java/android/view/accessibility/AccessibilityRecord.java).
+
+Direct microphone capture from the already-connected accessibility service has
+an Android 16 source basis without adding an app-owned foreground service:
+[`AccessibilityServiceConnection.bindLocked`](https://raw.githubusercontent.com/aosp-mirror/platform_frameworks_base/android16-release/services/accessibility/java/com/android/server/accessibility/AccessibilityServiceConnection.java)
+binds with `BIND_INCLUDE_CAPABILITIES` and foreground-while-awake importance.
+The [public binding contract](https://developer.android.com/reference/android/content/Context#BIND_INCLUDE_CAPABILITIES)
+includes while-in-use microphone access for a bound app with the required
+permission. Android's
+[`OomAdjuster`](https://raw.githubusercontent.com/aosp-mirror/platform_frameworks_base/android16-release/services/core/java/com/android/server/am/OomAdjuster.java)
+propagates these capabilities from the persistent system client;
+[`AppOpsUidStateTrackerImpl`](https://raw.githubusercontent.com/aosp-mirror/platform_frameworks_base/android16-release/services/core/java/com/android/server/appop/AppOpsUidStateTrackerImpl.java)
+uses the foreground-microphone capability when evaluating RECORD_AUDIO.
+This is a source-based eligibility inference, not a claim about measured A35
+audio, and does not rest on overlay visibility alone.
+
+The candidate must [register its recording callback before capture](https://developer.android.com/media/platform/sharing-audio-input#configuration-changes)
+and inspect only its own
+[`AudioRecord.activeRecordingConfiguration`](https://developer.android.com/reference/android/media/AudioRecord#getActiveRecordingConfiguration()),
+not global recording configurations. Require successful reads, recording state,
+and a non-null configuration with
+[`isClientSilenced == false`](https://developer.android.com/reference/android/media/AudioRecordingConfiguration#isClientSilenced()).
+Unknown/null is not success. These checks establish limited capture eligibility,
+not physical audibility, speech-recognition quality, or transcription success.
+The candidate must discard captured data and zero its application-owned PCM
+buffers. No new permission is needed for this
+candidate; a future app-owned microphone foreground service would require its
+own [type, permission, notification, and startup assessment](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start).
+
 ## Models and API separation
 
 The local Codex model catalog and the session's supported-agent metadata list

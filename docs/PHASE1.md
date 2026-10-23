@@ -44,9 +44,10 @@ backup domain and verify Samsung device-transfer behavior on the phone.
 1. Focus the local test editor or a draft field in KakaoTalk, Instagram DMs,
    or the actual SMS/RCS app. Put known text before and after a collapsed
    caret. Tap **Ko**, then **요**, **반말**, or **EN**. This launches a visible
-   recording screen. The chosen mode stays visible.
-2. Verify the system microphone indicator appears. Tap **Stop**; verify it
-   disappears. The editable English sample appears. Try **Edit English**.
+   compact recording panel over the destination. The chosen mode stays visible.
+2. Verify microphone use begins. Tap **Stop**; verify recording stops. Android's
+   recent-use privacy indicator may linger; AppOps distinguishes current from
+   recent microphone access. The editable English sample appears. Try **Edit English**.
 3. Confirm the unchanged Korean sample or EN sample. The recording screen
    closes; KoScribe tries one accessibility `commitText` only if the original
    editor, caret, and surrounding text still match. Inspect the draft and
@@ -77,6 +78,15 @@ the IPC call, so uncertain outcomes are never retried automatically. The
 service never invokes `ACTION_SET_TEXT`, keyboard replacement, editor actions,
 Enter, or Send.
 
+While the recording/review panel owns focus, the destination can disappear from
+Android's reported accessibility-window list. The modal guard requires strict
+alternating visibility under the same continuously resumed/focused panel and
+fresh original window/root/editor identity on every reappearance. After explicit
+confirmation, a separate check requires the captured target package/window to
+be the sole focused application; final field, caret, context and input checks
+still apply. Missing/contradictory evidence refuses. Content/navigation events
+are not ignored to make a test pass.
+
 Known active composition is refused using editor selection callbacks or styled
 surrounding text. When the editor does not report composition, the state stays
 **unknown**, not clear. This sample-only prototype permits that case after all
@@ -89,6 +99,9 @@ synthetic editor test before any real app draft.
 Some apps omit selection or context; those fields are unsupported for automatic
 insertion in this prototype. A same-app view can
 reuse source identity, and target checks plus commit are not atomic across
-processes. These are device-test questions, so a successful unit test is not proof of
+processes. Content events can be filtered while a modal covers the destination;
+a same-view conversation change that restores identical field state can be
+unobservable. Continuous panel ownership and fresh identity checks do not prove
+semantic conversation continuity. These are device-test questions, so a successful unit test is not proof of
 safe behavior in a real conversation. Phase 2 remains gated on the A35
 results in `IMPLEMENTATION.md`.

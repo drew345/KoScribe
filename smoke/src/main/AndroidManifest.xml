@@ -1,0 +1,14 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <queries>
+        <package android:name="com.koscribe.prototype" />
+    </queries>
+    <application android:label="KoScribe local smoke test"
+        android:allowBackup="false" android:usesCleartextTraffic="false"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        <activity android:name=".SmokeEditorActivity" android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+    </application>
+    <instrumentation android:name=".KoScribeTestRunner"
+        android:targetPackage="com.koscribe.smoke"
+        android:functionalTest="true" />
+</manifest>

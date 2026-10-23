@@ -57,3 +57,84 @@
   and currently lists no device. No installation or phone inspection occurred.
 - Staged prototype secret-pattern scan passed; credential/audio/APK ignore rules
   verified. GitHub visibility reconfirmed PRIVATE before publication.
+
+## 2026-10-23 — A35 tests and compact panel
+
+- Installed in main user 0 after Andrew connected USB and granted microphone
+  and accessibility access. Verified SwiftKey selection and Google Messages as
+  the default SMS app; preserved Wispr and other profiles.
+- Measured microphone start, Stop/Cancel cleanup, active-composition refusal,
+  and preservation of the local draft after refusal. No sample insertion is
+  confirmed yet; no real-app draft test or API call has occurred.
+- Code-only diagnostics identified the empty TextView caret omission. After
+  automatic review rejected an earlier diagnostic-scope change, Andrew
+  explicitly approved the narrow independently verified empty-field exception.
+  Sol implemented it; Astra reviewed it. Empty-field recording now starts.
+- Full-screen review caused conservative navigation guards to refuse return.
+  Andrew authorized a compact panel; it avoided those events in one observed
+  return, but the session expired before confirmation. Guards remain intact.
+- Compact-panel build and 10 unit tests passed; lint has 0 errors/14 warnings.
+  An app-targeted instrumentation attempt failed all three cases in setup by
+  restarting the product process and disconnecting its accessibility service.
+  Requested Andrew's visible accessibility toggle and a separate self-targeted
+  smoke runner. Current next action is maintained in `PROGRESS.md`.
+- Andrew restored the service; the self-targeted runner preserves it. The
+  keyboard-hidden diagnostic then inserted the exact English sample once,
+  confirmed by field assertion, code-only commit trace, and screenshot.
+  Normal keyboard-visible attempts still refuse an ancestor ScrollView subtree
+  event. The keyboard visibility setting experiment had no effect and was
+  reverted. Astra reviewed the test changes and recommended improving the
+  synthetic editor layout while retaining every insertion guard.
+
+## 2026-10-23 — Cross-app synthetic insertion and review editing
+
+- Added a minimal separate-process synthetic editor and self-targeted runner,
+  preserving the product accessibility service and SwiftKey. Removed the white
+  surround from the collapsed bubble; final icon design is deferred.
+- Andrew offered Astra Ultra for difficult implementation/diagnosis. Used it
+  for the modal-window correction and independent review; Sol added scoped
+  test cases. The first phase-bound, one-pair rule was source-reviewed, built,
+  and tested, with 23 passing unit tests and zero lint errors.
+- Normal SwiftKey-visible empty insertion passed exactly once. Explicit
+  review focus then enabled exact middle insertion with both sides preserved;
+  an uncontended repeat also passed. Selected-range refusal, Cancel, and
+  leaving-review preservation passed. Real messaging-app compatibility remains
+  untested; no API call or credential retrieval occurred.
+- Explicit editing inside the English review still triggered repeated modal
+  window visibility changes. Fixed-height and dialog-movement-animation
+  experiments were ineffective and reverted. Current work is replacing
+  brittle phase/count assumptions with independently reviewed continuous modal
+  ownership and fresh field-identity verification for each visibility return.
+- Andrew used Messages/Kakao briefly during tests, then finished; subsequent
+  uncontended edited-review failure confirms the remaining issue is not solely
+  user interference. An unintended post-test screenshot was immediately
+  deleted; use exact fixture assertions/code-only traces for further testing.
+- Keep the same-view/unchanged-field hidden-navigation limitation explicit.
+  Phase 1 acceptance and Phase 2 remain gated. Current result and next action
+  are maintained in `PROGRESS.md`; no new publish is recorded yet.
+- The narrowed continuous-modal policy passed automatic review after an initial
+  broader focus-helper patch was rejected. Astra independently cleared the
+  final code; build, 27 unit tests, lint, and APK signature checks passed.
+- After Andrew unlocked the phone, all eight normal synthetic cases passed on
+  the final guard, including edited-English return, both Korean modes, Unicode
+  preservation, and three refusal/cancellation checks. No repeated insertion;
+  microphone stopped and SwiftKey remained selected. Requested a prepared
+  KakaoTalk self-chat composer for the first real-app unsent-draft test.
+
+## 2026-10-23 — Permission audit and external-test boundary
+
+- Andrew confirmed the prepared KakaoTalk self-chat. Automatic approval review
+  nevertheless rejected adding the opt-in external draft test twice, citing
+  real-app interaction restrictions. No test file or Kakao draft was changed.
+  Saved the non-executable scope in `docs/EXTERNAL_DRAFT_TEST_PROPOSAL.md`;
+  explicit scoped approval remains outstanding. This is not an Android grant.
+- At Andrew's request, checked current official Wispr/DictoKey setup guidance,
+  Android/Samsung documentation, and installed permission metadata. Microphone
+  and accessibility are enabled for KoScribe; its accessibility overlay works
+  without a separate overlay grant. Wispr/DictoKey have notifications, overlay
+  access, and Doze exemptions; KoScribe has no exemption. Samsung sleep lists
+  and idle/reboot reliability remain unmeasured. No settings were changed.
+- Expanded `docs/RESEARCH.md` with required, optional, conditional, and future
+  permissions; added background/recovery checks to device acceptance. The
+  fixture-only keep-screen-on update passed smoke assembly/lint after the eight
+  device passes; that fixture update is not installed and product APK is unchanged.

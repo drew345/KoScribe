@@ -5,3 +5,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "KoScribe"
 include(":app")
+include(":smoke")

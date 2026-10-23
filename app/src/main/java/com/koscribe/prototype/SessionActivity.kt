@@ -2,19 +2,36 @@ package com.koscribe.prototype
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
+import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import java.util.Arrays
 
 /** Visible microphone owner. Audio frames are discarded and never written to disk. */
 class SessionActivity : Activity() {
+    /** A dialog-sized viewport; the native floating window handles system and IME insets. */
+    private class SessionScroll(context: Context) : ScrollView(context) {
+        override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+            val cap = minOf(context.resources.displayMetrics.heightPixels * 2 / 3, context.dp(600))
+            val offered = View.MeasureSpec.getSize(heightMeasureSpec)
+            val available = if (View.MeasureSpec.getMode(heightMeasureSpec) == View.MeasureSpec.UNSPECIFIED)
+                cap else minOf(cap, offered)
+            super.onMeasure(widthMeasureSpec,
+                View.MeasureSpec.makeMeasureSpec(available.coerceAtLeast(1), View.MeasureSpec.AT_MOST))
+        }
+    }
+
     companion object {
         const val EXTRA_ID = "session_id"
         const val EXTRA_MODE = "mode"
@@ -32,6 +49,9 @@ class SessionActivity : Activity() {
     @Volatile private var reading = false
     private var readThread: Thread? = null
     private var handedToService = false
+    private val panelOwner = Any()
+    private var panelResumed = false
+    private var panelFocused = false
     private val timeout = Runnable { if (stage == Stage.RECORDING) stopAndReview() }
     private lateinit var content: LinearLayout
     private lateinit var status: TextView
@@ -41,17 +61,26 @@ class SessionActivity : Activity() {
         sessionId = intent.getStringExtra(EXTRA_ID) ?: ""
         mode = OutputMode.entries.firstOrNull { it.name == intent.getStringExtra(EXTRA_MODE) }
             ?: OutputMode.ENGLISH
-        if (savedInstanceState != null || KoScribeService.active()?.isSessionActive(sessionId) != true) {
+        if (savedInstanceState != null ||
+            KoScribeService.active()?.bindSessionPanel(sessionId, panelOwner) != true) {
             finish()
             return
         }
-        content = column()
+        content = column().apply {
+            // Keep the panel's non-editor focus until the user chooses to edit.
+            // Adding the review EditText must not implicitly start a new IME transition.
+            isFocusableInTouchMode = true
+            descendantFocusability = ViewGroup.FOCUS_BEFORE_DESCENDANTS
+        }
         content.addView(caption("KoScribe · Phase 1", true))
         content.addView(caption("Selected mode: ${mode.label}", true))
         status = caption("Preparing microphone…")
         content.addView(status)
         content.addView(action("Cancel") { cancel() })
-        setContentView(insetScroll(content))
+        val viewport = SessionScroll(this).apply { addView(content) }
+        setContentView(viewport)
+        content.requestFocus()
+        setFinishOnTouchOutside(true)
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
             beginRecording()
         } else {
@@ -69,7 +98,40 @@ class SessionActivity : Activity() {
 
     override fun onStart() {
         super.onStart()
+        val width = minOf(resources.displayMetrics.widthPixels - dp(24), dp(480)).coerceAtLeast(1)
+        window.setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
+        window.setDimAmount(0.25f)
         isVisible = true
+    }
+
+    override fun onResume() {
+        super.onResume()
+        panelResumed = true
+        reportPanelState()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        panelFocused = hasFocus
+        reportPanelState()
+    }
+
+    private fun reportPanelState(interrupted: Boolean = false) {
+        if (stage == Stage.FINISHED) return
+        val phase = when (stage) {
+            Stage.WAITING -> PanelPhase.PREPARING
+            Stage.RECORDING -> PanelPhase.RECORDING
+            Stage.REVIEW -> PanelPhase.REVIEW
+            Stage.FINISHED -> return
+        }
+        // The attached decor's node carries this Activity's actual accessibility
+        // window ID. A package-name match cannot identify the recording panel.
+        val windowId = runCatching { window.decorView.createAccessibilityNodeInfo().windowId }
+            .getOrDefault(-1)
+        KoScribeService.active()?.updateSessionPanel(
+            sessionId, panelOwner, phase, panelResumed,
+            panelFocused && window.decorView.hasWindowFocus(), windowId, interrupted
+        )
     }
 
     private fun beginRecording() {
@@ -105,6 +167,7 @@ class SessionActivity : Activity() {
         recorder = created
         reading = true
         stage = Stage.RECORDING
+        reportPanelState()
         status.text = "Recording ${mode.label}. Audio is discarded; Stop loads a fixed sample."
         content.addView(action("Stop") { stopAndReview() })
         content.postDelayed(timeout, MAX_RECORDING_MS)
@@ -161,7 +224,8 @@ class SessionActivity : Activity() {
         if (stage != Stage.RECORDING) return
         releaseMic()
         stage = Stage.REVIEW
-        KoScribeService.active()?.reviewStarted(sessionId)
+        reportPanelState()
+        content.requestFocus()
         content.removeAllViews()
         content.addView(caption("${mode.label} · fixed sample review", true))
         content.addView(caption("No speech recognition ran. Edit this English sample. Korean insertion is available only while the sample stays unchanged."))
@@ -172,7 +236,12 @@ class SessionActivity : Activity() {
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
         }
         content.addView(english, LinearLayout.LayoutParams(-1, dp(130)))
-        content.addView(action("Edit English") { english.requestFocus() })
+        content.addView(action("Edit English") {
+            if (english.requestFocus()) {
+                (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
+                    .showSoftInput(english, InputMethodManager.SHOW_IMPLICIT)
+            }
+        })
         val feedback = caption("")
         content.addView(feedback)
         val label = if (mode == OutputMode.ENGLISH) "Insert English sample" else "Translate & insert sample"
@@ -195,7 +264,7 @@ class SessionActivity : Activity() {
             }
             handedToService = true
             stage = Stage.FINISHED
-            service.requestInsert(sessionId, output)
+            service.requestInsert(sessionId, panelOwner, output)
             finish()
         })
         content.addView(action("Cancel") { cancel() })
@@ -215,6 +284,8 @@ class SessionActivity : Activity() {
     }
 
     override fun onPause() {
+        panelResumed = false
+        reportPanelState(interrupted = true)
         if (!handedToService && stage == Stage.RECORDING) cancel()
         super.onPause()
     }

@@ -3,10 +3,13 @@
 Personal Android dictation app: speak English and insert natural Korean into
 the focused text field, while continuing to use Microsoft SwiftKey.
 
-**Status: Phase 1 feasibility prototype implemented; A35 device testing pending.**
+**Status: Phase 1 feasibility prototype implemented; A35 device testing underway.**
 The prototype tests the bubble, microphone lifecycle, English review, and safe
 insertion with fixed example messages. It does not transcribe or translate yet
 and needs no API key. See [build and device test instructions](docs/PHASE1.md).
+Eight synthetic cross-app checks pass on the A35, including middle insertion,
+edited review, Korean/emoji preservation, and cancellation/refusal. Real
+messaging-app acceptance and actual SwiftKey typing remain pending.
 
 ## Agreed interaction
 
@@ -33,11 +36,10 @@ still need detailed design.
 
 ## Initial device and apps
 
-- Samsung Galaxy A35 5G; Android 16, One UI 8.5 (user-reported).
+- Samsung Galaxy A35 5G; Android 16, One UI 8.5 (verified on the connected phone).
 - Microsoft SwiftKey remains the keyboard; Wispr Flow remains installed.
 - First destinations: KakaoTalk, Instagram DMs, and the SMS/RCS app.
-- SMS app may be Samsung Messages; verify its package when the phone is
-  connected for Phase 1 testing.
+- Default SMS/RCS app is Google Messages; Samsung Messages is also installed.
 - Long-term platform: Android. Personal-use distribution is the starting
   assumption; installation/update method is not yet settled.
 

@@ -1,7 +1,8 @@
 # Planning research
 
-Checked 2026-10-23. Documentation research, not hands-on competitor or phone
-testing. Recheck dynamic API/platform facts when implementation begins.
+Checked 2026-10-23. Documentation findings and the explicitly labeled installed
+permission audit below are separate evidence. Recheck dynamic API/platform facts
+when implementation begins.
 
 ## Android integration
 
@@ -28,10 +29,10 @@ verification still required; it is not a universal preservation guarantee.
 - [AOSP input connection implementation](https://android.googlesource.com/platform/frameworks/base/+/eabfd2281dfa777d8b7e10619f7e014cc56d3168/core/java/android/view/inputmethod/RemoteInputConnectionImpl.java)
 - [Accessibility actions: ACTION_SET_TEXT replaces field contents](https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo.AccessibilityAction)
 
-An accessibility overlay may avoid a separate draw-over-apps permission.
-A conventional application overlay needs SYSTEM_ALERT_WINDOW special access.
-A nonfocusable overlay can help retain the editor/keyboard focus. This is an
-architecture candidate, not a tested decision.
+The implemented nonfocusable TYPE_ACCESSIBILITY_OVERLAY uses the connected
+accessibility service. It has worked on the A35 without a separate
+SYSTEM_ALERT_WINDOW grant. A conventional TYPE_APPLICATION_OVERLAY requires
+that special access; Wispr's requirement does not transfer to this architecture.
 
 - [Window types and flags](https://developer.android.com/reference/android/view/WindowManager.LayoutParams)
 - [Overlay permission](https://developer.android.com/reference/android/Manifest.permission#SYSTEM_ALERT_WINDOW)
@@ -40,7 +41,8 @@ Recording requires microphone permission. A microphone foreground service
 also has declared type/permission requirements and a notification. Background
 service-start exceptions and microphone while-in-use eligibility are separate
 checks; visible overlay alone is not proof a microphone start is permitted.
-The A35 prototype must test this; a visible recording Activity is a fallback.
+The A35 prototype uses a visible recording Activity; microphone start and
+Stop/Cancel cleanup have been measured. It does not use a foreground service.
 Notification permission affects notification drawer visibility, not simply
 whether a foreground service can start.
 
@@ -89,6 +91,70 @@ policy should not be treated as a complete current bubble permission list.
 Takeaways: retain the keyboard, expose permission/connection status in the app,
 show speech level explicitly, and test unsupported editors. Do not copy
 competitor privacy claims; document KoScribe's actual data path.
+
+## Permission and settings audit (2026-10-23)
+
+Wispr's current official [requirements](https://docs.wisprflow.ai/articles/6344532666-android-system-requirements)
+make microphone, display-over-apps, and accessibility mandatory. Notifications
+are optional and permit its own alerts, not reading other apps' notifications.
+Battery exemption is recommended but skippable. Its [setup guide](https://docs.wisprflow.ai/articles/8858845757-setup-wispr-flow-on-android-android-settings)
+also specifies main accessibility service on, shortcut off, and a separate
+data-sharing choice. On Samsung it recommends Never sleeping apps, per-app
+Battery Unrestricted, and disabling the global Put unused apps to sleep switch.
+Those are vendor recommendations, not three universal Android requirements.
+
+DictoKey's [accessibility documentation](https://dictokey.com/accessibility/)
+describes an independent bubble and optional keyboard; enabling its keyboard is
+not a requirement for KoScribe or for retaining SwiftKey. Its [product page](https://dictokey.com/)
+explicitly makes notification shortcuts optional. Its older March privacy
+policy lists microphone/network/foreground-service/vibration permissions but
+is not a complete inventory of the current bubble. The installed metadata
+below fills that evidence gap without claiming every declaration is mandatory.
+DictoKey also documents Advanced Protection as a potential bubble limitation;
+this audit did not inspect or change that protection.
+
+Read-only ADB inspection of the three installed packages in main user 0:
+
+| Setting | KoScribe Phase 1 | Wispr Flow 2.8.0 | DictoKey 2.73.0 |
+| --- | --- | --- | --- |
+| Microphone runtime permission | Granted | Granted | Granted |
+| Main accessibility service | Enabled | Enabled | Not in enabled list |
+| Display over other apps | Not declared; not granted; not needed by this bubble | Allowed | Allowed |
+| Post notifications | Not declared; not enabled | Granted | Granted |
+| Android Doze battery exemption | Not listed | Listed | Listed |
+| `RUN_ANY_IN_BACKGROUND` AppOp | Default allow | Allow | Allow |
+| Samsung Never sleeping/Deep sleeping lists | Not inspected | Not inspected | Not inspected |
+
+SwiftKey remained selected. No setting, keyboard, app screen, or draft was
+changed by this audit. AppOps' historical microphone timestamps are not proof
+of current recording; KoScribe's operation was not running. An Android Doze
+exemption does not by itself establish the separate Samsung sleep-list state.
+
+KoScribe currently declares only RECORD_AUDIO as a uses-permission. Its service
+declaration is protected by BIND_ACCESSIBILITY_SERVICE; this is not an extra
+user runtime prompt. The visible Activity owns capture. INTERNET will be a
+manifest declaration for the later API phase, not a permission dialog. A future
+microphone foreground service would require the matching service declarations
+and a notification; [Android does not require notification permission merely
+to start that service](https://developer.android.com/develop/ui/compose/notifications/notification-permission).
+Neither feature is implemented in Phase 1.
+
+Remaining setup work: inspect Samsung's per-app battery and sleeping lists,
+then test idle/background survival and recovery before choosing an exemption.
+[Samsung documents per-app Never sleeping exceptions](https://developer.samsung.com/mobile/app-management.html);
+prefer evaluating that focused control before a global sleep-policy change.
+Also test permission loss/global microphone blocking and reboot recovery.
+No background-reliability claim follows from the short insertion tests.
+
+Conditional installation/setup controls are separate: [Allow restricted
+settings](https://support.google.com/android/answer/12623953?hl=en) can be needed
+to enable a sideloaded accessibility service. It is not blocking the current
+enabled installation. Installing a future APK through a file manager may need
+that installer's unknown-app-source permission; current USB installation worked.
+USB debugging is a development connection, not a normal KoScribe permission.
+No SMS/contact/notification-listener access or replacement keyboard is required
+by the implemented product. The audit found no basis to request secure-settings
+write access or to disable Samsung Auto Blocker.
 
 ## Models and API separation
 

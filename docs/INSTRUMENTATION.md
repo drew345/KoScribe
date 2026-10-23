@@ -40,9 +40,9 @@ The Korean cases exercise exact 요/반말 choices with their fixed samples. The
 
 ## Separately gated KakaoTalk self-chat tests
 
-`KakaoExternalDraftSmokeTest` is separate from the synthetic class and skips by default. Its two flags are mutually exclusive: `externalDraftReady` applies only to the previously approved unsent fixed-sample insertion, and `externalRecordCancelReady` applies only to the new recording/Cancel diagnostic. Each method independently checks its own flag before any product action. Never run the unfiltered external class with either flag; select the exact method. The earlier draft insertion authorization does not authorize another insertion or this new diagnostic run.
+`KakaoExternalDraftSmokeTest` is separate from the synthetic class and skips by default. Its two flags are mutually exclusive: `externalDraftReady` applies only to the completed unsent fixed-sample trial, and `externalRecordCancelReady` applies only to recording/Cancel diagnostics. Each method independently checks its own flag before any product action. Never run the unfiltered external class with either flag; select the exact method. Andrew subsequently authorized continued scoped recording/Stop/Cancel diagnostics without insertion or sending. That ongoing authorization covers repeats within the same scope; it does not authorize another confirmation/insertion trial.
 
-The new no-insertion method is `com.koscribe.smoke.KakaoExternalDraftSmokeTest#kakaoEmptyComposerPoliteRecordCancelPreservesEmptyDraft`. It requires Andrew's separate approval before running. After that approval, the exact single-method command is:
+The authorized no-insertion method is `com.koscribe.smoke.KakaoExternalDraftSmokeTest#kakaoEmptyComposerPoliteRecordCancelPreservesEmptyDraft`. Verify live empty self-chat and SwiftKey preconditions; the exact single-method command is:
 
 ```powershell
 adb -d shell am instrument --user 0 -w -e class 'com.koscribe.smoke.KakaoExternalDraftSmokeTest#kakaoEmptyComposerPoliteRecordCancelPreservesEmptyDraft' -e externalRecordCancelReady true com.koscribe.smoke/com.koscribe.smoke.KoScribeTestRunner
@@ -50,7 +50,20 @@ adb -d shell am instrument --user 0 -w -e class 'com.koscribe.smoke.KakaoExterna
 
 The method verifies the sole focused KakaoTalk application window and only its focused input node, an empty/hint composer with the approved narrow empty-caret rule, and the exact selected and visible SwiftKey IME. It requires no preexisting Stop/Cancel, opens KoScribe's bubble, chooses 요, waits for a fresh visible Stop, records for about two seconds, then taps Stop and **Cancel**. It never taps confirmation or Copy. It checks the same original field remains empty immediately and after 1.2 seconds, with SwiftKey still selected and visible. No chat tree, other field, keyboard tree, screenshot, Send, Enter, editor action, app launch, setting, or permission is touched. Failure cleanup can tap only KoScribe's exact Cancel control. The fixed reason codes never include the draft contents.
 
+After KakaoTalk regains focus, the no-insertion test allows up to four seconds for SwiftKey to become visible before checking the empty field. This accommodates asynchronous keyboard return; it does not retry recording or insertion.
+
 KoScribe's first-content diagnostic fields describe the latest successful editor capture and persist after Cancel. If an external test fails before mode selection, do not attribute retained diagnostic fields to that failed preflight.
+
+The lifecycle timing diagnostic also retains six one-shot own-UI milestones:
+collapsed bubble `addView` return, panel launch request, accepted panel bind,
+resume callback, focus callback with a known own-window ID, and a focused own
+window accepted by the existing modal gate. It prints only each milestone's
+BEFORE/AFTER difference from capture completion and the first valid content
+event occurrence, never raw timestamps or IDs. Add return is not proof that a
+frame rendered; a callback is not proof of accepted guard state. The separate
+verified-window milestone reuses the existing guard observation. Missing
+milestones remain NOT_OBSERVED; invalid/missing event times remain UNKNOWN.
+No cross-app query or insertion policy is added by these diagnostics.
 
 Run while Andrew is not using the phone; app switches can correctly invalidate a session. Instrumentation completion can remove the fixture and return to a previous real app. Do not take post-test full-screen screenshots on the assumption that the synthetic editor is still visible. Prefer exact fixture assertions and code-only traces; capture pixels only after independently verifying the current foreground is an owned synthetic screen.
 

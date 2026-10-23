@@ -161,3 +161,37 @@
   unit tests, lint (0 errors; app 15/smoke 3 warnings), and APK signature checks
   passed. New diagnostic APKs are not installed or run; further real-app
   diagnostic authorization is the next step.
+
+## 2026-10-23 — Scoped recording/Cancel diagnostics
+
+- Andrew authorized continued scoped KakaoTalk recording/Stop/Cancel diagnostics
+  without insertion or sending. Installed the reviewed timing build and test
+  APK; the accessibility service reconnected. He restored the empty self-chat
+  field and visible SwiftKey after installation.
+- First diagnostic completed recording/Stop/Cancel but its immediate keyboard
+  return assertion failed. A later system-state check showed SwiftKey visible.
+  Microphone stopped after 2.567 seconds; no confirmation or commit was invoked.
+- This run's first invalidation was TARGET_WINDOW_REAPPEARED: Android announced
+  the captured window added while the panel owned focus, but that window was
+  absent from the current window list. The diagnostic label ROOT_ABSENT does
+  not mean a present window had a null root. No content event was recorded
+  before invalidation; later content events are not covered by that statement.
+- Sol added a bounded four-second post-Cancel wait for SwiftKey; Astra reviewed
+  it and smoke assembly/lint passed. Two complete diagnostic runs then passed
+  original empty-field identity/preservation and keyboard-return assertions.
+  An intervening attempt refused before recording started. All three sessions
+  first invalidated on another target node's content-description event (flag 4),
+  timestamped 27/35/46 ms after editor capture completed. The event's role and
+  harmlessness remain unknown. No insertion, confirmation, or Send occurred.
+- Sol added own-panel lifecycle milestone timing; Astra reviewed the exact
+  source. Both builds, 27 unit tests, lint, and APK signature checks passed.
+  Installed product SHA-256 starts BC464039. One early startup refusal followed
+  by a complete recording/Stop/Cancel pass showed the event after launch request
+  but before accepted bind (latest: 26 ms after launch, 25 ms before bind).
+  Event delivery was delayed 105 ms. This explains why delivery-time recording
+  state cannot identify occurrence-time state; it does not establish cause.
+- Corrected-test total: three complete passes and two early recording-start
+  refusals. Latest microphone use ended after 2.634 s; SwiftKey remains selected
+  and visible. Original draft stayed empty on every completed assertion flow.
+  No guards or permissions changed. Same repeated timing checks are exhausted;
+  next work should assess safe startup/capture or explicit recovery design.

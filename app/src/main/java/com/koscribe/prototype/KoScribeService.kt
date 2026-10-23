@@ -67,6 +67,14 @@ class KoScribeService : AccessibilityService() {
     private var lastInvalidationCode: String? = null
     private var captureStartUptimeMs: Long? = null
     private var captureCompleteUptimeMs: Long? = null
+    private enum class OwnMilestone {
+        COLLAPSED_BUBBLE_ADD_RETURNED, PANEL_LAUNCH_REQUESTED, PANEL_BIND_ACCEPTED,
+        PANEL_RESUME_CALLBACK, PANEL_FOCUS_KNOWN_WINDOW_CALLBACK, OWN_FOCUS_WINDOW_VERIFIED
+    }
+    /** One-shot callback times for the latest successful capture, retained through Cancel. */
+    private val ownMilestoneUptimeMs = mutableMapOf<OwnMilestone, Long>()
+    @Volatile
+    private var firstTargetContentEventUptimeMs: Long? = null
     private var firstTargetContentTimingLogged = false
     @Volatile
     private var firstTargetContentTimeCode: String? = null
@@ -79,6 +87,28 @@ class KoScribeService : AccessibilityService() {
             if (trace.size == 32) trace.removeFirst()
             trace.addLast("$traceSequence $code")
         }
+    }
+
+    private fun markOwnMilestone(id: String, milestone: OwnMilestone) {
+        if (pendingId != id) return
+        synchronized(trace) {
+            ownMilestoneUptimeMs.putIfAbsent(milestone, SystemClock.uptimeMillis())
+        }
+    }
+
+    /** Signed by label; only elapsed uptime differences leave the service. */
+    private fun relativeUptime(at: Long, reference: Long?): String = when {
+        reference == null -> "UNKNOWN"
+        at < reference -> "BEFORE_${reference - at}"
+        at > reference -> "AFTER_${at - reference}"
+        else -> "AT_0"
+    }
+
+    private fun ownMilestoneDiagnostics(): String = OwnMilestone.entries.joinToString("\n") { milestone ->
+        val at = ownMilestoneUptimeMs[milestone]
+        if (at == null) "${milestone.name}_NOT_OBSERVED"
+        else "${milestone.name}_CAPTURE_${relativeUptime(at, captureCompleteUptimeMs)}" +
+            "_FIRST_CONTENT_${relativeUptime(at, firstTargetContentEventUptimeMs)}"
     }
 
     private fun refuse(code: ObservationCode): Observation? {
@@ -108,6 +138,7 @@ class KoScribeService : AccessibilityService() {
         val complete = captureCompleteUptimeMs
         val occurred = event.eventTime
         val validEventTime = occurred > 0L && occurred <= deliveredUptimeMs
+        firstTargetContentEventUptimeMs = occurred.takeIf { validEventTime }
         fun deltaFrom(reference: Long?): String = when {
             !validEventTime || reference == null -> "UNKNOWN"
             occurred < reference -> "BEFORE_${reference - occurred}"
@@ -148,6 +179,8 @@ class KoScribeService : AccessibilityService() {
             "First invalidation: ${lastInvalidationCode ?: "none"}\n" +
             "First content timing: ${firstTargetContentTimeCode ?: "none"}\n" +
             "First content state: ${firstTargetContentStateCode ?: "none"}\n" +
+            "Own UI milestones (callback uptime vs capture completion / first content occurrence):\n" +
+            ownMilestoneDiagnostics() + "\n" +
             "Recent guard events (codes only):\n" +
             if (trace.isEmpty()) "none" else trace.joinToString("\n")
     }
@@ -348,9 +381,12 @@ class KoScribeService : AccessibilityService() {
         val focusedPackage = focusedApps.singleOrNull()?.root?.packageName?.toString()
         if (focusedPackage != null && focusedPackage != packageName &&
             focusedPackage != session.target.packageName) invalidate(id, "OTHER_FOCUSED_APP")
-        if (!returningToEditor && modalOcclusion?.hasAcquiredFocus == true &&
-            modalOcclusion?.focusedPanelMatches(focusedPanelWindowId(currentWindows)) != true)
-            invalidate(id, "PANEL_FOCUSED_WINDOW_CHANGED")
+        if (!returningToEditor && modalOcclusion?.hasAcquiredFocus == true) {
+            val focusedPanelWindow = focusedPanelWindowId(currentWindows)
+            if (modalOcclusion?.focusedPanelMatches(focusedPanelWindow) == true)
+                markOwnMilestone(id, OwnMilestone.OWN_FOCUS_WINDOW_VERIFIED)
+            else invalidate(id, "PANEL_FOCUSED_WINDOW_CHANGED")
+        }
     }
 
     private fun focusedPanelWindowId(currentWindows: List<AccessibilityWindowInfo>): Int? =
@@ -486,6 +522,7 @@ class KoScribeService : AccessibilityService() {
         if (pendingId != id || guard.session(id) == null) return false
         val bound = modalOcclusion?.bind(owner) == true
         if (!bound) invalidate(id, "PANEL_OWNER_CHANGED")
+        else markOwnMilestone(id, OwnMilestone.PANEL_BIND_ACCEPTED)
         return bound
     }
 
@@ -495,6 +532,11 @@ class KoScribeService : AccessibilityService() {
     ) {
         // Old Activity callbacks must never poison a later session.
         if (pendingId != id || guard.session(id) == null) return
+        if (modalOcclusion?.owns(owner) == true) {
+            if (resumed) markOwnMilestone(id, OwnMilestone.PANEL_RESUME_CALLBACK)
+            if (focused && windowId >= 0)
+                markOwnMilestone(id, OwnMilestone.PANEL_FOCUS_KNOWN_WINDOW_CALLBACK)
+        }
         if (modalOcclusion?.updatePanel(owner, phase, resumed, focused, windowId, interrupted) != true)
             invalidate(id, "PANEL_LIFECYCLE_INTERRUPTED")
         if (phase == PanelPhase.REVIEW && !reviewVisible) {
@@ -549,6 +591,8 @@ class KoScribeService : AccessibilityService() {
         val session = guard.begin(mode, target.snapshot, SystemClock.elapsedRealtime()) ?: return
         captureStartUptimeMs = captureStart
         captureCompleteUptimeMs = captureComplete
+        synchronized(trace) { ownMilestoneUptimeMs.clear() }
+        firstTargetContentEventUptimeMs = null
         firstTargetContentTimingLogged = false
         firstTargetContentTimeCode = null
         firstTargetContentStateCode = null
@@ -566,11 +610,13 @@ class KoScribeService : AccessibilityService() {
         ownTransition = true
         expanded = false
         renderBubble()
+        if (bubble != null) markOwnMilestone(session.id, OwnMilestone.COLLAPSED_BUBBLE_ADD_RETURNED)
         val intent = Intent(this, SessionActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             putExtra(SessionActivity.EXTRA_ID, session.id)
             putExtra(SessionActivity.EXTRA_MODE, mode.name)
         }
+        markOwnMilestone(session.id, OwnMilestone.PANEL_LAUNCH_REQUESTED)
         try { startActivity(intent) } catch (_: Exception) {
             guard.cancel(session.id)
             guard.end(session.id)

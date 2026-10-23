@@ -39,20 +39,23 @@ recipients, real messages, or sending. Astra must review the implementation and
 the build must pass before the device test runs. Hidden same-view conversation
 reuse remains an acknowledged limitation of the prototype.
 
-## Proposed follow-up: recording and Cancel only
+## Authorized follow-up: recording and Cancel only
 
-Prepared, independently reviewed, and built; not yet authorized, installed, or
-run. Use the separately opted-in diagnostic path in `INSTRUMENTATION.md` with
+Andrew authorized continued scoped diagnostics without inserting or sending on
+2026-10-23. The lifecycle timing build and corrected test are installed; three complete
+recording/Stop/Cancel runs passed. See `DEVICE_TESTS.md` for the full results.
+Use the separately opted-in diagnostic path in `INSTRUMENTATION.md` with
 the same empty self-chat/SwiftKey preconditions. Open KoScribe, choose 요, wait
 briefly for recording, Stop, then Cancel. There must be no confirmation, Copy,
 or insertion path. Verify the original draft stays empty and the microphone
 stops; do not inspect conversation history or keyboard contents.
 
-The prepared product diagnostic records only first-event timing relative to
-capture, event category/source-equality code, and cached own-panel state.
+The product diagnostic records only first-event timing relative to capture,
+event category/source-equality code, cached own-panel state, and own lifecycle
+milestone timing described in `INSTRUMENTATION.md`.
 It adds no cross-app reads and changes no guard decision. Zero/unknown timestamps
 remain unknown. Its purpose is to distinguish event timing from panel state;
 timing alone cannot establish that an event is harmless or justify ignoring it.
-Source review and build passed before requesting approval of this separate
-real-app diagnostic. The completed one-message trial is not authorization to
-repeat it. Do not reuse the draft test, which has a confirmation step.
+Source review and build passed before Andrew approved this ongoing diagnostic
+scope. Do not request the same authorization again. The completed one-message
+trial remains closed; do not reuse the draft test, which has a confirmation step.

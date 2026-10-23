@@ -19,7 +19,8 @@ Private repository created and visibility verified:
 https://github.com/drew345/KoScribe . Initial planning commit was pushed to
 `main`; the Phase 1 baseline was later pushed as `cfdd6fb`. Reviewed device-test
 fixes, eight synthetic results, and the permission audit were pushed as
-`76fd0b4`; local `main` tracks `origin/main`.
+`76fd0b4`; the first Kakao refusal and prepared timing diagnostics were pushed
+as `188e34a`. Local `main` tracks `origin/main`.
 
 ## Confirmed this session
 
@@ -52,15 +53,25 @@ fixes, eight synthetic results, and the permission audit were pushed as
 
 ## Next action
 
-Obtain approval for additional Kakao self-chat diagnostics, starting with the
-reviewed recording -> Stop -> Cancel method in `docs/INSTRUMENTATION.md`.
-The code-only timing update and that separate no-confirmation method passed
-Astra review, both builds, 27 unit tests, lint, and APK signature verification.
-They are not installed or device-tested. Product guard behavior is unchanged.
-Prepared product APK SHA-256:
-`67FDAE782F8A71010BCD0457BCF545DAF1D9D6547A925826A09D9E9FD138E2C6`.
-After approval, install both fresh APKs and verify service connection before the
-exact diagnostic method. Do not run the old confirmation method or full suite.
+Andrew approved continued scoped non-inserting Kakao self-chat diagnostics,
+using the reviewed recording -> Stop -> Cancel method in
+`docs/INSTRUMENTATION.md`. Three complete runs passed original empty-field
+preservation and SwiftKey return. Two attempts refused before recording started;
+an earlier run checked keyboard return too early. Sol's bounded four-second
+return wait and later own-panel timing update passed Astra review and builds.
+The five corrected-test sessions first invalidated on a content-description
+event from another target node, timestamped 27-46 ms after editor capture.
+The latest pass places the event 26 ms after the panel launch request and 25 ms
+before accepted panel binding; delivery was 105 ms after occurrence. This
+narrows the issue to startup timing, without proving cause or harmlessness.
+Source role remains unknown. Repeating the same measurement is unlikely to
+help further. Next work should evaluate a startup/capture or recovery design
+that preserves explicit target binding and all field/commit checks; do not
+whitelist flag 4 from this timing evidence. No behavior change has been made.
+Current installed product APK SHA-256:
+`BC46403985B60C26EB04A26A41E6BC55199FDF5F7EB2001FC3A29510C24AD0F9`.
+Verify live field/keyboard preconditions before the exact diagnostic method.
+Do not run the old confirmation method or full suite.
 Retained first-content fields belong to the latest successful capture; do not
 attribute old diagnostics to a preflight failure.
 
@@ -86,13 +97,10 @@ The edited-review smoke uses a scoped synthetic text action with SwiftKey
 visible; actual SwiftKey keystroke/composition editing still needs manual
 verification. Same-view semantic conversation reuse while hidden remains
 unobservable. Do not claim real-app compatibility from synthetic passes.
-The compact pill has no white surround; final icon is deferred. Microphone is
-stopped and SwiftKey remains selected. A fixture-only keep-screen-on flag was
-reviewed after the eight passes; smoke assembly/lint passed and the updated
-test APK was installed for that trial. The newer timing/Cancel diagnostic APKs
-described above remain uninstalled; the phone still has the tested product.
-SwiftKey remains selected and Wispr remains enabled. Follow `docs/PHASE1.md`
-and `docs/DEVICE_TESTS.md`.
+The compact pill has no white surround; final icon is deferred. The current
+lifecycle-timing product and corrected Cancel test are installed. Microphone is stopped,
+SwiftKey remains selected, and Wispr remains enabled. Follow `docs/PHASE1.md`
+and `docs/DEVICE_TESTS.md` for measured results and remaining acceptance checks.
 No API key is needed for Phase 1.
 
 The requested permission audit is recorded in `docs/RESEARCH.md`. Read-only ADB
@@ -130,10 +138,11 @@ Activity, editable English sample review, fixed Korean examples, and explicit
 Copy recovery. Audio is discarded. No INTERNET permission or persistent
 message/audio storage exists. Complete device acceptance remains unverified.
 
-Final checks: `:app:assembleDebug :app:testDebugUnitTest :app:lintDebug` passed;
-current compact-panel build has 27 tests, 0 failures/errors. Lint: 0 errors,
-15 warnings in the product, 3 warnings in smoke. Current APK signature verified;
-its packaged permission list contains only RECORD_AUDIO. Tested APK SHA-256:
+Build checks: `:app:assembleDebug :app:testDebugUnitTest :app:lintDebug` passed;
+the timing build has 27 tests, 0 failures/errors. Lint: 0 errors,
+15 warnings in the product, 3 warnings in smoke. Timing APK signature verified;
+its packaged permission list contains only RECORD_AUDIO. The earlier APK used
+for the eight successful synthetic cases has SHA-256:
 `30DDA116F39FAB7261E5D0DEC1B98FF7F46EDC427B9D622909A47FEBFDCF4E28`.
 
 Astra found no remaining demonstrated blocker for controlled synthetic local

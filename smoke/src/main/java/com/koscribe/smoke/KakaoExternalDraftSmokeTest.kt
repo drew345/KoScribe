@@ -144,6 +144,9 @@ class KakaoExternalDraftSmokeTest {
                 ownButtons("Translate & insert sample").isEmpty()).takeIf { it }
         }
         await("KAKAO_DID_NOT_RETURN") { focusedKakaoEditor() }
+        await("SWIFTKEY_NOT_VISIBLE_ON_RETURN", 4_000) {
+            swiftKeySelectedAndVisible().takeIf { it }
+        }
         val returned = captureEmptyFocusedKakaoEditor()
         assertSameIdentity(original, returned)
         SystemClock.sleep(1_200)

@@ -12,6 +12,12 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
 - Andrew authorized Phase 1 implementation on 2026-10-23. Build and review
   the API-free feasibility prototype; do not advance beyond its device-test
   gate without the required results. Later phases remain gated.
+- Andrew subsequently authorized continued scoped KakaoTalk self-chat
+  diagnostics using recording -> Stop -> Cancel, without inserting or sending.
+  This scope permits repeat non-inserting diagnostics as needed; do not ask
+  again for the same scope. Inspect only the focused field/root metadata and
+  code-only timing/state, never conversation history. The earlier one-sample
+  insertion trial is complete and must not be rerun under this authorization.
 - Once implementation is authorized, use subagents for coding with
   `gpt-6-sol` / `xhigh` (Extra High), and independent checking with
   `gpt-6-astra` / `xhigh`. Explicit model overrides require fresh-context

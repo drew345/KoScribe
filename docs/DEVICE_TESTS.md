@@ -263,3 +263,80 @@ other accessibility services. Initial permission inspection used it before any
 live recording. Do not run stock
 UI dumps during these tests. Sources: [dump command](https://raw.githubusercontent.com/aosp-mirror/platform_frameworks_base/android16-release/cmds/uiautomator/cmds/uiautomator/src/com/android/commands/uiautomator/DumpCommand.java),
 [Android accessibility service handling](https://raw.githubusercontent.com/aosp-mirror/platform_frameworks_base/android16-release/services/accessibility/java/com/android/server/accessibility/AccessibilityManagerService.java).
+
+## Authorized Kakao recording / Stop / Cancel diagnostics
+
+Andrew authorized continued non-inserting diagnostics and prepared the empty
+self-chat with SwiftKey visible. The reviewed timing product APK
+(`67FDAE782F8A71010BCD0457BCF545DAF1D9D6547A925826A09D9E9FD138E2C6`)
+and separate opt-in test were installed; accessibility reconnected.
+
+- The first run completed recording/Stop/Cancel but checked keyboard return too
+  early. A subsequent metadata check found SwiftKey visible; microphone use had
+  ended after 2.567 s. First invalidation was TARGET_WINDOW_REAPPEARED: the
+  target ADDED event arrived while its window was absent from the current list.
+  ROOT_ABSENT denotes a missing window here, not a present window with null root.
+  No first-content timing was recorded before this invalidation; the recorder
+  intentionally ignores content after a prior invalidation.
+- Sol added a bounded four-second keyboard-return wait to the no-insertion
+  test. Astra reviewed it; smoke build/lint passed. The corrected method passed
+  twice, verifying the same original empty field immediately and after 1.2 s,
+  with SwiftKey still selected and visible. Microphone stopped after 2.314 s and
+  2.530 s respectively. The method never confirms or requests insertion.
+- Between those passes, one attempt refused before a fresh Stop appeared;
+  microphone did not start. That run did not complete post-Cancel assertions
+  and must not be counted as a passing recording/Cancel flow.
+- All three corrected-test sessions first invalidated on
+  TARGET_CONTENT_CHANGED_OTHER_NODE, content flag 4 (description change).
+  Capture duration / event after capture completion / delivery delay were
+  20/35/136 ms, 14/27/27 ms, and 21/46/90 ms. The first and third had cached
+  RECORDING state at delivery; the middle still had PREPARING/VISIBLE0. These
+  are delivery-time states, not proof of lifecycle state at event occurrence.
+  All three reported event times are after capture; none supports a stale
+  pre-capture explanation. Source role and harmlessness remain unknown.
+
+These results establish cancellation and empty-draft preservation in two real
+flows, not successful Kakao insertion. Product guards are unchanged. No editor
+mutation, confirmation, Send/Enter, clipboard use, screenshot, conversation
+history traversal, API call, or recording retention occurred in this scope.
+
+### Own lifecycle milestone follow-up
+
+Sol added code-only timing at existing own-UI callbacks and reused the existing
+focus verification. Astra cleared source SHA-256
+`4FCACE823575D42537467F307FC688D06E27FCFD0731F54E80083576B9165A9D`.
+Both APK builds, 27 JVM tests (zero failures/errors), lint (zero errors;
+app 15/smoke 3 warnings), and product signature verification passed. Installed
+product SHA-256 is
+`BC46403985B60C26EB04A26A41E6BC55199FDF5F7EB2001FC3A29510C24AD0F9`.
+SwiftKey remained visible after this update; no phone action was needed.
+
+Two more authorized no-insertion measurements produced:
+
+| Observation | Early startup refusal | Complete Cancel pass |
+| --- | --- | --- |
+| Capture duration | 29 ms | 12 ms |
+| Content event after capture completion | 38 ms | 38 ms |
+| Delivery delay | 32 ms | 105 ms |
+| Bubble add return / launch request before event | 28 ms | 26 ms |
+| Accepted panel bind relative to event | Not observed | 25 ms after |
+| Resume callback relative to event | Not observed | 87 ms after |
+| Own known-window focus callback relative to event | Not observed | 219 ms after |
+
+Both first invalidations were OTHER_NODE content flag 4. The early attempt
+never started the microphone; PANEL_OWNER_CHANGED followed invalidation and
+does not establish an actual owner switch. The completed method passed in
+5.178 s with the same original field empty immediately and after 1.2 s and
+SwiftKey selected/visible. Its microphone use ended after 2.634 s.
+
+The occurrence timestamp precedes accepted panel binding in the successful
+flow; the event was delivered after binding and resume. This accounts for the
+previous cached RECORDING state at delivery. Launch request preceding the event
+does not establish causation. The missing verified-window milestone does not
+prove focus never arrived: the already-invalid gate cannot accept it. No
+description text, source role, conversation content, or keyboard tree was read.
+
+Combined corrected-test total: three complete recording/Stop/Cancel passes,
+two refusals before a fresh recording control, plus the earlier uncorrected
+keyboard-return assertion failure. These remain cancellation diagnostics;
+successful real-app insertion is still unverified.

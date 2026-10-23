@@ -30,3 +30,30 @@
   checked standard locations. Prepare tooling before requesting USB connection
   for the first prototype test. API credentials are unnecessary for Phase 1.
 - Planning decisions are sufficient for Phase 1; implementation has not begun.
+
+## 2026-10-23 — Phase 1 implementation; awaiting A35
+
+- Andrew authorized Phase 1 and pointed to MindHub's PhoneCare subproject.
+  Followed the MindHub migration pointer to the shared authoritative files;
+  reused PhoneCare's ADB/SDK/JDK tools. No phone-care files were changed.
+- Prepared standard API 36 / Build Tools 36.0.0 SDK paths by copying existing
+  tools; verified and installed official Gradle 8.13 and its pinned wrapper.
+- Sol 6 Extra High implemented the Kotlin feasibility app: three-mode bubble,
+  visible microphone screen, editable fixed English review, Korean samples,
+  guarded one-attempt insertion, and explicit Copy recovery. No API/key/network
+  integration; microphone audio is discarded.
+- Astra Extra High independently reviewed source. Sol fixed microphone
+  permission handling, input/window binding, navigation continuity, composing
+  state evidence, cancellation ownership, and recording-screen task affinity.
+  Unknown composition remains explicitly unknown; the platform's accessibility
+  commit behavior supports this controlled prototype policy, pending A35 tests.
+- Final debug build and seven unit tests passed. Lint has 0 errors/18 warnings
+  (prototype UI localization and Gradle update notice). APK signature verified;
+  packaged permission list contains only RECORD_AUDIO. No release key created.
+- Astra cleared the source for controlled local-editor testing, not real-app
+  compatibility. Added `docs/PHASE1.md` and an unmeasured device acceptance
+  matrix. Phase 2 is still gated on real-device results.
+- Requested USB connection when build/review completed. ADB starts correctly
+  and currently lists no device. No installation or phone inspection occurred.
+- Staged prototype secret-pattern scan passed; credential/audio/APK ignore rules
+  verified. GitHub visibility reconfirmed PRIVATE before publication.

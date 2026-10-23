@@ -1,0 +1,3 @@
+<resources>
+    <string name="accessibility_description">Shows a dictation test bubble and inserts a confirmed sample into a verified text editor. Never sends messages.</string>
+</resources>

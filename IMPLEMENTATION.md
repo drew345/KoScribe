@@ -1,6 +1,7 @@
 # Implementation plan
 
-Planning baseline: 2026-10-23. Application coding is not yet authorized.
+Planning baseline: 2026-10-23. Andrew authorized Phase 1 implementation on
+2026-10-23. Later phases remain gated on the first device test results.
 
 ## Confirmed product choices
 
@@ -16,8 +17,8 @@ Wispr Flow still installed.
 
 Native Kotlin Android app with a small control/settings Activity, an
 AccessibilityService for a bubble and tightly scoped editor access, and
-explicit recording sessions. Jetpack Compose is a candidate for app screens;
-the overlay toolkit should follow the feasibility results.
+explicit recording sessions. Phase 1 uses Android Views for the prototype
+screens and accessibility overlay. The final UI follows feasibility results.
 
 Prototype Android 13+ accessibility input connections first. They offer an
 insertion API without selecting KoScribe as a keyboard. This is not proof of
@@ -25,9 +26,9 @@ compatibility with every editor. Prototype an accessibility overlay to avoid
 unnecessary draw-over-other-apps access; retain a conventional application
 overlay as an alternative only if needed and disclosed.
 
-Android microphone foreground-service rules must be tested independently of
-overlay visibility. A small visible recording Activity is a possible fallback
-if a bubble-only start is unreliable; discuss any resulting interaction change.
+Phase 1 opens a visible Activity to own microphone recording and English
+review; the bubble remains the entry point. Bubble-only recording and Android
+microphone foreground-service restrictions remain later device/design work.
 Never keep the microphone recording simply to keep a bubble alive.
 
 Andrew selected OpenAI cloud speech recognition for the first version and
@@ -97,8 +98,15 @@ security design to carry into implementation review.
 3. Abort automatic insertion for selected text, unknown selection, changed
    editor/text, or incomplete observations. Keep the generated message.
 4. Permit at most one commit per session, through the accessibility input
-   connection at a verified
-   collapsed caret. Test SwiftKey composition/autocorrection explicitly.
+   connection at a verified collapsed caret. Refuse reported active composing
+   ranges; do not treat missing styled-text spans or an absent selection
+   callback as proof that composition is clear. For the Phase 1 probe, unknown
+   composition alone is not a rejection: Android's accessibility commit path
+   finishes composition before committing, preserving the existing composing
+   text for standard editors. Keep every live caret/context/identity check.
+   Test synthetic local text first, then SwiftKey/OEM/custom editor behavior
+   before accepting external-app compatibility. Do not issue a separate
+   finish-composition or keyboard action.
 5. Observe success where supported. An uncertain outcome must not trigger a
    retry that might duplicate text. Cross-app checks and insertion are not an
    atomic transaction; document remaining compatibility limits honestly.

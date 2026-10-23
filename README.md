@@ -3,7 +3,10 @@
 Personal Android dictation app: speak English and insert natural Korean into
 the focused text field, while continuing to use Microsoft SwiftKey.
 
-**Status: planning only. No Android application has been implemented.**
+**Status: Phase 1 feasibility prototype implemented; A35 device testing pending.**
+The prototype tests the bubble, microphone lifecycle, English review, and safe
+insertion with fixed example messages. It does not transcribe or translate yet
+and needs no API key. See [build and device test instructions](docs/PHASE1.md).
 
 ## Agreed interaction
 
@@ -34,7 +37,7 @@ still need detailed design.
 - Microsoft SwiftKey remains the keyboard; Wispr Flow remains installed.
 - First destinations: KakaoTalk, Instagram DMs, and the SMS/RCS app.
 - SMS app may be Samsung Messages; verify its package when the phone is
-  connected for debugging. Phone access is planned for a later session.
+  connected for Phase 1 testing.
 - Long-term platform: Android. Personal-use distribution is the starting
   assumption; installation/update method is not yet settled.
 
@@ -62,5 +65,17 @@ still need detailed design.
 - [PROGRESS.md](PROGRESS.md): current status, unresolved decisions, next action.
 - [SESSION_LOG.md](SESSION_LOG.md): concise work history.
 - [Research](docs/RESEARCH.md): dated official sources and limitations.
+- [Device acceptance](docs/DEVICE_TESTS.md): measured results and pending checks.
 
-No build commands exist yet. The repository currently contains planning only.
+## Prototype build
+
+With JDK 17+, Android SDK 36 / Build Tools 36.0.0, and the environment configured
+as described in [Phase 1](docs/PHASE1.md):
+
+```powershell
+.\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+```
+
+The debug APK is `app/build/outputs/apk/debug/app-debug.apk`. Build output,
+credentials, recordings, and transcripts are excluded from Git. Real-device
+acceptance is required before starting the speech/API phase.

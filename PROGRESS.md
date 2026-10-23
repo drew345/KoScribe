@@ -4,8 +4,11 @@ Updated: 2026-10-23 (Asia/Seoul).
 
 ## State
 
-Phase 0: planning. Folder initialized with project memory. No application code,
-SDK project, API integration, device test, or paid API call has been created.
+Phase 1 feasibility prototype built with Sol 6 Extra High and independently
+reviewed by Astra Extra High. Final build, seven unit tests, lint, and APK
+signature verification passed. Ready for controlled A35 testing; ADB currently
+lists no connected device. No API integration, device test, or paid API call
+has been performed. Phase 1 acceptance is not complete.
 Private repository created and visibility verified:
 https://github.com/drew345/KoScribe . Initial planning commit was pushed to
 `main`; local `main` tracks `origin/main`.
@@ -37,12 +40,12 @@ https://github.com/drew345/KoScribe . Initial planning commit was pushed to
 
 ## Next action
 
-No further product choice is required for the API-free Phase 1 prototype.
-Andrew asked whether anything else is needed before starting; implementation
-has not begun. Next implementation work: prepare the Android toolchain, build
-the feasibility prototype with Sol Extra High, then review with Astra Extra
-High. Request USB connection when ADB and the first installable prototype are
-ready. No API key is needed for Phase 1.
+Andrew has been asked to connect the unlocked A35 with a USB data cable and
+authorize USB debugging. Confirm one physical device
+and its user profiles; install only into the intended main user. Start with
+synthetic text in KoScribe's local test editor before testing real-app drafts.
+Follow `docs/PHASE1.md` and record outcomes in `docs/DEVICE_TESTS.md` before Phase 2.
+No API key is needed for Phase 1.
 
 ## Verification so far
 
@@ -52,10 +55,34 @@ device behavior or authenticated OpenAI model availability is yet verified.
 No API key was retrieved; current process has no OPENAI_API_KEY.
 Planning review added protected-field exclusions, same-app conversation-switch
 checks, cancellation ownership, and at-most-once insertion. Staged-file secret
-patterns and ignore rules checked; no application tests are applicable yet.
+patterns and ignore rules checked during initialization and before the Phase 1
+publish. No credential patterns or unexpected sensitive/generated paths were
+found in the staged prototype. GitHub visibility reconfirmed PRIVATE.
 English-review flow approved; safe return from editing to the intended message
 field remains an explicit device-test gate.
-Read-only toolchain check: adb, Java/Javac, Gradle and sdkmanager were not found
-on PATH; the checked standard Android SDK/Studio/Java locations were absent.
-This is not an exhaustive scan for custom installations. Toolchain preparation
-is required before device testing.
+PhoneCare resolved the custom tool locations on ROBERTSLGGRAM17: ADB 37.0.1
+and Android SDK under `C:\AI\Codex\Tools\android-sdk`, Microsoft JDK
+21.0.12.1 under `C:\AI\Codex\Tools\openjdk21\jdk-21.0.12.1+1`.
+Existing platform/build-tools were copied into standard API 36 / 36.0.0 SDK
+directories without removing originals. Official Gradle 8.13 was downloaded,
+SHA-256 verified, and installed under `C:\AI\Codex\Tools\gradle\gradle-8.13`.
+Shared Gradle cache: `C:\AI\Codex\Tools\gradle-cache`.
+
+The prototype uses a nonfocusable accessibility bubble, visible recording
+Activity, editable English sample review, fixed Korean examples, and explicit
+Copy recovery. Audio is discarded. No INTERNET permission or persistent
+message/audio storage exists. Final device behavior remains unverified.
+
+Final checks: `:app:assembleDebug :app:testDebugUnitTest :app:lintDebug` passed;
+7 tests, 0 failures/errors. Lint: 0 errors, 18 warnings (17 prototype UI string
+localization warnings and one Gradle update notice). APK signature verified;
+packaged permission list contains only RECORD_AUDIO. APK SHA-256:
+`1FEC3F9973171EFF2F94449B59033D71CB6AFAC56114069F5057284E93E5B0DD`.
+
+Astra found no remaining demonstrated blocker for controlled synthetic local
+editor testing after fixes to window binding, review return, navigation,
+composition evidence, and stale cancellation. Conservative return events may
+refuse normal insertion. Unknown composition, Samsung/SwiftKey behavior,
+same-app conversation reuse, and cross-process commit timing still require
+device evidence. Root-only backup exclusions must be expanded/tested before
+Phase 2 credential storage.

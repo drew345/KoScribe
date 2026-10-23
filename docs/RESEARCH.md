@@ -11,6 +11,16 @@ still be replaced, so selection/focus validation is essential. AOSP finishes
 existing composition before an accessibility commit; actual SwiftKey behavior
 must be tested. No universal insertion guarantee follows from these APIs.
 
+Phase 1 review refinement: a fresh accessibility `onUpdateSelection` callback
+is not guaranteed after each editor start/return, and composing spans can be
+omitted by IPC serialization. Absence of either is not evidence of a clear
+composition state. For the controlled probe, unknown composition may proceed
+with verified live caret/context/identity, relying on the accessibility
+commit implementation's finish-composition-before-commit behavior for standard
+editors. Reported active composition still refuses. Astra reviewed this as a
+documented policy choice, with synthetic local testing and OEM/custom editor
+verification still required; it is not a universal preservation guarantee.
+
 - [Accessibility InputMethod](https://developer.android.com/reference/android/accessibilityservice/InputMethod)
 - [AccessibilityInputConnection](https://developer.android.com/reference/android/accessibilityservice/InputMethod.AccessibilityInputConnection)
 - [EditorInfo: field identifiers are not sufficient target identity](https://developer.android.com/reference/android/view/inputmethod/EditorInfo)

@@ -7,8 +7,8 @@ Updated: 2026-10-23 (Asia/Seoul).
 Phase 0: planning. Folder initialized with project memory. No application code,
 SDK project, API integration, device test, or paid API call has been created.
 Private repository created and visibility verified:
-https://github.com/drew345/KoScribe . Planning files are prepared for the initial
-commit; verify remote synchronization before reporting the session complete.
+https://github.com/drew345/KoScribe . Initial planning commit was pushed to
+`main`; local `main` tracks `origin/main`.
 
 ## Confirmed this session
 

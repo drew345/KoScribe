@@ -18,6 +18,7 @@
 - Andrew subsequently selected GPT-6 Luna Extra High for translation.
 - Created GitHub repository `drew345/KoScribe` and verified PRIVATE visibility.
 - Reviewed planning files, checked credential ignore rules, and scanned staged
-  files for secret patterns. Prepared the initial planning commit for publish.
+  files for secret patterns. Published initial planning commit `68a0475` to
+  private `origin/main` and set branch tracking.
 - Agreed implementation remains deferred. Next: choose speech/latency details,
   then approve a device-first phase plan.

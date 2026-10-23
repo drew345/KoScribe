@@ -20,14 +20,16 @@ https://github.com/drew345/KoScribe . Initial planning commit was pushed to
 - English review appears for every message initially; skip option comes later.
 - User supplies a key on the phone; no embedded key or Git credential storage.
 - Translation: `gpt-6-luna` at `xhigh` (Extra High).
+- Speech recognition: OpenAI cloud transcription first; documented baseline
+  `gpt-transcribe`. Some additional processing time is acceptable.
 - Sol 6 Extra High coding; Astra Extra High checking; main planner/overseer.
 
 ## Open decisions / checks
 
-- Speech recognition: local vs cloud, privacy/quality/latency tradeoff.
-- Verify actual API-account access to the selected GPT-6 Luna model.
-- Desired Stop-to-transcript and confirmation-to-insertion delay, normal
-  dictation length, and spending limit.
+- Before Phase 2: verify actual API-account access to GPT-6 Luna and the
+  selected OpenAI transcription model, plus billing/spending controls.
+- Measure Stop-to-transcript and confirmation-to-insertion delays during
+  testing. No fixed numeric target; normal dictation length is still unknown.
 - Personal installation/update method; whether any wider distribution is wanted.
 - Bubble icon/placement, detailed cancel/recovery UI, and settings screen.
 - Verify phone build, SMS package, microphone start restrictions, safe editor
@@ -35,9 +37,12 @@ https://github.com/drew345/KoScribe . Initial planning commit was pushed to
 
 ## Next action
 
-Confirm speech-recognition preference and acceptable processing latency
-(questions already asked). Continue planning; do not start Phase 1 until
-Andrew authorizes it.
+No further product choice is required for the API-free Phase 1 prototype.
+Andrew asked whether anything else is needed before starting; implementation
+has not begun. Next implementation work: prepare the Android toolchain, build
+the feasibility prototype with Sol Extra High, then review with Astra Extra
+High. Request USB connection when ADB and the first installable prototype are
+ready. No API key is needed for Phase 1.
 
 ## Verification so far
 
@@ -50,3 +55,7 @@ checks, cancellation ownership, and at-most-once insertion. Staged-file secret
 patterns and ignore rules checked; no application tests are applicable yet.
 English-review flow approved; safe return from editing to the intended message
 field remains an explicit device-test gate.
+Read-only toolchain check: adb, Java/Javac, Gradle and sdkmanager were not found
+on PATH; the checked standard Android SDK/Studio/Java locations were absent.
+This is not an exhaustive scan for custom installations. Toolchain preparation
+is required before device testing.

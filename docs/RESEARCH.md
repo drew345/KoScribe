@@ -99,7 +99,7 @@ are separate; do not assume a Codex `ultra` option is an API parameter.
 | Independent review | `gpt-6-astra`, `xhigh` | User requested; session availability confirmed. |
 | Planner | Astra / Ultra | User requested; current runtime setting not independently inspected. |
 | Korean text translation | `gpt-6-luna`, `xhigh` | User selected after name verification; account access pending. |
-| Cloud transcription | `gpt-transcribe` | Current documented recorded-audio option; provider choice pending. |
+| Cloud transcription | `gpt-transcribe` | OpenAI cloud provider selected; current documented baseline, account access pending. |
 
 Standard published text rates per million tokens: GPT-5.6 Luna $0.20 input /
 $1.20 output; GPT-6 Luna $0.10 input / $0.50 output. These are list rates, not a

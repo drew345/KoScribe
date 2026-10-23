@@ -24,5 +24,9 @@
 - Reviewed planning files, checked credential ignore rules, and scanned staged
   files for secret patterns. Published initial planning commit `68a0475` to
   private `origin/main` and set branch tracking.
-- Agreed implementation remains deferred. Next: choose speech/latency details,
-  then approve a device-first phase plan.
+- Andrew selected OpenAI speech recognition and accepts extra processing time.
+  Baseline is `gpt-transcribe`; no fixed latency target is assumed.
+- Read-only environment check did not find Android/Java tools on PATH or in
+  checked standard locations. Prepare tooling before requesting USB connection
+  for the first prototype test. API credentials are unnecessary for Phase 1.
+- Planning decisions are sufficient for Phase 1; implementation has not begun.

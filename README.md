@@ -50,6 +50,9 @@ still need detailed design.
   outside Git and the APK. No backend is selected for the first version.
 - Translation model: GPT-6 Luna with Extra High reasoning (`gpt-6-luna`,
   `xhigh`), subject to account access and quality/latency testing.
+- Speech recognition: OpenAI cloud transcription first, using the currently
+  recommended `gpt-transcribe` recorded-audio workflow. Some extra processing
+  time is acceptable; measure it rather than assuming a fixed latency target.
 - Prove phone/editor integration before investing in full speech/translation.
 
 ## Project memory

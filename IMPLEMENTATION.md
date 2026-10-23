@@ -30,12 +30,17 @@ overlay visibility. A small visible recording Activity is a possible fallback
 if a bubble-only start is unreliable; discuss any resulting interaction change.
 Never keep the microphone recording simply to keep a bubble alive.
 
-Speech provider is undecided: evaluate on-device English recognition against
-OpenAI transcription for latency, names, and mixed-language phrases. A system
-recognizer must not be described as on-device unless that path is verified.
-For a cloud path: audio -> English transcription -> selected text translation.
-EN skips Korean translation. Do not choose a Luna model for audio input;
-the documented Luna candidates accept text, not audio.
+Andrew selected OpenAI cloud speech recognition for the first version and
+accepts some extra processing time. Start with the documented `gpt-transcribe`
+recorded-audio workflow; verify account access before paid testing. The path
+is audio -> English transcription -> user review/edit -> confirmed text
+translation. EN skips Korean translation. Luna is a text model, so it is not
+the audio recognizer. Provide visible processing/cancel states and bounded
+timeouts; no numeric latency promise has been agreed.
+
+Android on-device speech recognition remains a future alternative if needed;
+its availability and quality would need device-specific testing. It is not a
+blocking comparison for the first version.
 
 Andrew selected `gpt-6-luna` with `reasoning.effort: "xhigh"` for translation.
 Verify account access and benchmark it; discuss any change to that selection.
@@ -109,7 +114,7 @@ security design to carry into implementation review.
 | --- | --- | --- |
 | 0: Planning | Settle UX, credentials, models, speech provider, installation and latency goals. | Andrew approves implementation plan. |
 | 1: Device feasibility | Minimal bubble, explicit microphone start/stop, hardcoded sample insertion; no API needed. | On A35: SwiftKey stays selected, original text preserved, no send, focus changes fail safely; KakaoTalk/Instagram/SMS tested. |
-| 2: Speech and credentials | Keystore-backed user key if cloud chosen, recording, cancel, transcription, editable English review and EN insertion. | Accurate transcripts; edits are preserved; destination safely restored after review; mic stops on every exit; errors recover; no secret/audio logs. |
+| 2: Speech and credentials | Keystore-backed user key, OpenAI recording/transcription, cancel, editable English review and EN insertion. | Accurate transcripts; edits are preserved; destination safely restored after review; mic stops on every exit; errors recover; no secret/audio logs. |
 | 3: Korean translation | Confirmed English -> explicit 해요체/반말 translation -> safe insertion. | User-reviewed corpus; correct meaning/tone; measured Stop-to-transcript and confirmation-to-insertion latency, plus cost. |
 | 4: Daily-use reliability | Bubble placement, settings/status, coexistence with Wispr, battery/restart behavior, signed personal installation. | Real-app acceptance matrix, release APK/Git secret scan, independent Astra review, Andrew's daily-use test. |
 

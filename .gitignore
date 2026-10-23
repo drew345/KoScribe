@@ -1,0 +1,38 @@
+# Local credentials and private content
+.env
+.env.*
+!.env.example
+secrets/
+credentials/
+private/
+local.properties
+keystore.properties
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+*.log
+recordings/
+transcripts/
+device-dumps/
+
+# Android, IDE, and build output
+.gradle/
+.kotlin/
+.idea/
+*.iml
+**/build/
+captures/
+.cxx/
+.externalNativeBuild/
+*.apk
+*.aab
+
+# Local tooling
+.DS_Store
+Thumbs.db
+node_modules/
+.venv/
+__pycache__/

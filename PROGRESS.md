@@ -15,7 +15,9 @@ https://github.com/drew345/KoScribe . Initial planning commit was pushed to
 - Galaxy A35 5G, Android 16, One UI 8.5 (user-reported).
 - First apps: KakaoTalk, Instagram DMs, SMS/RCS (exact SMS app unverified).
 - Keep SwiftKey and installed Wispr Flow.
-- Tap bubble -> choose 요 / 반말 / EN to record -> Stop -> safe immediate insert.
+- Tap bubble -> choose 요 / 반말 / EN -> record -> Stop -> editable English
+  review -> confirm -> translate if Korean -> safe immediate insert.
+- English review appears for every message initially; skip option comes later.
 - User supplies a key on the phone; no embedded key or Git credential storage.
 - Translation: `gpt-6-luna` at `xhigh` (Extra High).
 - Sol 6 Extra High coding; Astra Extra High checking; main planner/overseer.
@@ -24,7 +26,8 @@ https://github.com/drew345/KoScribe . Initial planning commit was pushed to
 
 - Speech recognition: local vs cloud, privacy/quality/latency tradeoff.
 - Verify actual API-account access to the selected GPT-6 Luna model.
-- Desired stop-to-insert delay, normal dictation length, and spending limit.
+- Desired Stop-to-transcript and confirmation-to-insertion delay, normal
+  dictation length, and spending limit.
 - Personal installation/update method; whether any wider distribution is wanted.
 - Bubble icon/placement, detailed cancel/recovery UI, and settings screen.
 - Verify phone build, SMS package, microphone start restrictions, safe editor
@@ -32,7 +35,7 @@ https://github.com/drew345/KoScribe . Initial planning commit was pushed to
 
 ## Next action
 
-Confirm speech-recognition preference and acceptable stop-to-insert latency
+Confirm speech-recognition preference and acceptable processing latency
 (questions already asked). Continue planning; do not start Phase 1 until
 Andrew authorizes it.
 
@@ -45,3 +48,5 @@ No API key was retrieved; current process has no OPENAI_API_KEY.
 Planning review added protected-field exclusions, same-app conversation-switch
 checks, cancellation ownership, and at-most-once insertion. Staged-file secret
 patterns and ignore rules checked; no application tests are applicable yet.
+English-review flow approved; safe return from editing to the intended message
+field remains an explicit device-test gate.

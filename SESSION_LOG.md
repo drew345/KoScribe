@@ -16,6 +16,10 @@
 - Verified Sol 6 and Astra Extra High are listed for Codex. GPT-5.0 Luna name
   unresolved; official API catalogs list GPT-5.6 Luna and GPT-6 Luna.
 - Andrew subsequently selected GPT-6 Luna Extra High for translation.
+- Andrew added English transcript review and chose to show it for every
+  message initially, with a skip option later. Confirmed/edited English is
+  translated, then Korean inserts immediately when safe; no second preview is
+  required. Added tests for returning from transcript editing to the target.
 - Created GitHub repository `drew345/KoScribe` and verified PRIVATE visibility.
 - Reviewed planning files, checked credential ignore rules, and scanned staged
   files for secret patterns. Published initial planning commit `68a0475` to

@@ -4,9 +4,13 @@ Planning baseline: 2026-10-23. Application coding is not yet authorized.
 
 ## Confirmed product choices
 
-Use the three-mode bubble flow in `README.md`. Insert immediately when safe;
-preview is a recovery surface, not a mandatory step. Keep SwiftKey and never
-send. Test on the A35 with Wispr Flow still installed.
+Use the three-mode bubble flow in `README.md`. Every message initially gets an
+editable English transcript review after Stop. Korean modes offer Edit,
+Translate & insert, and Cancel; EN offers Edit, Insert English, and Cancel.
+Translate only confirmed English. After translation, insert immediately when
+safe without requiring a second Korean preview. A skip-English-review option
+is deferred until later. Keep SwiftKey and never send. Test on the A35 with
+Wispr Flow still installed.
 
 ## Proposed architecture
 
@@ -38,6 +42,16 @@ Verify account access and benchmark it; discuss any change to that selection.
 Translation is text-only, with an explicit mode and instructions to preserve
 meaning and produce just the message. Treat dictated instructions as content,
 not commands to control the app. Keep prior chats and field contents local.
+English edits invalidate earlier derived results. Do not translate provisional
+or unconfirmed English in the initial review flow.
+
+The review/edit UI must preserve the intended destination separately from its
+own text editor. A user editing the transcript with SwiftKey must never cause
+the Korean result to be inserted back into KoScribe's review field. Restoring
+the destination after a deliberate review transition requires fresh identity,
+focus, selection, and context checks. If return cannot be verified, keep the
+result for explicit recovery. Do not weaken navigation checks merely because
+the flow includes a review screen.
 
 ## Credential approach selected by Andrew
 
@@ -95,8 +109,8 @@ security design to carry into implementation review.
 | --- | --- | --- |
 | 0: Planning | Settle UX, credentials, models, speech provider, installation and latency goals. | Andrew approves implementation plan. |
 | 1: Device feasibility | Minimal bubble, explicit microphone start/stop, hardcoded sample insertion; no API needed. | On A35: SwiftKey stays selected, original text preserved, no send, focus changes fail safely; KakaoTalk/Instagram/SMS tested. |
-| 2: Speech and credentials | Keystore-backed user key if cloud chosen, recording, cancel, transcription, English output. | Accurate sample transcripts; mic stops on every exit; offline/denied permissions/timeouts recover; no secret/audio logs. |
-| 3: Korean translation | Explicit 해요체/반말 prompt, model evaluation, safe end-to-end insertion. | User-reviewed bilingual test corpus; correct meaning/tone; measured stop-to-insert latency and per-message cost. |
+| 2: Speech and credentials | Keystore-backed user key if cloud chosen, recording, cancel, transcription, editable English review and EN insertion. | Accurate transcripts; edits are preserved; destination safely restored after review; mic stops on every exit; errors recover; no secret/audio logs. |
+| 3: Korean translation | Confirmed English -> explicit 해요체/반말 translation -> safe insertion. | User-reviewed corpus; correct meaning/tone; measured Stop-to-transcript and confirmation-to-insertion latency, plus cost. |
 | 4: Daily-use reliability | Bubble placement, settings/status, coexistence with Wispr, battery/restart behavior, signed personal installation. | Real-app acceptance matrix, release APK/Git secret scan, independent Astra review, Andrew's daily-use test. |
 
 Coding subagents: `gpt-6-sol` at `xhigh`. Independent checking after each
@@ -111,6 +125,9 @@ same-app conversation switch and switch-back; rotation/lock; editor disappears;
 password/PIN fields; mic in use; both bubbles present; unsupported editors;
 network loss; cancel then start another recording; repeated Stop; out-of-order
 responses; ambiguous commit; service restart/killed or permissions revoked.
+Also: edit transcript with SwiftKey, return to original destination, switch
+conversation during review, cancel review, repeated confirmation, and verify
+only the final confirmed English is translated/inserted.
 No test sends a real message automatically.
 
 Translation corpus should include requests, apologies, scheduling, negation,

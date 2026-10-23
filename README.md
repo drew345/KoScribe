@@ -13,13 +13,20 @@ the focused text field, while continuing to use Microsoft SwiftKey.
    - **반말**: casual Korean.
    - **EN**: English dictation without Korean translation.
 3. Speak; the chosen label remains visible. Tap **Stop**.
-4. Insert the result immediately if the original focused field is safe.
+4. Review the captured **English text**. Correct it with **Edit**, then choose
+   **Translate & insert** (Korean modes) or **Insert English** (EN). **Cancel**
+   discards the session. Review appears for every message initially; a skip
+   option can be added later.
+5. Translate the confirmed text and insert the result immediately if the
+   original focused field is safe. EN skips translation.
    If it cannot be verified, preserve the result for explicit copy/retry.
-5. Review/edit in the destination app and press Send yourself.
+6. Review/edit in the destination app and press Send yourself.
 
 Each message requires an explicit mode choice. No hidden gesture determines
-politeness. There is no 습니다 output mode. Cancel, error recovery, the bubble
-icon, placement, and the supporting settings screen still need detailed design.
+politeness. There is no 습니다 output mode. The English review is editable text,
+not an image; there is no required second preview of the Korean result. Cancel,
+error recovery, the bubble icon, placement, and the supporting settings screen
+still need detailed design.
 
 ## Initial device and apps
 

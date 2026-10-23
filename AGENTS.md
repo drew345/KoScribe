@@ -27,9 +27,13 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   the selected keyboard. Do not create a replacement keyboard/IME service.
 - Per message: open bubble, choose `요`, `반말`, or `EN` to begin recording,
   then Stop. Keep the selected output mode visible during recording.
+- Initially show an editable English transcript for every message. Translate
+  only after confirmation; Korean modes use `Translate & insert`, EN uses
+  `Insert English`. Add an option to skip review only in a later phase.
 - Korean modes are conversational 해요체 and casual 반말. Do not add a
   습니다 mode. English output is secondary, but approved in the selector.
-- Insert immediately only when the focused editor is verified safe. Preserve
+- After transcript confirmation/translation, insert immediately only when the
+  intended editor is verified safe. Preserve
   existing text. Refuse uncertain selection, changed target, or ambiguous
   insertion; keep the result available for explicit recovery.
 - Never send messages, activate editor actions, emulate Enter, or tap Send.

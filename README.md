@@ -11,9 +11,18 @@ Eight synthetic cross-app checks pass on the A35, including middle insertion,
 edited review, Korean/emoji preservation, and cancellation/refusal. Real
 messaging-app acceptance and actual SwiftKey typing remain pending.
 
+The installed Oct24 test build has a contextual, draggable bubble with saved
+position. Synthetic A35 checks passed for keyboard visibility, Hide, password
+field exclusion, position after service restart, and recording/Stop/Cancel.
+That candidate still uses readonly sample review; Copy/Insert and completion
+dismissal are not available in it. The ordinary default build remains the older
+prototype until the replacement flow passes its gates.
+
 ## Agreed interaction
 
-1. Tap the floating bubble.
+1. Tap an editable text field to show the keyboard and the floating bubble,
+   then tap the bubble. The idle bubble stays hidden outside editing. Drag it
+   to a preferred position; remember that position across uses.
 2. Tap one of three visible choices to start recording:
    - **요**: polite conversational Korean (해요체).
    - **반말**: casual Korean.
@@ -27,18 +36,29 @@ messaging-app acceptance and actual SwiftKey typing remain pending.
    on the bubble. KoScribe captures and checks that destination afresh before
    insertion. EN skips translation. If the check fails, keep the result for an
    explicit new destination attempt; never silently retarget or retry a commit.
-6. Review/edit in the destination app and press Send yourself.
+6. After successful insertion or explicit Copy, dismiss the bubble for that
+   interaction. Review/edit in the destination app and press Send yourself.
 
 Each message requires an explicit mode choice. No hidden gesture determines
 politeness. There is no 습니다 output mode. The English review is editable text,
 not an image; there is no required second preview of the Korean result. Cancel,
-error recovery, the bubble icon, placement, and the supporting settings screen
-still need detailed design.
+error recovery, the final bubble icon, and the supporting settings screen still
+need detailed design. Contextual visibility, dragging, and remembered position
+are the current priority before further capabilities.
 
 The separate destination-selection step was chosen after the A35 startup
 diagnostics on 2026-10-23. Recording/review will no longer depend on an earlier
 editor binding. This revised workflow is being implemented; real-app tests
 remain non-inserting until their separate scope is agreed.
+
+## Minimum useful fallback
+
+Andrew specified this on 2026-10-24: open KoScribe from the home-screen icon,
+tap its microphone, dictate English, review and edit the English with SwiftKey,
+choose 요 or 반말 to translate, then tap Copy & close. He manually long-presses
+the intended message field and pastes. A separate Close control is also useful.
+The bubble/direct-insertion design must demonstrate a benefit over that simpler
+workflow; the fallback is an accepted product direction, not yet implemented.
 
 ## Initial device and apps
 

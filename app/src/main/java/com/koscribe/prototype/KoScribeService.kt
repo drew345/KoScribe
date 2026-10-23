@@ -11,15 +11,23 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
+import android.graphics.Insets
 import android.graphics.PixelFormat
+import android.graphics.Rect
 import android.graphics.drawable.GradientDrawable
 import android.os.Handler
 import android.os.Looper
 import android.os.PersistableBundle
+import android.os.PowerManager
 import android.os.SystemClock
 import android.text.InputType
 import android.text.Spanned
 import android.view.Gravity
+import android.view.Display
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewConfiguration
+import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
@@ -43,7 +51,15 @@ class KoScribeService : AccessibilityService() {
     private val main = Handler(Looper.getMainLooper())
     private lateinit var windowManager: WindowManager
     private var bubble: LinearLayout? = null
+    private var bubbleParams: WindowManager.LayoutParams? = null
     private var expanded = false
+    private val idleBubblePolicy = IdleBubblePolicy()
+    private var idleBubbleVisible = false
+    private var idleRefreshQueued = false
+    private var idleDragging = false
+    private var idleBubbleGeometry: IdleBubbleGeometry? = null
+    private var serviceConnected = false
+    private val bubblePrefs by lazy { getSharedPreferences("bubble_position", Context.MODE_PRIVATE) }
     private var status = "Focus a text field, then choose a mode."
     private var recoveryText: String? = null
     private var pendingId: String? = null
@@ -250,14 +266,27 @@ class KoScribeService : AccessibilityService() {
         private val composition = CompositionEvidence()
 
         override fun onStartInput(attribute: EditorInfo, restarting: Boolean) {
-            if (startupExperiment == StartupExperiment.RESELECT) return
+            if (startupExperiment == StartupExperiment.RESELECT) {
+                scheduleIdleBubbleRefresh()
+                return
+            }
             generation++
             composition.reset()
             inputStarted(attribute)
         }
 
         override fun onFinishInput() {
-            if (startupExperiment == StartupExperiment.RESELECT) return
+            if (startupExperiment == StartupExperiment.RESELECT) {
+                // Android clears currentInputStarted after this callback returns.
+                // Hide immediately, then inspect the settled state on the main loop.
+                if (unboundRecording.current() == null) {
+                    idleBubbleVisible = false
+                    expanded = false
+                    renderBubble()
+                }
+                scheduleIdleBubbleRefresh()
+                return
+            }
             composition.reset()
             inputFinished()
             // Do not call the default implementation: it can clear composition
@@ -312,17 +341,111 @@ class KoScribeService : AccessibilityService() {
         if (returningToEditor && !returnContinuity.finishedInput()) invalidate(id, "INPUT_FINISH_SEQUENCE")
     }
 
+    private data class IdleWindowCheck(val ime: IdleBubblePolicy.Ime, val ordinaryInputReady: Boolean)
+
+    private fun scheduleIdleBubbleRefresh() {
+        if (startupExperiment != StartupExperiment.RESELECT || !serviceConnected ||
+            idleRefreshQueued) return
+        idleRefreshQueued = true
+        main.post {
+            idleRefreshQueued = false
+            refreshIdleBubble()
+        }
+    }
+
+    private fun refreshIdleBubble(forceRender: Boolean = false) {
+        if (startupExperiment != StartupExperiment.RESELECT || !serviceConnected ||
+            !::windowManager.isInitialized ||
+            unboundRecording.current() != null) return
+        val unlocked = runCatching {
+            (getSystemService(POWER_SERVICE) as PowerManager).isInteractive &&
+                !(getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked
+        }.getOrDefault(false)
+        // Only window type, display, focus, bounds, and the focused root package
+        // are read. This is a visibility heuristic, never insertion eligibility.
+        val check = if (!unlocked) IdleWindowCheck(IdleBubblePolicy.Ime.UNKNOWN, false)
+            else runCatching { inspectIdleWindows() }
+            .getOrDefault(IdleWindowCheck(IdleBubblePolicy.Ime.UNKNOWN, false))
+        val wanted = idleBubblePolicy.shouldShow(check.ime, check.ordinaryInputReady,
+            unlocked, activeOwner = false)
+        if (wanted != idleBubbleVisible || forceRender) {
+            idleBubbleVisible = wanted
+            if (!wanted) expanded = false
+            renderBubble()
+        } else if (wanted) {
+            val holder = bubble
+            if (holder == null) {
+                renderBubble()
+                return
+            }
+            val params = bubbleParams
+            val geometry = idleBubbleGeometry
+            if (holder.isEnabled && params != null && geometry != null &&
+                holder.width > 0 && holder.height > 0) {
+                if (geometry.frame != bubbleFrame()) {
+                    renderBubble()
+                    return
+                }
+                if (idleDragging) return
+                val desired = BubblePlacement.resolve(savedBubbleAnchor(), holder.width,
+                    holder.height, geometry.frame.area)
+                moveBubbleToScreenPoint(holder, params, desired)
+            }
+        }
+    }
+
+    private fun inspectIdleWindows(): IdleWindowCheck {
+        val snapshot = windows ?: return IdleWindowCheck(IdleBubblePolicy.Ime.UNKNOWN, false)
+        val focused = snapshot.filter {
+            it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.isFocused
+        }
+        if (focused.size != 1 || focused.single().displayId != Display.DEFAULT_DISPLAY)
+            return IdleWindowCheck(IdleBubblePolicy.Ime.UNKNOWN, false)
+        val imes = snapshot.filter {
+            it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD &&
+                it.displayId == Display.DEFAULT_DISPLAY
+        }
+        if (imes.size > 1 || snapshot.any {
+                it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD &&
+                    it.displayId != Display.DEFAULT_DISPLAY
+            }) return IdleWindowCheck(IdleBubblePolicy.Ime.UNKNOWN, false)
+        if (imes.isEmpty()) return IdleWindowCheck(IdleBubblePolicy.Ime.ABSENT, false)
+        val imeBounds = Rect()
+        imes.single().getBoundsInScreen(imeBounds)
+        if (imeBounds.isEmpty) return IdleWindowCheck(IdleBubblePolicy.Ime.UNKNOWN, false)
+        val method = inputMethod as? TrackingInputMethod
+            ?: return IdleWindowCheck(IdleBubblePolicy.Ime.VISIBLE, false)
+        if (!method.currentInputStarted) return IdleWindowCheck(IdleBubblePolicy.Ime.VISIBLE, false)
+        val info = method.currentInputEditorInfo
+            ?: return IdleWindowCheck(IdleBubblePolicy.Ime.VISIBLE, false)
+        if (!safeInputType(info.inputType)) return IdleWindowCheck(IdleBubblePolicy.Ime.VISIBLE, false)
+        // getRoot(0) avoids the framework's default descendant prefetch.
+        val focusedPackage = focused.single().getRoot(0)?.packageName?.toString()
+        return IdleWindowCheck(IdleBubblePolicy.Ime.VISIBLE,
+            focusedPackage != null && focusedPackage == info.packageName)
+    }
+
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = WeakReference(this)
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        renderBubble()
+        serviceConnected = true
+        if (startupExperiment == StartupExperiment.RESELECT) scheduleIdleBubbleRefresh()
+        else renderBubble()
     }
 
     override fun onCreateInputMethod(): InputMethod = TrackingInputMethod(this)
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-        if (startupExperiment == StartupExperiment.RESELECT) return // No destination exists during recording.
+        if (startupExperiment == StartupExperiment.RESELECT) {
+            // Idle UI visibility is metadata only. No destination or editor is captured.
+            if (unboundRecording.current() == null &&
+                (event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
+                    event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
+                    event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED))
+                scheduleIdleBubbleRefresh()
+            return
+        }
         val deliveredUptimeMs = SystemClock.uptimeMillis()
         val id = pendingId ?: return
         val session = guard.session(id) ?: return
@@ -666,6 +789,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        serviceConnected = false
         unboundRecording.endActive()
         stopOverlayOwnership()
         overlayCleanupPending?.close()
@@ -908,7 +1032,10 @@ class KoScribeService : AccessibilityService() {
             renderBubble()
             return
         }
-        val host = bubble?.takeIf { expanded && it.isAttachedToWindow && it.width > 0 && it.height > 0 }
+        val host = bubble?.takeIf {
+            expanded && it.isAttachedToWindow && it.isShown && it.isEnabled &&
+                it.width > 0 && it.height > 0
+        }
         if (host == null) {
             status = "Recording bubble is unavailable."
             renderBubble()
@@ -981,7 +1108,7 @@ class KoScribeService : AccessibilityService() {
         note("RESELECT_ENDED_${reason}")
         status = if (overlayCleanupPending != null) "Microphone cleanup uncertain. Restart the service."
             else "Recording cancelled."
-        renderBubble()
+        refreshIdleBubble(forceRender = true)
     }
 
     private fun startOverlaySession(id: String, mode: OutputMode) {
@@ -1308,13 +1435,206 @@ class KoScribeService : AccessibilityService() {
         renderBubble()
     }
 
+    private data class IdleBubbleFrame(
+        val bounds: Rect, val bars: Insets, val area: BubblePlacement.Area
+    )
+
+    private data class IdleBubbleGeometry(
+        val frame: IdleBubbleFrame, val screenOffset: BubblePlacement.Point
+    )
+
+    private fun bubbleFrame(): IdleBubbleFrame {
+        val metrics = windowManager.currentWindowMetrics
+        val bounds = metrics.bounds
+        val bars = metrics.windowInsets.getInsetsIgnoringVisibility(
+            WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
+        val margin = dp(8)
+        val left = bounds.left + bars.left + margin
+        val top = bounds.top + bars.top + margin
+        val right = bounds.right - bars.right - margin
+        var bottom = bounds.bottom - bars.bottom - margin
+        // Window bounds are metadata only. Never traverse the keyboard tree.
+        val ime = windows?.filter {
+            it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD &&
+                it.displayId == Display.DEFAULT_DISPLAY
+        }?.singleOrNull()
+        if (ime != null) {
+            val imeRect = Rect()
+            ime.getBoundsInScreen(imeRect)
+            if (!imeRect.isEmpty && imeRect.left < right && imeRect.right > left)
+                bottom = minOf(bottom, imeRect.top - margin)
+        }
+        return IdleBubbleFrame(Rect(bounds), bars,
+            BubblePlacement.Area(left, top, right.coerceAtLeast(left), bottom.coerceAtLeast(top)))
+    }
+
+    private fun savedBubbleAnchor(): BubblePlacement.Anchor {
+        val x = bubblePrefs.getFloat("anchor_x", 1f)
+        val y = bubblePrefs.getFloat("anchor_y", 0.18f)
+        return BubblePlacement.Anchor(x.coerceIn(0f, 1f), y.coerceIn(0f, 1f))
+    }
+
+    private fun bubbleScreenPoint(holder: View): BubblePlacement.Point {
+        val location = IntArray(2)
+        holder.getLocationOnScreen(location)
+        return BubblePlacement.Point(location[0], location[1])
+    }
+
+    private fun moveBubbleToScreenPoint(
+        holder: LinearLayout, params: WindowManager.LayoutParams,
+        requested: BubblePlacement.Point
+    ): BubblePlacement.Point? {
+        if (startupExperiment != StartupExperiment.RESELECT || !serviceConnected ||
+            unboundRecording.current() != null || bubble !== holder || !holder.isAttachedToWindow)
+            return null
+        val geometry = idleBubbleGeometry ?: return null
+        if (geometry.frame != bubbleFrame()) {
+            renderBubble()
+            return null
+        }
+        val chosen = BubblePlacement.clamp(requested, holder.width, holder.height, geometry.frame.area)
+        // This offset was measured before the host's first position update.
+        // Mutable params may already describe an in-flight relayout, so never
+        // derive another offset from the current view location and those params.
+        val desiredX = chosen.x - geometry.screenOffset.x
+        val desiredY = chosen.y - geometry.screenOffset.y
+        if (params.x == desiredX && params.y == desiredY) return chosen
+        val previousX = params.x
+        val previousY = params.y
+        params.x = desiredX
+        params.y = desiredY
+        return try {
+            windowManager.updateViewLayout(holder, params)
+            chosen
+        } catch (_: Exception) {
+            params.x = previousX
+            params.y = previousY
+            null
+        }
+    }
+
+    private fun positionNewBubble(holder: LinearLayout, params: WindowManager.LayoutParams,
+        frame: IdleBubbleFrame) {
+        if (!serviceConnected) return
+        holder.addOnLayoutChangeListener(object : View.OnLayoutChangeListener {
+            override fun onLayoutChange(
+                view: View, left: Int, top: Int, right: Int, bottom: Int,
+                oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int
+            ) {
+                if (holder.width <= 0 || holder.height <= 0) return
+                holder.removeOnLayoutChangeListener(this)
+                if (!serviceConnected || bubble !== holder || unboundRecording.current() != null) return
+                if (frame != bubbleFrame()) {
+                    holder.post {
+                        if (serviceConnected && bubble === holder && unboundRecording.current() == null)
+                            renderBubble()
+                    }
+                    return
+                }
+                val actual = bubbleScreenPoint(holder)
+                idleBubbleGeometry = IdleBubbleGeometry(frame,
+                    BubblePlacement.Point(actual.x - params.x, actual.y - params.y))
+                val desired = BubblePlacement.resolve(savedBubbleAnchor(), holder.width,
+                    holder.height, frame.area)
+                if (moveBubbleToScreenPoint(holder, params, desired) != null)
+                    holder.visibility = View.VISIBLE
+            }
+        })
+    }
+
+    private fun enableCollapsedDrag(pill: Button, holder: LinearLayout,
+        params: WindowManager.LayoutParams) {
+        val slop = ViewConfiguration.get(this).scaledTouchSlop
+        var downX = 0f
+        var downY = 0f
+        var start: BubblePlacement.Point? = null
+        var dragging = false
+        pill.setOnTouchListener { view, event ->
+            if (!serviceConnected || unboundRecording.current() != null ||
+                bubble !== holder || expanded || !holder.isShown || !holder.isEnabled ||
+                idleBubbleGeometry == null)
+                return@setOnTouchListener false
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    downX = event.rawX
+                    downY = event.rawY
+                    start = bubbleScreenPoint(holder)
+                    dragging = false
+                    idleDragging = true
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val origin = start ?: return@setOnTouchListener false
+                    if (!dragging &&
+                        (kotlin.math.abs(event.rawX - downX) > slop ||
+                            kotlin.math.abs(event.rawY - downY) > slop)) dragging = true
+                    if (dragging) moveBubbleToScreenPoint(holder, params,
+                        BubblePlacement.Point(origin.x + (event.rawX - downX).toInt(),
+                            origin.y + (event.rawY - downY).toInt()))
+                    true
+                }
+                MotionEvent.ACTION_UP -> {
+                    if (dragging) {
+                        val origin = start
+                        val final = if (origin == null) null else moveBubbleToScreenPoint(holder, params,
+                            BubblePlacement.Point(origin.x + (event.rawX - downX).toInt(),
+                                origin.y + (event.rawY - downY).toInt()))
+                        val geometry = idleBubbleGeometry
+                        if (final != null && geometry != null) {
+                            // Remember the accepted user request immediately. A later
+                            // hide/expand must not cancel persistence of this completed drag.
+                            val anchor = BubblePlacement.anchor(final, holder.width, holder.height,
+                                geometry.frame.area)
+                            bubblePrefs.edit().putFloat("anchor_x", anchor.x)
+                                .putFloat("anchor_y", anchor.y).apply()
+                        }
+                        idleDragging = false
+                        scheduleIdleBubbleRefresh()
+                    } else {
+                        idleDragging = false
+                        view.performClick()
+                    }
+                    start = null
+                    dragging = false
+                    true
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    start?.let { moveBubbleToScreenPoint(holder, params, it) }
+                    start = null
+                    dragging = false
+                    idleDragging = false
+                    scheduleIdleBubbleRefresh()
+                    true
+                }
+                else -> true
+            }
+        }
+    }
+
     private fun renderBubble() {
-        if (!::windowManager.isInitialized) return
+        if (!serviceConnected || !::windowManager.isInitialized) return
         if (startupExperiment == StartupExperiment.RESELECT && unboundRecording.current() != null)
             return // Keep the existing window unchanged until this recording ends.
         if (startupExperiment == StartupExperiment.OVERLAY && pendingId != null &&
             overlayPanel != null) return // Keep the captured host window unchanged until terminal cleanup.
-        bubble?.let { try { windowManager.removeView(it) } catch (_: Exception) { } }
+        bubble?.let {
+            try { windowManager.removeView(it) }
+            catch (_: Exception) {
+                // Do not add a second window while the old one may still exist.
+                it.visibility = View.GONE
+                it.isEnabled = false
+                return
+            }
+        }
+        idleDragging = false
+        idleBubbleGeometry = null
+        bubble = null
+        bubbleParams = null
+        if (startupExperiment == StartupExperiment.RESELECT && !idleBubbleVisible) return
+        val frame = if (startupExperiment == StartupExperiment.RESELECT) bubbleFrame() else null
+        val available = frame?.area
+        if (available != null && (available.right - available.left < dp(56) ||
+                available.bottom - available.top < dp(48))) return
         val holder = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             if (expanded) {
@@ -1323,13 +1643,43 @@ class KoScribeService : AccessibilityService() {
                 elevation = dp(4).toFloat()
             }
         }
+        val controls = if (startupExperiment == StartupExperiment.RESELECT && expanded)
+            LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        else holder
         if (expanded) {
-            holder.addView(caption("KoScribe · sample only", true))
-            holder.addView(caption(status))
-            for (mode in OutputMode.entries) holder.addView(action(mode.label) { startMode(mode) })
+            controls.addView(caption("KoScribe · sample only", true))
+            controls.addView(caption(status))
+            val modeRow = if (startupExperiment == StartupExperiment.RESELECT)
+                LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            else null
+            for (mode in OutputMode.entries) {
+                val button = action(mode.label) { startMode(mode) }
+                if (modeRow != null)
+                    modeRow.addView(button, LinearLayout.LayoutParams(0, -2, 1f))
+                else controls.addView(button)
+            }
+            if (modeRow != null) controls.addView(modeRow, LinearLayout.LayoutParams(-1, -2))
             if (startupExperiment == StartupExperiment.OFF && recoveryText != null)
-                holder.addView(action("Copy result manually") { copyRecovery() })
-            holder.addView(action("Close") { expanded = false; renderBubble() })
+                controls.addView(action("Copy result manually") { copyRecovery() })
+            val footerRow = if (startupExperiment == StartupExperiment.RESELECT)
+                LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            else null
+            if (footerRow != null)
+                footerRow.addView(action("Hide") {
+                    idleBubblePolicy.hideUntilNextImeCycle()
+                    idleBubbleVisible = false
+                    expanded = false
+                    renderBubble()
+                }, LinearLayout.LayoutParams(0, -2, 1f))
+            val close = action("Close") { expanded = false; renderBubble() }
+            if (footerRow != null) {
+                footerRow.addView(close, LinearLayout.LayoutParams(0, -2, 1f))
+                controls.addView(footerRow, LinearLayout.LayoutParams(-1, -2))
+            } else controls.addView(close)
+            if (controls !== holder) {
+                val viewport = android.widget.ScrollView(this).apply { addView(controls) }
+                holder.addView(viewport, LinearLayout.LayoutParams(-1, -1))
+            }
         } else {
             val pill = Button(this).apply {
                 text = "Ko"
@@ -1349,15 +1699,30 @@ class KoScribeService : AccessibilityService() {
             holder.addView(pill, LinearLayout.LayoutParams(dp(56), dp(48)))
         }
         val params = WindowManager.LayoutParams(
-            if (expanded) dp(260) else WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
+            if (startupExperiment == StartupExperiment.RESELECT && expanded)
+                minOf(dp(260), available!!.right - available.left)
+            else if (expanded) dp(260) else WindowManager.LayoutParams.WRAP_CONTENT,
+            if (startupExperiment == StartupExperiment.RESELECT && expanded)
+                minOf(dp(320), available!!.bottom - available.top)
+            else WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             PixelFormat.TRANSLUCENT
-        ).apply { gravity = Gravity.TOP or Gravity.END; x = dp(8); y = dp(110) }
+        ).apply {
+            gravity = if (startupExperiment == StartupExperiment.RESELECT)
+                Gravity.TOP or Gravity.LEFT else Gravity.TOP or Gravity.END
+            x = if (startupExperiment == StartupExperiment.RESELECT) 0 else dp(8)
+            y = if (startupExperiment == StartupExperiment.RESELECT) 0 else dp(110)
+        }
         try {
+            if (startupExperiment == StartupExperiment.RESELECT) holder.visibility = View.INVISIBLE
             windowManager.addView(holder, params)
             bubble = holder
-        } catch (_: Exception) { bubble = null }
+            if (startupExperiment == StartupExperiment.RESELECT) {
+                bubbleParams = params
+                if (!expanded) enableCollapsedDrag(holder.getChildAt(0) as Button, holder, params)
+                positionNewBubble(holder, params, frame!!)
+            }
+        } catch (_: Exception) { bubble = null; bubbleParams = null }
     }
 }

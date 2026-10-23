@@ -211,6 +211,44 @@ buffers. No new permission is needed for this
 candidate; a future app-owned microphone foreground service would require its
 own [type, permission, notification, and startup assessment](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start).
 
+## Contextual bubble lifecycle (2026-10-24)
+
+Andrew requires an idle bubble only during editing, draggable with a saved
+position, and dismissed after Copy/successful insertion. The current RESELECT
+prototype has neither Copy nor insertion; an explicit Hide control can test
+the dismissal policy without claiming those later actions work.
+
+The visibility heuristic is independent of insertion eligibility. It combines
+live input-started/type/package metadata, a unique focused application window,
+and a nonempty input-method window on the default display. Only the focused
+root's package may be cross-checked; no focused node, text, selection, source,
+tree traversal, or InputConnection is needed. Unknown observations hide idle
+controls but must not count as a confirmed IME hide/show cycle for rearming.
+An active recording/review owner retains its host regardless of IME transitions.
+
+Primary evidence reviewed by Astra Ultra:
+
+- Android 16 [accessibility InputMethod source](https://raw.githubusercontent.com/aosp-mirror/platform_frameworks_base/android16-release/core/java/android/accessibilityservice/InputMethod.java)
+  sets input-started/editor metadata before onStartInput, but calls onFinishInput
+  before clearing it. Clear idle eligibility immediately on finish, then post a
+  refresh. Keep the existing no-super finish rule and no selection processing.
+- [AccessibilityService.getWindows](https://developer.android.com/reference/android/accessibilityservice/AccessibilityService#getWindows())
+  reports interactive default-display windows; an empty result may be unavailable.
+  [Input-method windows](https://developer.android.com/reference/android/view/accessibility/AccessibilityWindowInfo#TYPE_INPUT_METHOD)
+  include keyboard/suggestion UI. Their presence is a visibility heuristic,
+  not proof that a field is a safe insertion destination.
+- [WindowMetrics bounds](https://developer.android.com/reference/android/view/WindowMetrics#getBounds())
+  include system bars, while [overlay fit-insets behavior](https://developer.android.com/reference/android/view/WindowManager.LayoutParams#setFitInsetsTypes(int))
+  affects the layout frame. Do not double-apply insets. Comparing own-view screen
+  position with layout coordinates is a proposed conversion that needs device
+  verification after geometry changes.
+- [Touch slop](https://developer.android.com/reference/android/view/ViewConfiguration#getScaledTouchSlop())
+  separates tap from drag. Persist only a completed user drag; clamping for IME,
+  rotation, or expanded controls must not overwrite the saved anchor.
+- Accessibility [commitText](https://developer.android.com/reference/android/accessibilityservice/InputMethod.AccessibilityInputConnection#commitText(java.lang.CharSequence,%20int,%20android.view.inputmethod.TextAttribute))
+  returns void. The old flow's commit-request return is not insertion success
+  confirmation and must not be relabeled as such for completion dismissal.
+
 ## Models and API separation
 
 The local Codex model catalog and the session's supported-agent metadata list

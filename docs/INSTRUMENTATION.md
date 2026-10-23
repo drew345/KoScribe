@@ -217,6 +217,42 @@ The planned later destination check needs its own fresh transaction and full
 event/input guards; the Stage 1 unconditional RESELECT callback exits must be
 replaced with phase-aware handling before that check can exist.
 
+## Contextual bubble synthetic checks (2026-10-24)
+
+Use a reviewed RESELECT build with `BubbleLifecycleSmokeTest`. These tests launch
+only the synthetic fixture, read/traverse only KoScribe and fixture nodes, and
+use window metadata for IME presence. They do not insert, copy, send, change
+keyboard selection, or open a conversation. The idle test drags only the
+observed Ko control. Its protected field contains no actual credential.
+
+Run one exact method at a time, with its sole flag:
+
+| Method suffix after `com.koscribe.smoke.BubbleLifecycleSmokeTest#` | Sole flag |
+| --- | --- |
+| `idleBubbleTracksImeHideCycleDragAndProtectedField` | `-e bubbleIdleReady true` |
+| `savedPositionRestoresAfterProductServiceRestart` | `-e bubbleRestoreReady true` |
+| `draggedHostStaysPinnedThroughSyntheticStopAndCancel` | `-e bubbleMicReady true` |
+
+Example:
+
+```powershell
+adb -d shell am instrument --user 0 -w -r -e class 'com.koscribe.smoke.BubbleLifecycleSmokeTest#idleBubbleTracksImeHideCycleDragAndProtectedField' -e bubbleIdleReady true com.koscribe.smoke/com.koscribe.smoke.KoScribeTestRunner
+```
+
+The idle gate checks keyboard show/hide, explicit Hide suppression, a confirmed
+IME hide/show rearm, physical drag without accidental expansion, position after
+reopening, and hiding for a password-type fixture. It saves only its observed
+coordinates in the smoke package's private test preferences. After that pass,
+root may reinstall the exact same product APK without clearing app data to
+restart the service, verify reconnect, then run the restore-only method. Do not
+reinstall or clear the smoke package's data between those two gates.
+
+The mic regression drags/opens the host, records, toggles the fixture IME while
+recording to check host continuity, then Stop/review/Cancel. Check exact-app
+RECORD_AUDIO AppOps afterward. Source review and this test do not prove general
+orientation, multi-window, external display, or app compatibility. Hide tests
+the suppression behavior; it does not establish Copy or insertion dismissal.
+
 Run while Andrew is not using the phone; app switches can correctly invalidate a session. Instrumentation completion can remove the fixture and return to a previous real app. Do not take post-test full-screen screenshots on the assumption that the synthetic editor is still visible. Prefer exact fixture assertions and code-only traces; capture pixels only after independently verifying the current foreground is an owned synthetic screen.
 
 References: [AOSP instrumentation target restart](https://source.android.com/docs/core/tests/development/instrumentation), [UiAutomation flag](https://developer.android.com/reference/android/app/UiAutomation#FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES), [flagged acquisition](https://developer.android.com/reference/android/app/Instrumentation#getUiAutomation(int)).

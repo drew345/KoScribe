@@ -47,7 +47,8 @@ class KakaoOverlayRecordingSmokeTest {
         instrumentation = InstrumentationRegistry.getInstrumentation()
         val args = InstrumentationRegistry.getArguments()
         val older = listOf("externalDraftReady", "externalRecordCancelReady",
-            "startupHoldReady", "startupCollapseReady", "startupPanelReady", "reselectReady")
+            "startupHoldReady", "startupCollapseReady", "startupPanelReady", "reselectReady",
+            "bubbleIdleReady", "bubbleMicReady", "bubbleRestoreReady")
             .any { args.getString(it) == "true" }
         assumeTrue("OVERLAY_TEST_REQUIRES_SOLE_OPT_IN", args.getString("overlayReady") == "true" && !older)
         assertTrue("WRONG_INSTRUMENTATION_PACKAGE",

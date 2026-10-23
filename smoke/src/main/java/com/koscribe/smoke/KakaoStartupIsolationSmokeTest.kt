@@ -53,7 +53,10 @@ class KakaoStartupIsolationSmokeTest {
         val olderExternalFlag = arguments.getString("externalDraftReady") == "true" ||
             arguments.getString("externalRecordCancelReady") == "true" ||
             arguments.getString("overlayReady") == "true" ||
-            arguments.getString("reselectReady") == "true"
+            arguments.getString("reselectReady") == "true" ||
+            arguments.getString("bubbleIdleReady") == "true" ||
+            arguments.getString("bubbleMicReady") == "true" ||
+            arguments.getString("bubbleRestoreReady") == "true"
         assumeTrue("STARTUP_PROBE_REQUIRES_ONE_EXPLICIT_FLAG",
             selected == 1 && !olderExternalFlag)
         assertTrue("WRONG_INSTRUMENTATION_PACKAGE",

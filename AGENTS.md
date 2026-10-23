@@ -40,11 +40,22 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   merely because it is requested. Do not silently substitute GPT-6.1 Sol.
 - Implement and test in phases. Record review and device-test results before
   advancing; never describe an untested phone behavior as working.
+- On 2026-10-24 Andrew prioritized bubble lifecycle before further capabilities:
+  appear while editing/keyboard visible, allow dragging with saved position,
+  and disappear after Copy or successful insertion. Active recording/review
+  still needs explicit controls and reliable microphone cleanup. Visibility
+  observation is separate from destination capture or insertion eligibility.
+  Use Astra Ultra subagents when a problem is very difficult.
 
 ## Nonnegotiable product constraints
 
 - Android floating bubble is the main interface. Keep Microsoft SwiftKey as
   the selected keyboard. Do not create a replacement keyboard/IME service.
+- The bubble must offer a better experience than the accepted fallback:
+  launcher app -> microphone -> editable English -> choose 요 or 반말 ->
+  translate -> Copy & close -> user long-presses the intended field and pastes.
+  Keep this fallback available as an architectural direction; do not spend
+  indefinitely on direct insertion without demonstrated user benefit.
 - Per message: open bubble, choose `요`, `반말`, or `EN` to begin recording,
   then Stop. Keep the selected output mode visible during recording.
 - Initially show an editable English transcript for every message. Translate

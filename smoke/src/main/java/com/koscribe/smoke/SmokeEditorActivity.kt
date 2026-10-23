@@ -8,11 +8,18 @@ import android.view.WindowManager
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
+import java.lang.ref.WeakReference
 
 /** One standard editor containing only synthetic fixture text; no send action. */
 class SmokeEditorActivity : Activity() {
+    companion object {
+        var current = WeakReference<SmokeEditorActivity>(null)
+            private set
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        current = WeakReference(this)
         // This window keeps the device awake only while the synthetic fixture is visible.
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val density = resources.displayMetrics.density
@@ -31,6 +38,11 @@ class SmokeEditorActivity : Activity() {
             minLines = 4
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
         }, LinearLayout.LayoutParams(-1, (160 * density + 0.5f).toInt()))
+        root.addView(EditText(this).apply {
+            id = R.id.local_protected_editor
+            hint = "Synthetic protected field"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }, LinearLayout.LayoutParams(-1, -2))
         root.setOnApplyWindowInsetsListener { view, insets ->
             val bars = insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
             val left = margin + bars.left
@@ -43,5 +55,10 @@ class SmokeEditorActivity : Activity() {
             insets
         }
         setContentView(root)
+    }
+
+    override fun onDestroy() {
+        if (current.get() === this) current = WeakReference(null)
+        super.onDestroy()
     }
 }

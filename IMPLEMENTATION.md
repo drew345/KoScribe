@@ -16,6 +16,20 @@ Wispr Flow still installed.
 
 ## Proposed architecture
 
+2026-10-24 priority: first fix idle bubble visibility, dragging/persistence, and
+completion dismissal before adding editable review or more insertion features.
+An idle visibility observer may use minimal keyboard/window/editor metadata;
+it must not read field text, create a destination snapshot, or confer insertion
+eligibility. Active recording/review owns its controls until terminal cleanup.
+Position changes must not violate that ownership or move a captured host.
+Test this on synthetic screens before real-app confirmation.
+
+The accepted fallback is a launcher Activity with mic -> editable English ->
+요/반말 translation -> Copy & close, followed by manual paste. Design content
+review/translation independently of destination integration so this remains a
+practical route. Direct insertion still needs measured advantage and reliability;
+do not extend failed integration diagnostics indefinitely.
+
 Native Kotlin Android app with a small control/settings Activity, an
 AccessibilityService for a bubble and tightly scoped editor access, and
 explicit recording sessions. Phase 1 uses Android Views for the prototype

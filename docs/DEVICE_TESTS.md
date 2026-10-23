@@ -4,6 +4,9 @@ Status: eight normal synthetic cross-app checks passed on the final modal guard
 on 2026-10-23, including edited English review return and Korean/emoji insertion.
 First Kakao flow safely refused insertion; other external-app checks and actual
 SwiftKey keystroke editing remain pending.
+On 2026-10-24 the RESELECT candidate also passed three exact synthetic bubble
+gates: visibility/drag/Hide, service-restart position restoration, and recording
+through keyboard transitions. See the final section for scope and limits.
 
 ## Environment to verify
 
@@ -575,3 +578,73 @@ retention, API call, or permission change occurred. Stage 2 was not started.
 The tested APKs remain installed and saved under ignored
 `app/build/reselect-stage1`; ordinary app-debug.apk output is OFF. Work stopped
 at this checkpoint with tomorrow's next steps in PROGRESS and IMPLEMENTATION.
+
+## Contextual bubble — 2026-10-24
+
+Andrew prioritized idle visibility, dragging/persistence, and dismissal after
+Copy or insertion before further capabilities. He also specified the launcher
+app -> English review -> 요/반말 -> Copy & close fallback. This change covers
+the contextual bubble in RESELECT; Copy/Insert remain blocked in that arm.
+Explicit Hide exercises suppression but cannot establish completion dismissal.
+
+Sol 6 Extra High implemented the initial policy and synthetic tests. Astra Ultra
+handled the difficult coordinate/layout changes, and a separate Astra Ultra
+reviewer checked ownership, geometry, metadata-only visibility, and final tests.
+The idle observer never creates a destination or reads field text/selection.
+Unknown observations hide idle UI without clearing Hide suppression. Active
+recording/review retains its host independently of idle visibility and dragging.
+Position is saved on completed drag; temporary bounds clamping does not rewrite
+the preferred anchor. The expanded menu uses compact mode and footer rows.
+
+Final reviewed source SHA-256:
+
+- Service: `C93EB2441DB6CC5E094F1FFD915697FD3233C2307F42C6964FF4582933CBC982`.
+- Policy/placement: `F0158C4AE085F0BE2B67CB5910C63FA7620582145F4648DE2E2EF726F7052399`.
+- Final smoke: `6FDDACB214D35EE0B623E170ACB4F5BA9CB894D54ABC65BBA2F661A903C98820`.
+
+Tested product SHA-256:
+`7568BD4C21D0B7E66A232BCED5F6E4C48FD588195A576AA43F701713CB4E283B`.
+Idle/restore smoke SHA-256:
+`735770EB2312C235DA32F7475117A4B03369FF6BDF6E5A5363CEC921F1AB8F20`.
+Final mic smoke SHA-256:
+`598F1278742DCE9BA4EA5E2311A85D3C35EB85EAA65F51EADF9D8FE175DC0828`.
+The final pair remains installed and saved under ignored
+`app/build/bubble-lifecycle/RESELECT.apk` and `smoke.apk`.
+
+Candidate/default OFF builds, 32 JVM tests (zero failures/errors/skips), both
+lints (zero errors; app 20/smoke 3 warnings), and candidate signatures passed.
+The three new unit tests cover Hide/unknown/IME policy and placement clamping.
+Ordinary app-debug.apk output was reset to OFF without installing it over the
+tested candidate. Prior APK checkpoints remain saved.
+
+All phone methods below are exact opt-in methods in `BubbleLifecycleSmokeTest`.
+They inspect own fixture/product nodes and IME window metadata, never chats.
+
+| Gate | Measured result |
+| --- | --- |
+| `idleBubbleTracksImeHideCycleDragAndProtectedField` | Passed in 4.889s: bubble follows keyboard show/hide, Hide persists in the same IME session, verified hide/show rearms it, physical drag moves it without opening the menu, reopening restores it within 24px, empty password-type fixture hides it. |
+| `savedPositionRestoresAfterProductServiceRestart` | Passed in 1.883s after reinstalling the exact same product without clearing data. Service PID changed 9275 -> 10466. Position restored within 24px of the saved test coordinates. |
+| `draggedHostStaysPinnedThroughSyntheticStopAndCancel` | Passed in 4.105s: positive unsilenced microphone proof, same expanded host across fixture keyboard hide/show, Stop -> readonly sample -> Cancel, zero destination captures and no cleanup pending. |
+
+Earlier idle runs failed because the test matched title-case Hide against an
+Android uppercase button label. Fixed own-control diagnostics established that
+Hide was present, and also showed a clipped Close footer; the selector was
+corrected and the menu compacted before the successful gates. The first mic run
+then stopped before recording on `EXPANDED_HOST_NOT_FOUND` (2.359s): it queried
+Close immediately after clicking Ko. A reviewed test-only bounded wait fixed
+that race; only the mic method was rerun, on the unchanged product.
+
+Final independent AppOps read confirmed ended microphone use of 984ms. Own
+service state was RESELECT_CANCELLED, proof count 1, destination count 0, cleanup
+pending false, with ordered positive-unsilenced proof -> Stop -> proved stopped
+-> Cancel. One service dump timed out; one bounded retry returned this state.
+SwiftKey remained selected; the keyboard was hidden after fixture cleanup.
+No insertion, Copy, Send/Enter, API call, retained audio, screenshot, permission
+change, or conversation traversal occurred. Wispr was left enabled.
+
+These are bounded portrait synthetic checks, not current-build real-app
+acceptance or daily-use reliability. The mic run is short; the prior >3-second
+Kakao result applies to its earlier Stage1 APK. Editable English review,
+Copy/insertion dismissal, actual destination insertion, rotation, split-screen,
+external-display/reboot behavior, and the fallback implementation remain open.
+Phase 1 acceptance and the speech/API phase have not been reached.

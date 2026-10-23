@@ -265,3 +265,29 @@
 - Tomorrow: independently owned editable English review after microphone Stop,
   then ready controls. Later explicit destination check must restore full
   phase-aware guards. Actual external insertion remains outside current scope.
+
+## 2026-10-24 — Contextual draggable bubble
+
+- Andrew prioritized a keyboard-triggered, draggable bubble with saved position
+  and dismissal after Copy/insertion. He specified a launcher app with English
+  review, 요/반말 translation, and Copy & close as the minimum useful fallback.
+- Sol 6 Extra High implemented the idle policy and tests; Astra Ultra handled
+  difficult geometry, with independent Astra Ultra review. RESELECT idle
+  visibility uses metadata only, never destination capture. Active recording
+  retains its host; drag saves a normalized anchor. Menu rows are now compact.
+- Three exact synthetic A35 gates passed: visibility/Hide/drag/password exclusion
+  (4.889s), position after confirmed service restart (1.883s), and same recording
+  host through keyboard hide/show -> Stop -> readonly sample -> Cancel (4.105s).
+  Test capitalization and asynchronous expansion errors were corrected and
+  reviewed; the final correction changed only the smoke test.
+- Final state: one positive unsilenced recording proof, zero destination captures,
+  no cleanup pending. AppOps confirmed mic ended after 984ms. SwiftKey remains
+  selected, Wispr remains enabled. No insertion, Copy, sending, real-chat reads,
+  API calls, audio retention, screenshots, or permission changes occurred.
+- Candidate/default builds, 32 JVM tests, lints (zero errors; app 20/smoke 3
+  warnings), and signatures passed. Installed product 7568BD4... and smoke 598F127...
+  are saved under ignored app/build/bubble-lifecycle. Ordinary output is OFF.
+- Copy/Insert dismissal, editable review, current-build real-app acceptance,
+  broader geometry/reliability, and the fallback remain unimplemented or untested.
+  Next is independently owned editable review/result handling with completion
+  dismissal, keeping the fallback practical. Phase 1 acceptance remains open.

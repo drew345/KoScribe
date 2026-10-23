@@ -340,3 +340,60 @@ Combined corrected-test total: three complete recording/Stop/Cancel passes,
 two refusals before a fresh recording control, plus the earlier uncorrected
 keyboard-return assertion failure. These remain cancellation diagnostics;
 successful real-app insertion is still unverified.
+
+## Bubble / recording-panel startup isolation
+
+Andrew explicitly authorized this controlled experiment. Sol implemented the
+debug-only compile-time arms described in `INSTRUMENTATION.md`; Astra reviewed
+the final source and interpretation. Normal OFF behavior and all existing
+guards remain. All experimental builds refuse insertion and Copy in the service,
+omit confirmation/edit/Copy review controls, and end their original session on
+bounded deadlines. No session is recaptured or rearmed after invalidation.
+
+The normal build, 27 JVM tests (zero failures/errors), and lint (zero errors;
+app 15/smoke 3 warnings) passed. All three arm APKs built and passed signature
+verification. Each used the same root/focused-input privacy boundary and exact
+preflight checks. Each test verified its installed arm and a fresh capture count.
+
+| Arm | APK SHA-256 |
+| --- | --- |
+| HOLD | `2FE738BE19951CC8D051785A86E825CA82B6CB879775381F29339A2DC4B64959` |
+| COLLAPSE | `1046883B4B43400B2F5717EA14A789D52772DBB244420236A5ABC871A6BCF94C` |
+| PANEL | `2E36F8AD0F91209751F015928F55EF5A13D1A3B1B12E3D4519B86E1ED98F69C6` |
+
+One controlled run per arm produced:
+
+| Arm | Observed sequence and result |
+| --- | --- |
+| HOLD | Passed in 4.039 s. No collapse or panel launch; hold ended 1,505 ms after capture completion. No invalidation or first-content event recorded during the active hold. |
+| COLLAPSE | Passed in 3.911 s. Collapsed bubble add returned at capture +16 ms; hold ended at +1,519 ms. No panel launch, invalidation, or first-content event recorded during the active hold. |
+| PANEL | Preserved the original empty field/SwiftKey, then failed its full-flow assertion with PANEL_STOP_NOT_AVAILABLE (6.002 s). Panel launch was verified without collapse, but the first content event invalidated the session before accepted binding or recording. |
+
+PANEL's capture took 30 ms. The launch request was capture-completion +2 ms;
+the OTHER_NODE flag-4 event occurred at +107 ms (105 ms after launch), then was
+delivered 5 ms later. Cached delivery state was PREPARING/VISIBLE0. No bind,
+resume, or focus milestone was accepted. Later PANEL_OWNER_CHANGED is consistent
+with the invalid gate rejecting bind, not proof of an actual owner change.
+
+All three runs checked the same original empty field immediately and after
+1.2 seconds, with SwiftKey selected and visible. The PANEL verdict is emitted
+after those preservation assertions and fresh-capture/launch-only checks, so it
+is a measured startup refusal with draft preservation, not a recording pass.
+AppOps retained the earlier 2.634-second microphone use throughout: none of
+these three runs started the microphone. No insertion, confirmation, Send/Enter,
+clipboard operation, screenshot, chat-history/keyboard traversal, API call, or
+audio retention occurred. No additional phone action or permission was needed.
+
+These bounded comparisons associate the refusal with panel launch. Bubble
+collapse and microphone use were not necessary to reproduce it in this case.
+They do not establish the exact cause, source role, semantic conversation
+continuity, or harmlessness. A quiet hold does not exclude events after its
+observation interval. Keep all guards unchanged; identical repeats add little.
+
+After measurement, the exact pre-experiment product APK
+`BC46403985B60C26EB04A26A41E6BC55199FDF5F7EB2001FC3A29510C24AD0F9`
+was restored successfully and its service reconnected. SwiftKey remained
+selected/visible and microphone stopped. The new smoke runner remains installed.
+The ordinary local APK output was rebuilt with OFF so the normal install path
+does not point to PANEL. Separate probe APKs and the preserved original are
+ignored build artifacts; they are not committed.

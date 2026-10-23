@@ -20,7 +20,8 @@ https://github.com/drew345/KoScribe . Initial planning commit was pushed to
 `main`; the Phase 1 baseline was later pushed as `cfdd6fb`. Reviewed device-test
 fixes, eight synthetic results, and the permission audit were pushed as
 `76fd0b4`; the first Kakao refusal and prepared timing diagnostics were pushed
-as `188e34a`. Local `main` tracks `origin/main`.
+as `188e34a`; recording/Cancel timing results were pushed as `a15c15c`.
+Local `main` tracks `origin/main`.
 
 ## Confirmed this session
 
@@ -53,25 +54,36 @@ as `188e34a`. Local `main` tracks `origin/main`.
 
 ## Next action
 
-Andrew approved continued scoped non-inserting Kakao self-chat diagnostics,
-using the reviewed recording -> Stop -> Cancel method in
-`docs/INSTRUMENTATION.md`. Three complete runs passed original empty-field
-preservation and SwiftKey return. Two attempts refused before recording started;
-an earlier run checked keyboard return too early. Sol's bounded four-second
-return wait and later own-panel timing update passed Astra review and builds.
-The five corrected-test sessions first invalidated on a content-description
-event from another target node, timestamped 27-46 ms after editor capture.
-The latest pass places the event 26 ms after the panel launch request and 25 ms
-before accepted panel binding; delivery was 105 ms after occurrence. This
-narrows the issue to startup timing, without proving cause or harmlessness.
-Source role remains unknown. Repeating the same measurement is unlikely to
-help further. Next work should evaluate a startup/capture or recovery design
-that preserves explicit target binding and all field/commit checks; do not
-whitelist flag 4 from this timing evidence. No behavior change has been made.
-Current installed product APK SHA-256:
+The authorized startup-isolation experiment is complete. Sol implemented
+debug-only HOLD / COLLAPSE / PANEL arms; Astra reviewed the source and results.
+One controlled run per arm showed no invalidation during capture-only or
+collapse-only 1.5-second holds. PANEL-only reproduced the OTHER_NODE flag-4
+content-description refusal before accepted panel binding, without bubble
+collapse or microphone use. Its event occurred 105 ms after launch request and
+was delivered 5 ms later. All three runs verified the original empty field and
+SwiftKey after cleanup. PANEL was a startup refusal, not a recording pass.
+Detailed hashes and evidence are in `docs/DEVICE_TESTS.md`.
+
+This isolates a launch-associated transition in the observed case; source role,
+exact cause, and harmlessness remain unknown. No more identical runs are needed.
+Next work should evaluate a nonfocusable recording/review design using Android
+documentation, including microphone eligibility and editable-review focus.
+An alternative proposal is explicit destination reselection and a new guarded
+insertion transaction after permanently ending the old session; that adds a
+user step and is not yet agreed. Do not whitelist flag 4, silently rearm, or
+assume unchanged node identity proves the same conversation. Successful Kakao
+insertion remains unverified.
+
+The ordinary pre-experiment APK was restored and the service reconnected.
+All diagnostic arms block insertion/Copy; OFF remains the default and release
+configuration. The ordinary build-output path was rebuilt with OFF after the
+experiment. The exact currently installed product is the earlier verified APK,
+SHA-256:
 `BC46403985B60C26EB04A26A41E6BC55199FDF5F7EB2001FC3A29510C24AD0F9`.
-Verify live field/keyboard preconditions before the exact diagnostic method.
-Do not run the old confirmation method or full suite.
+Verify live field/keyboard preconditions before any later scoped diagnostic.
+Do not run the old confirmation method or full suite. The earlier continued
+recording/Cancel scope produced three complete preservation passes and two
+startup refusals; those are separate from today's isolation-arm measurements.
 Retained first-content fields belong to the latest successful capture; do not
 attribute old diagnostics to a preflight failure.
 
@@ -98,8 +110,9 @@ visible; actual SwiftKey keystroke/composition editing still needs manual
 verification. Same-view semantic conversation reuse while hidden remains
 unobservable. Do not claim real-app compatibility from synthetic passes.
 The compact pill has no white surround; final icon is deferred. The current
-lifecycle-timing product and corrected Cancel test are installed. Microphone is stopped,
-SwiftKey remains selected, and Wispr remains enabled. Follow `docs/PHASE1.md`
+lifecycle-timing product was restored; the new scoped smoke runner remains
+installed. Microphone is stopped, SwiftKey remains selected, and Wispr remains
+enabled. Follow `docs/PHASE1.md`
 and `docs/DEVICE_TESTS.md` for measured results and remaining acceptance checks.
 No API key is needed for Phase 1.
 

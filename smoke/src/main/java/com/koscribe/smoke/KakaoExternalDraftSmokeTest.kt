@@ -49,8 +49,10 @@ class KakaoExternalDraftSmokeTest {
         val draftReady = InstrumentationRegistry.getArguments().getString("externalDraftReady") == "true"
         val recordCancelReady =
             InstrumentationRegistry.getArguments().getString("externalRecordCancelReady") == "true"
+        val startupReady = listOf("startupHoldReady", "startupCollapseReady", "startupPanelReady")
+            .any { InstrumentationRegistry.getArguments().getString(it) == "true" }
         assumeTrue("EXTERNAL_TEST_REQUIRES_ONE_EXPLICIT_OPT_IN",
-            draftReady.xor(recordCancelReady))
+            draftReady.xor(recordCancelReady) && !startupReady)
         assertTrue("WRONG_INSTRUMENTATION_PACKAGE",
             instrumentation.context.packageName == "com.koscribe.smoke")
         assertTrue("MIC_PERMISSION_REQUIRED",

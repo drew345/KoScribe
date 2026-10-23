@@ -65,6 +65,64 @@ verified-window milestone reuses the existing guard observation. Missing
 milestones remain NOT_OBSERVED; invalid/missing event times remain UNKNOWN.
 No cross-app query or insertion policy is added by these diagnostics.
 
+## Startup isolation experiment (authorized 2026-10-23)
+
+Andrew authorized separating the bubble and recording-panel startup steps.
+The controlled design uses compile-time debug opt-in arms and the same existing
+Ko / 요 controls; extra runtime test controls would change the overlay geometry.
+The normal build remains the default. The experiment arms are:
+
+| Arm | After the original field capture | Observation scope |
+| --- | --- | --- |
+| HOLD | Keep the expanded bubble, do not launch a panel | Bounded 1.5-second baseline |
+| COLLAPSE | Collapse the bubble normally, do not launch a panel | Bounded 1.5-second collapse observation |
+| PANEL | Launch the recording panel immediately, keep the expanded bubble | Recording / Stop / Cancel only |
+
+Each experiment must use the original capture and existing invalidation rules;
+it must never recapture or restore an invalidated session. Experimental builds
+block insertion and clipboard recovery in the service and omit confirmation
+controls. A timeout must end the probe and release any microphone use. The
+external test verifies the expected build arm before acting, requires a fresh
+probe start, and checks the same original empty focused field plus SwiftKey
+after cleanup. Existing privacy limits and the closed earlier insertion trial
+still apply. The preserved ordinary APK is restored after measurements.
+
+Only events during each active probe count toward its comparison. In particular,
+the final cleanup rerenders the bubble after the observation ends.
+Absence of a first-content record after an earlier invalidation does not mean
+there were no content events. Build hashes, measured outcomes, and limitations
+belong in `DEVICE_TESTS.md` after execution.
+
+Build with `-PkoscribeStartupArm=HOLD`, `COLLAPSE`, or `PANEL` and keep each
+APK under a distinct ignored build-output filename. Omitting the property uses
+OFF; release builds always use OFF. The test checks the installed arm from
+KoScribe's fixed-code dump and requires its capture count to advance exactly
+once, so a retained earlier result cannot satisfy a new run.
+
+Use only one exact method in
+`com.koscribe.smoke.KakaoStartupIsolationSmokeTest` with its corresponding
+argument; never run the whole class/suite or combine legacy external flags.
+
+| Exact method suffix after `#` | Required argument |
+| --- | --- |
+| `captureOnlyHoldsExpandedBubbleWithoutPanel` | `-e startupHoldReady true` |
+| `collapseOnlyHoldsWithoutPanel` | `-e startupCollapseReady true` |
+| `panelOnlyStartsWithoutCollapsingBubble` | `-e startupPanelReady true` |
+
+For example, after installing the verified HOLD APK and confirming the live
+empty self-chat/SwiftKey preconditions:
+
+```powershell
+adb -d shell am instrument --user 0 -w -r -e class 'com.koscribe.smoke.KakaoStartupIsolationSmokeTest#captureOnlyHoldsExpandedBubbleWithoutPanel' -e startupHoldReady true com.koscribe.smoke/com.koscribe.smoke.KoScribeTestRunner
+```
+
+The initial comparison has no extra settling delay between opening Ko and
+selecting 요. HOLD therefore isolates the absence of later collapse/launch,
+but cannot distinguish capture/mode-tap effects from delayed effects of opening
+the expanded bubble. Add a matched settling condition only if the observations
+make it useful. A refused panel startup is not a completed recording/Stop/Cancel
+flow, even when the final preservation assertions succeed.
+
 Run while Andrew is not using the phone; app switches can correctly invalidate a session. Instrumentation completion can remove the fixture and return to a previous real app. Do not take post-test full-screen screenshots on the assumption that the synthetic editor is still visible. Prefer exact fixture assertions and code-only traces; capture pixels only after independently verifying the current foreground is an owned synthetic screen.
 
 References: [AOSP instrumentation target restart](https://source.android.com/docs/core/tests/development/instrumentation), [UiAutomation flag](https://developer.android.com/reference/android/app/UiAutomation#FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES), [flagged acquisition](https://developer.android.com/reference/android/app/Instrumentation#getUiAutomation(int)).

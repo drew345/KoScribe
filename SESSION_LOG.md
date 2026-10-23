@@ -195,3 +195,24 @@
   and visible. Original draft stayed empty on every completed assertion flow.
   No guards or permissions changed. Same repeated timing checks are exhausted;
   next work should assess safe startup/capture or explicit recovery design.
+
+## 2026-10-23 — Bubble / panel startup isolation
+
+- Andrew authorized isolating the bubble and recording-panel startup steps.
+  Sol implemented compile-time debug HOLD/COLLAPSE/PANEL probes using the same
+  controls and original capture; OFF/default/release retains ordinary behavior.
+  Every probe blocks insertion/Copy and has bounded cleanup. Astra independently
+  reviewed source, flag gating, preservation assertions, and result interpretation.
+- Full normal build, 27 JVM tests, lint (zero errors; app 15/smoke 3 warnings),
+  three arm builds, and signatures passed. Separate APK copies prevented arm
+  confusion. No new phone permission or user preparation was needed.
+- HOLD and COLLAPSE each passed with no invalidation during their 1.5-second
+  observations. PANEL reproduced the same flag-4 OTHER_NODE refusal before
+  binding/recording: event 105 ms after launch, delivery 5 ms later. All three
+  verified the same original empty field and SwiftKey after cleanup; no new
+  microphone use, insertion, sending, or clipboard operation occurred.
+- Restored the exact prior product APK BC464039..., confirmed service reconnect,
+  stopped microphone, and visible selected SwiftKey. Reset normal build output
+  to OFF. Evidence implicates the panel-launch transition in this comparison,
+  without identifying the other node or proving its change harmless. Next is
+  lifecycle/recovery design evaluation; keep all insertion guards unchanged.

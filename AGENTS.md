@@ -18,6 +18,10 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   again for the same scope. Inspect only the focused field/root metadata and
   code-only timing/state, never conversation history. The earlier one-sample
   insertion trial is complete and must not be rerun under this authorization.
+- Andrew then authorized the experiment isolating bubble collapse from
+  recording-panel startup. Controlled no-insertion baseline/collapse/panel
+  comparisons are within scope; keep the same focused-field privacy limits,
+  existing guards, and original capture. Never rearm an invalidated session.
 - Once implementation is authorized, use subagents for coding with
   `gpt-6-sol` / `xhigh` (Extra High), and independent checking with
   `gpt-6-astra` / `xhigh`. Explicit model overrides require fresh-context

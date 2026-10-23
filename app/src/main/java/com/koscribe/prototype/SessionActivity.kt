@@ -20,6 +20,7 @@ import java.util.Arrays
 
 /** Visible microphone owner. Audio frames are discarded and never written to disk. */
 class SessionActivity : Activity() {
+    private val startupExperiment = StartupExperiment.configured
     /** A dialog-sized viewport; the native floating window handles system and IME insets. */
     private class SessionScroll(context: Context) : ScrollView(context) {
         override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -53,6 +54,9 @@ class SessionActivity : Activity() {
     private var panelResumed = false
     private var panelFocused = false
     private val timeout = Runnable { if (stage == Stage.RECORDING) stopAndReview() }
+    private val experimentDeadline = Runnable {
+        if (startupExperiment != StartupExperiment.OFF && stage != Stage.FINISHED) cancel()
+    }
     private lateinit var content: LinearLayout
     private lateinit var status: TextView
 
@@ -87,6 +91,8 @@ class SessionActivity : Activity() {
             status.text = "Microphone permission is required for this test."
             requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), MIC_REQUEST)
         }
+        if (startupExperiment != StartupExperiment.OFF)
+            content.postDelayed(experimentDeadline, 6_000)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -227,6 +233,11 @@ class SessionActivity : Activity() {
         reportPanelState()
         content.requestFocus()
         content.removeAllViews()
+        if (startupExperiment != StartupExperiment.OFF) {
+            content.addView(caption("Diagnostic recording stopped. No insertion is available.", true))
+            content.addView(action("Cancel") { cancel() })
+            return
+        }
         content.addView(caption("${mode.label} · fixed sample review", true))
         content.addView(caption("No speech recognition ran. Edit this English sample. Korean insertion is available only while the sample stays unchanged."))
         val english = EditText(this).apply {
@@ -271,6 +282,7 @@ class SessionActivity : Activity() {
     }
 
     private fun cancel() {
+        if (::content.isInitialized) content.removeCallbacks(experimentDeadline)
         releaseMic()
         stage = Stage.FINISHED
         KoScribeService.active()?.cancelSession(sessionId)
@@ -291,6 +303,7 @@ class SessionActivity : Activity() {
     }
 
     override fun onDestroy() {
+        if (::content.isInitialized) content.removeCallbacks(experimentDeadline)
         releaseMic()
         if (!handedToService && stage != Stage.FINISHED) KoScribeService.active()?.cancelSession(sessionId)
         super.onDestroy()

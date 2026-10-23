@@ -37,6 +37,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     private val guard = SessionGuard()
+    private val startupExperiment = StartupExperiment.configured
     private val main = Handler(Looper.getMainLooper())
     private lateinit var windowManager: WindowManager
     private var bubble: LinearLayout? = null
@@ -67,9 +68,12 @@ class KoScribeService : AccessibilityService() {
     private var lastInvalidationCode: String? = null
     private var captureStartUptimeMs: Long? = null
     private var captureCompleteUptimeMs: Long? = null
+    @Volatile private var experimentCaptureCount = 0
+    @Volatile private var experimentPhase = "NOT_CAPTURED"
     private enum class OwnMilestone {
         COLLAPSED_BUBBLE_ADD_RETURNED, PANEL_LAUNCH_REQUESTED, PANEL_BIND_ACCEPTED,
-        PANEL_RESUME_CALLBACK, PANEL_FOCUS_KNOWN_WINDOW_CALLBACK, OWN_FOCUS_WINDOW_VERIFIED
+        PANEL_RESUME_CALLBACK, PANEL_FOCUS_KNOWN_WINDOW_CALLBACK, OWN_FOCUS_WINDOW_VERIFIED,
+        EXPERIMENT_HOLD_COMPLETE
     }
     /** One-shot callback times for the latest successful capture, retained through Cancel. */
     private val ownMilestoneUptimeMs = mutableMapOf<OwnMilestone, Long>()
@@ -167,7 +171,9 @@ class KoScribeService : AccessibilityService() {
         val stateCode = "FIRST_CONTENT_STATE_SRC_${sourceKind}_FLAGS_${event.contentChangeTypes}" +
             "_VISIBLE_${if (SessionActivity.isVisible) 1 else 0}" +
             "_REVIEW_${if (reviewVisible) 1 else 0}_RETURN_${if (returningToEditor) 1 else 0}" +
-            "_GATE_${modalOcclusion?.diagnosticCode() ?: "NONE"}"
+            "_GATE_${modalOcclusion?.diagnosticCode() ?: "NONE"}" +
+            (if (startupExperiment == StartupExperiment.OFF) ""
+             else "_EXPERIMENT_${startupExperiment.name}_DELIVERY_PHASE_$experimentPhase")
         firstTargetContentTimeCode = timeCode
         firstTargetContentStateCode = stateCode
         note(timeCode)
@@ -179,6 +185,9 @@ class KoScribeService : AccessibilityService() {
             "First invalidation: ${lastInvalidationCode ?: "none"}\n" +
             "First content timing: ${firstTargetContentTimeCode ?: "none"}\n" +
             "First content state: ${firstTargetContentStateCode ?: "none"}\n" +
+            "Experiment arm: ${startupExperiment.name}\n" +
+            "Experiment capture count: $experimentCaptureCount\n" +
+            "Experiment phase: $experimentPhase\n" +
             "Own UI milestones (callback uptime vs capture completion / first content occurrence):\n" +
             ownMilestoneDiagnostics() + "\n" +
             "Recent guard events (codes only):\n" +
@@ -508,6 +517,7 @@ class KoScribeService : AccessibilityService() {
         if (pendingId != id) return
         guard.end(id)
         pendingId = null
+        if (startupExperiment != StartupExperiment.OFF) experimentPhase = "CANCELLED"
         reviewVisible = false
         returningToEditor = false
         ownTransition = false
@@ -522,7 +532,10 @@ class KoScribeService : AccessibilityService() {
         if (pendingId != id || guard.session(id) == null) return false
         val bound = modalOcclusion?.bind(owner) == true
         if (!bound) invalidate(id, "PANEL_OWNER_CHANGED")
-        else markOwnMilestone(id, OwnMilestone.PANEL_BIND_ACCEPTED)
+        else {
+            markOwnMilestone(id, OwnMilestone.PANEL_BIND_ACCEPTED)
+            if (startupExperiment == StartupExperiment.PANEL) experimentPhase = "PANEL_BOUND"
+        }
         return bound
     }
 
@@ -539,6 +552,8 @@ class KoScribeService : AccessibilityService() {
         }
         if (modalOcclusion?.updatePanel(owner, phase, resumed, focused, windowId, interrupted) != true)
             invalidate(id, "PANEL_LIFECYCLE_INTERRUPTED")
+        else if (startupExperiment == StartupExperiment.PANEL)
+            experimentPhase = "PANEL_CALLBACK_${phase.name}"
         if (phase == PanelPhase.REVIEW && !reviewVisible) {
             reviewVisible = true
             note("REVIEW_STARTED")
@@ -547,6 +562,11 @@ class KoScribeService : AccessibilityService() {
 
     fun requestInsert(id: String, owner: Any, output: String) {
         if (pendingId != id) return
+        if (startupExperiment != StartupExperiment.OFF) {
+            invalidate(id, "EXPERIMENT_INSERT_BLOCKED")
+            cancelSession(id)
+            return
+        }
         if (modalOcclusion?.focusedPanelMatches(focusedPanelWindowId(windows)) != true)
             invalidate(id, "CONFIRMATION_OUTSIDE_PANEL")
         if (modalOcclusion?.beginReturn(owner) != true) invalidate(id, "UNVERIFIED_PANEL_CONFIRMATION")
@@ -589,6 +609,10 @@ class KoScribeService : AccessibilityService() {
             return
         }
         val session = guard.begin(mode, target.snapshot, SystemClock.elapsedRealtime()) ?: return
+        if (startupExperiment != StartupExperiment.OFF) {
+            experimentCaptureCount++
+            experimentPhase = "CAPTURED"
+        }
         captureStartUptimeMs = captureStart
         captureCompleteUptimeMs = captureComplete
         synchronized(trace) { ownMilestoneUptimeMs.clear() }
@@ -608,16 +632,43 @@ class KoScribeService : AccessibilityService() {
         reviewVisible = false
         returningToEditor = false
         ownTransition = true
-        expanded = false
-        renderBubble()
-        if (bubble != null) markOwnMilestone(session.id, OwnMilestone.COLLAPSED_BUBBLE_ADD_RETURNED)
+        if (startupExperiment == StartupExperiment.HOLD) {
+            experimentPhase = "EXPANDED_HOLD"
+            scheduleExperimentHold(session.id)
+            return
+        }
+        if (startupExperiment != StartupExperiment.PANEL) {
+            if (startupExperiment == StartupExperiment.COLLAPSE)
+                experimentPhase = "COLLAPSE_REQUESTED"
+            expanded = false
+            renderBubble()
+            if (bubble != null)
+                markOwnMilestone(session.id, OwnMilestone.COLLAPSED_BUBBLE_ADD_RETURNED)
+        }
+        if (startupExperiment == StartupExperiment.COLLAPSE) {
+            experimentPhase = if (bubble != null) "COLLAPSED_HOLD" else "COLLAPSE_ADD_FAILED_HOLD"
+            scheduleExperimentHold(session.id)
+            return
+        }
         val intent = Intent(this, SessionActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             putExtra(SessionActivity.EXTRA_ID, session.id)
             putExtra(SessionActivity.EXTRA_MODE, mode.name)
         }
+        if (startupExperiment == StartupExperiment.PANEL)
+            experimentPhase = "PANEL_LAUNCH_REQUESTED"
         markOwnMilestone(session.id, OwnMilestone.PANEL_LAUNCH_REQUESTED)
-        try { startActivity(intent) } catch (_: Exception) {
+        try {
+            startActivity(intent)
+            if (startupExperiment == StartupExperiment.PANEL)
+                main.postDelayed({
+                    if (pendingId == session.id) {
+                        experimentPhase = "SERVICE_DEADLINE"
+                        cancelSession(session.id)
+                    }
+                }, 10_000)
+        } catch (_: Exception) {
+            if (startupExperiment == StartupExperiment.PANEL) experimentPhase = "LAUNCH_FAILED"
             guard.cancel(session.id)
             guard.end(session.id)
             pendingId = null
@@ -630,8 +681,23 @@ class KoScribeService : AccessibilityService() {
         }
     }
 
+    private fun scheduleExperimentHold(id: String) {
+        main.postDelayed({
+            if (pendingId == id) {
+                markOwnMilestone(id, OwnMilestone.EXPERIMENT_HOLD_COMPLETE)
+                experimentPhase = "HOLD_COMPLETE"
+                cancelSession(id)
+            }
+        }, 1_500)
+    }
+
     private fun attemptInsertion(id: String) {
         if (pendingId != id) return
+        if (startupExperiment != StartupExperiment.OFF) {
+            invalidate(id, "EXPERIMENT_INSERT_BLOCKED")
+            cancelSession(id)
+            return
+        }
         val session = guard.session(id)
         if (session == null) {
             status = "Session ended; use Copy if a result is available."
@@ -790,6 +856,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     private fun copyRecovery() {
+        if (startupExperiment != StartupExperiment.OFF) return
         val result = recoveryText ?: return
         val clip = ClipData.newPlainText("KoScribe sample", result)
         clip.description.extras = PersistableBundle().apply {
@@ -815,7 +882,8 @@ class KoScribeService : AccessibilityService() {
             holder.addView(caption("KoScribe · sample only", true))
             holder.addView(caption(status))
             for (mode in OutputMode.entries) holder.addView(action(mode.label) { startMode(mode) })
-            if (recoveryText != null) holder.addView(action("Copy result manually") { copyRecovery() })
+            if (startupExperiment == StartupExperiment.OFF && recoveryText != null)
+                holder.addView(action("Copy result manually") { copyRecovery() })
             holder.addView(action("Close") { expanded = false; renderBubble() })
         } else {
             val pill = Button(this).apply {

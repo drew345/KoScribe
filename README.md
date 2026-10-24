@@ -14,8 +14,10 @@ remains untested; these results apply to the builds recorded in
 
 The separate [Phase 2 candidate](docs/PHASE2.md) adds private on-phone API key
 entry and real English transcription after Stop. Source review, unit tests and
-setup checks precede any real-key or paid transcription test. Korean translation
-is the next phase. The [Phase 1 sample build](docs/PHASE1.md) remains available
+setup checks preceded private key entry. Real speech review/Cancel and
+SwiftKey-edited insertion passed in the test editor; recording-control layout
+and error/cancel checks are still underway. Korean translation is the next
+phase. The [Phase 1 sample build](docs/PHASE1.md) remains available
 without an API key; ordinary and release builds default to OFF. See
 [PROGRESS](PROGRESS.md) for the current installed build and next action.
 

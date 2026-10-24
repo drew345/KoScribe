@@ -22,6 +22,13 @@ Stop -> processing -> editable English -> Confirm English -> guarded Insert or
 explicit Copy. Existing destination checks/one-attempt/no-Send rules apply.
 Korean translation is Phase3; actual speech never receives canned Korean output.
 
+The recording-controls candidate reserves a fixed Stop/Cancel row below
+scrollable explanatory text inside the existing host. Stop appears after
+microphone proof and disables on its first tap; Cancel stays available during
+preparation, recording and processing. This addresses the reported clipped Stop
+button. Current-phone visibility still requires the user check in PROGRESS;
+broader menu styling and recording-state prominence remain deferred.
+
 ## Credential flow
 
 Open KoScribe -> API key settings. User privately enters a key on the phone;
@@ -62,8 +69,9 @@ No chat history, field context, screenshots or contacts are sent.
 Responses are bounded and validated before review. Empty/malformed/overlong
 transcripts and provider/network failures show sanitized errors, not raw response
 bodies or exception details. Local audio/transcript history is not retained;
-this does not assert zero provider retention. Account access, accuracy, latency
-and actual paid behavior require a deliberate later on-device test.
+this does not assert zero provider retention. The first deliberate transcription
+and later SwiftKey-edited insertion passed on A35. Broader accuracy, error recovery,
+latency/cost and Phase 2 acceptance remain subject to the gates in PROGRESS.
 
 ## First device checks
 

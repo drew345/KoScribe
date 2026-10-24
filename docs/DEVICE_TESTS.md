@@ -1417,3 +1417,46 @@ looking for it before realizing recording had started. He explicitly deferred
 clearer/prominent recording feedback and menu polish to later. Record that
 usability issue; do not reinterpret this one accuracy/Cancel pass as UI acceptance,
 general ASR accuracy, measured latency/cost, edit/insert acceptance or Phase 2 closure.
+
+### Real speech, SwiftKey edit and guarded Insert PASS (2026-10-24)
+
+Same secure speech v3 F2079E8A and smoke v4 2782686D. Andrew reported that the
+complete dictated-and-edited text appeared in the synthetic field and the box
+disappeared. Own REVIEW_COMPLETED, draftNONE, captures0->1/commits0->1,
+CONFIRMED, cleanupfalse. Trace contains two VERIFIED_EMPTY_CARET observations,
+one FRESH_COMMIT_REQUESTED_ONCE, focused-node refresh, then INSERT_CONFIRMED.
+Proof1->3 includes an intervening EN recording -> Stop -> USER_CANCELLED before
+the successful recording. Its reason is unspecified; no extra insertion occurred.
+Latest microphone use ended4.368s; SwiftKey remains selected. Root inspected
+only own codes/AppOps/device state, no transcript, key, screenshots or conversations.
+
+Usability finding from Andrew: Stop was half clipped at the bottom of the
+recording panel but still tappable. The functional test passes; control visibility
+does not. Narrow proposed repair pins speech Stop/Cancel outside scrolling text
+inside the same captured host. General recording-status prominence/menu polish
+remains deferred as requested. Review/build and a manual recording-Cancel layout
+check are required before claiming the clipping corrected.
+
+### Speech controls v4 installed; manual visibility/Cancel pending (2026-10-24)
+
+Sol6/xhigh changed only OverlayRecordingPanel: speech explanatory content gets a
+weighted ScrollView above a fixed56dp Stop/Cancel row (52dp buttons), inside the
+same captured host. Stop appears after microphone proof and disables on first tap;
+Cancel remains through preparation/recording/processing. API-free sample layout
+and recorder, join/upload, credentials and insertion paths are unchanged.
+Astra/xhigh independently cleared source SHA256:
+`6CB0ACBE2691C8028DACE729FD6A531F31456156D6E9195E02E6FCF6581E03B1`.
+
+Candidate build/signature passed, all53 units passed with zero failures/errors/
+skips, app lint zero errors/37 warnings. Saved and installed via replace-in-place:
+`app/build/speech-input/SPEECH-controls-v4.apk`, SHA256
+`524133623674E42B4BE8E5745C92BAD85A649D1C46AD46EF9181441858461F05`.
+No uninstall, data clearing, key access or new permission. Smoke v4 unchanged.
+Ordinary debug/release output restored and verified OFF, visualfalse/SPEECHfalse.
+
+Service reconnected idle: NOT_CAPTURED, proof/captures/commits0, draftNONE,
+confirmationNONE, cleanupfalse. Phone unlocked; owned Test message launched.
+Asked Andrew to tap field -> Ko -> EN, inspect both buttons without scrolling,
+then Cancel directly without Stop. No speech/upload/review/insertion is requested.
+Await report and own microphone/zero-commit verification. Source review alone
+does not establish visibility on the phone or larger-font/smaller-window layouts.

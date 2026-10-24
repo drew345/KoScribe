@@ -587,3 +587,19 @@
 - Same installed secure candidate; no code/build changes. Next: manual synthetic
   real speech -> SwiftKey edit -> Confirm English -> one guarded Insert, then
   verify edited text/dismissal. No retry, Copy/Paste substitute or sending.
+
+## 2026-10-24 — Real speech editing/insertion passed; clipped Stop reported
+
+- Andrew confirmed dictated-and-edited text insertion and dismissal. Own
+  REVIEW_COMPLETED, proof3/captures1/commits1, CONFIRMED, draftNONE/cleanupfalse;
+  microphone ended4.368s, SwiftKey selected. An intervening review Cancel is in
+  the trace; reason unspecified, no extra commit. No content/key reads or screenshots.
+- Stop was half clipped but tappable. Sol6/xhigh is fixing only speech-control
+  reachability with a pinned Stop/Cancel row; Astra/xhigh reviews it. Stable host,
+  all guards, live credential, sample baseline and default OFF are preserved.
+  General recording-status/menu polish remains deferred. Device check pending.
+- Narrow source fix cleared review and installed as controls v4 52413362.
+  All53 units passed; lint zero errors/37 warnings; default/release restored OFF.
+  Live key/data preserved. Service idle baseline0/0/0, draftNONE/cleanupfalse.
+  Asked for button visibility plus direct recording Cancel (no Stop/upload),
+  awaiting user report. No clipping-fix claim until device confirmation.

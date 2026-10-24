@@ -12,8 +12,10 @@ edited-Korean cancellation, and unchanged-commit uncertainty all passed. Forty
 unit tests passed; lints have zero errors. Manual empty-field Korean insertion
 now passed in Kakao self-chat, Google Messages and Instagram. The bounded Phase1
 feasibility gate is met from combined device/unit/source evidence. Phase 2's
-first real EN transcription -> review -> Cancel test now passed. Editing and
-inserting a real transcript is next; Korean translation remains unimplemented.
+first real EN transcription -> review -> Cancel and real speech -> SwiftKey edit
+-> guarded insertion/dismissal tests now passed. User reported Stop half clipped;
+a narrow recording-controls layout fix is installed for manual checking. Korean translation
+remains unimplemented; Phase 2 cancel/error recovery checks are pending.
 
 Andrew's newly approved one-attempt Kakao trial PASSED and is now complete.
 He reported the exact expected Korean sample appeared and remained unsent,
@@ -93,10 +95,26 @@ No agent-initiated recording/upload, insertion, Copy or Send occurred.
 User feedback: tapping EN starts recording, but its status was hard to spot;
 he spent time locating the recording indication. He explicitly accepted the test
 and deferred more prominent recording feedback/menu improvements to later. Record
-that UX requirement without changing this tested candidate now. Next manual
-synthetic test: real speech -> SwiftKey transcript edit -> Confirm English ->
-one guarded floating Insert -> verify edited text and dismissal. Stop on uncertainty;
-no retry, Copy substitute or Send. Phase 2 acceptance is still open.
+that UX requirement for later. The next real speech -> SwiftKey edit -> guarded
+Insert test passed: Andrew reported the complete edited text appeared and the
+box disappeared. Own REVIEW_COMPLETED, captures0->1/commits0->1, CONFIRMED,
+draftNONE/cleanupfalse, latest microphone ended4.368s, SwiftKey selected.
+Proof1->3 includes an intervening recording/Stop/review-Cancel trace before the
+successful run; its reason was not reported and no insertion happened there.
+
+New measured usability report: Stop is only half visible at the bottom of the
+recording panel, although the user could tap it. Fix this narrow reachability
+issue before further recording checks. Sol6/xhigh implemented a speech-only
+pinned Stop/Cancel row outside scrolling explanatory content; Astra/xhigh cleared
+the source. Same host/window dimensions and all microphone, upload, insertion
+and key guards remain intact; broader status/menu polish stays deferred.
+Controls v4 built/signed, all53 units passed, app lint zero errors/37 warnings.
+Installed with replace-in-place, no uninstall/data clearing/key access. Default
+debug/release outputs restored OFF, visualfalse/SPEECHfalse. Own service reconnected
+idle with proof/captures/commits0, draftNONE/cleanupfalse. Test message is open;
+await user report that both buttons are fully visible and direct recording Cancel
+closes without review or text changes. No Stop/upload/insertion is requested.
+Device layout acceptance remains pending; do not claim clipping fixed yet.
 
 Previous secure980E build Kakao self-chat microphone -> Stop -> English review -> Cancel
 PASSED. Andrew reported the sample review closed and the composer cursor/SwiftKey
@@ -262,7 +280,9 @@ remains foreground after instrumentation cleanup.
 Verify live readiness next session. Fixture cleanup may return
 to a real app; never assume the foreground is still synthetic.
 
-Installed product: `app/build/speech-input/SPEECH-secure-v3.apk`,
+Installed product: `app/build/speech-input/SPEECH-controls-v4.apk`,
+SHA-256 `524133623674E42B4BE8E5745C92BAD85A649D1C46AD46EF9181441858461F05`.
+Successful ASR/edit/Insert baseline remains saved as SPEECH-secure-v3.apk,
 SHA-256 `F2079E8AE1181930911E7820AD4A735A56911F1C122FE06CA76DC594E0F811F9`.
 Phase 1 rollback: `app/build/composed-confirmation/REVIEW-secure.apk`,
 SHA-256 `3AA18446275E46E3712D5232EC8D02DC4AEF0D3C1D88D7CE7CAECE6080DF99DD`.
@@ -278,15 +298,16 @@ Do not substitute ordinary output for the saved secure speech artifact.
 Prior diagnostic, refresh-only, and earlier smoke APKs are retained in ignored
 build folders. Detailed source review hashes are in DEVICE_TESTS.
 
-Latest v3 checkpoint: REVIEW_CANCELLED, proof1/captures0/commits0, draftNONE,
-confirmationNONE, cleanupfalse, latest note REVIEW_ENDED_USER_CANCELLED.
-AppOps confirms the real speech recording ended after29.097s. Counts restarted
-on APK install. SwiftKey remains selected. All three real-app scopes are consumed;
+Last v3 checkpoint: REVIEW_COMPLETED, proof3/captures1/commits1, draftNONE,
+CONFIRMED/cleanupfalse; mic ended4.368s. Newly installed controls v4 reset own
+counters: NOT_CAPTURED, proof/captures/commits0, draftNONE, confirmationNONE,
+cleanupfalse. SwiftKey remains selected. All three real-app scopes are consumed;
 fixed unsent drafts are for Andrew to remove manually. Only the static fake
 credential marker was saved/deleted during setup. Andrew subsequently saved his
-real key privately and confirmed backup; it was not inspected. One real transcript
-is user-confirmed correct. No Send/Enter, conversation inspection, screenshot,
-or keyboard change occurred. Next use is the synthetic edit/insert test.
+real key privately and confirmed backup; it was not inspected. Real transcription,
+review Cancel and edited-text insertion are user-confirmed. No Send/Enter,
+conversation inspection, screenshot, or keyboard change occurred. The controls
+layout/active-recording Cancel check is pending on the reviewed installed candidate.
 
 ## Next work and gates
 
@@ -299,11 +320,11 @@ or keyboard change occurred. Next use is the synthetic edit/insert test.
 2. Preserve all three app passes; their scopes are consumed. Phase 2 code is
    reviewed, built and unit/lint checked. Credential fake test passed; missing-key
    safety assertions passed, with full-method Close cleanup failures recorded.
-   Key entry and backup are user-confirmed. First synthetic speech/review/Cancel
-   passed; proceed with actual transcript editing and one insertion. No API keys in chat or
-   shell; no unattended audio upload, fake-key/deletion or missing-key reruns.
-   Await this manual result before further phone actions. After it passes,
-   Astra's minimum remaining Phase 2 checks are active-recording Cancel and one
+   Key entry and backup are user-confirmed. Synthetic real speech/review/Cancel
+   and speech/edit/Insert passed. First fix the clipped Stop control, then use
+   a manual active-recording Cancel check to verify reachable controls and cleanup.
+   No API keys in chat or shell; no unattended audio upload, fake-key/deletion
+   or missing-key reruns. Astra's remaining Phase 2 checks are active Cancel and one
    controlled network failure followed by a fresh successful recording. Any
    connectivity change should be deliberate and performed by Andrew; keep the
    saved key intact. Broader reliability remains a later phase.

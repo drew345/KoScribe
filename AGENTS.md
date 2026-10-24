@@ -18,7 +18,10 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   speech/credentials under the selected on-phone-key approach. Broader
   lifecycle/geometry/same-view switch-back remain explicit later limitations.
   Keep the tested REVIEW sample baseline; speech is a separate explicit debug
-  flag, release/default disabled until reviewed. No paid call or real key yet.
+  flag, release/default disabled until reviewed. Andrew subsequently saved a
+  personal key privately and confirmed DeveloperStuff backup; actual speech
+  tests have begun. Never rerun fake-key/deletion or missing-key setup tests
+  against his live credential. PROGRESS owns current device evidence.
 - Andrew subsequently authorized continued scoped KakaoTalk self-chat
   diagnostics using recording -> Stop -> Cancel, without inserting or sending.
   This scope permits repeat non-inserting diagnostics as needed; do not ask

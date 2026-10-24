@@ -52,6 +52,8 @@ internal class OverlayRecordingPanel(
     private val capturedWindowId = ownWindowId()
     private lateinit var card: LinearLayout
     private lateinit var status: TextView
+    private var speechActions: LinearLayout? = null
+    private var stopAction: Button? = null
     private val attachedListener = object : View.OnAttachStateChangeListener {
         override fun onViewAttachedToWindow(view: View) = Unit
         override fun onViewDetachedFromWindow(view: View) {
@@ -84,17 +86,34 @@ internal class OverlayRecordingPanel(
         if (speechMode) card.addView(label("Audio is sent to OpenAI after Stop; KoScribe does not save recordings or transcripts.", false))
         status = label("Preparing microphone…", false)
         card.addView(status)
-        card.addView(button("Cancel") { cancel() })
+        if (!speechMode) card.addView(button("Cancel") { cancel() })
         val interiorHeight = (capturedHeight - host.paddingTop - host.paddingBottom).coerceAtLeast(1)
         val viewport = ScrollView(context).apply {
             isFillViewport = true
             addView(card)
         }
+        val panel = if (speechMode) LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            background = GradientDrawable().apply {
+                setColor(0xEE263449.toInt())
+                cornerRadius = dp(12).toFloat()
+            }
+            addView(viewport, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
+            ))
+            val actions = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
+            actions.addView(button("Cancel") { cancel() },
+                LinearLayout.LayoutParams(0, dp(52), 1f))
+            speechActions = actions
+            addView(actions, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(56)
+            ))
+        } else viewport
         return try {
             host.addOnAttachStateChangeListener(attachedListener)
             host.addOnLayoutChangeListener(layoutListener)
             host.removeAllViews()
-            host.addView(viewport, LinearLayout.LayoutParams(
+            host.addView(panel, LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, interiorHeight
             ))
             main.postDelayed(sessionDeadline, sessionTimeoutMs)
@@ -242,7 +261,12 @@ internal class OverlayRecordingPanel(
         main.removeCallbacks(proofDeadline)
         status.text = if (speechMode) "Recording ${mode.label}. Tap Stop to transcribe; Cancel discards audio."
             else "Recording ${mode.label}. Audio is discarded; Stop shows a fixed sample."
-        card.addView(button("Stop") { stopAndReview() })
+        val stop = button("Stop") { stopAndReview() }
+        if (speechMode) {
+            val actions = speechActions ?: return fail("SPEECH_ACTION_ROW_LOST")
+            stopAction = stop
+            actions.addView(stop, 0, LinearLayout.LayoutParams(0, dp(52), 1f))
+        } else card.addView(stop)
         onReady()
     }
 
@@ -256,6 +280,7 @@ internal class OverlayRecordingPanel(
 
     private fun stopAndReview() {
         if (stage != Stage.RECORDING) return
+        if (speechMode) stopAction?.isEnabled = false
         onStopEntry()
         val own = recorder ?: return fail("OVERLAY_MIC_LOST")
         val config = runCatching { own.activeRecordingConfiguration }.getOrNull()

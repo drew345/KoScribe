@@ -24,19 +24,33 @@ secure-build empty Insert regression failed after one commit: exact text appeare
 but postcommit SPAN_COMPOSING caused terminal uncertainty. This differs from the
 manual precommit refusal; cause/timing remains unresolved. No retry occurred.
 
-Andrew requested seeing the screen during tests. An explicit debug REVIEW visual
-build is temporarily installed for synthetic-only USB screenshots. Default/release
-retain FLAG_SECURE. Initial screenshot and READY screenshot succeeded; four
-controls fit at the phone's font_scale=1.15, but the toolbar initially overlaps
-the upper field and the lower fixture field has focus. Andrew is now asked to
-drag it into the blank area and briefly tap the upper field, WITHOUT Insert.
-A subsequent screenshot encountered an incoming-call overlay; phone/visual work
-paused and its local image was removed. Andrew finished the call and requested a
-fresh attempt. Own state confirmed the old draft ended by DEADLINE with zero
-captures/commits. The fixture is reopened and he is repeating recording/review,
-then dragging/tapping the upper field, WITHOUT insertion. Do not poll screenshots
-while awaiting his reply. Restore the saved secure candidate
-after the visual session and before any real-app work; no real-app screenshots.
+The synthetic visual session finished and secure REVIEW was restored afterward.
+Andrew reported successfully dragging the whole compact control by its Move
+handle and selecting the top field. Its hint was mistaken for residual text;
+two fixture fields also caused confusion. The screenshot after his reply already
+showed draft expiry and the large mode menu, so it does not independently prove
+the dragged READY geometry. Own state confirmed two recordings, zero captures/
+commits, no draft or cleanup pending, and microphone use ended after 5.111s.
+Temporary images were removed. No conversation screenshots or real-app insertion;
+the earlier incidental incoming-call frame was deleted.
+Sol simplified the manual fixture to one clearly labelled field and made
+expired/cancelled reviews collapse to the contextual bubble. Independent source
+review passed. The simplified launcher was installed/opened; manual report and
+expiry-collapse device acceptance remain pending.
+
+Astra Ultra's read-only analysis separated precommit safety from postcommit
+observation: Android can mark existing text composing without changing text or
+caret. The failed trace rejected composing spans before exact expected-context
+and complete target checks. Sol implemented and Astra independently reviewed a
+fixture-only diagnostic for that conjunction and bounded later samples, without
+changing eligibility, confirmation, or terminal uncertainty. Both fresh runs on
+secure980E4299... returned NATURAL_CONFIRMED (5.370s/4.638s): exact text/caret,
+one commit each, dismissal, stable result. The failure did not reproduce, so no
+composition probe ran and no root-cause fix is claimed. The two-run round is
+closed. Copy dismissal/new-keyboard-cycle reappearance also passed in5.853s.
+Next is Andrew's manual SwiftKey edit/Insert report on the simplified fixture;
+do not act on the phone while awaiting him. Any completion-policy change still
+needs a concrete measured proposal first.
 
 Earlier stale-node diagnosis: after a commit, the input connection already showed the exact
 expected text/caret while the same focused accessibility node retained an old
@@ -79,8 +93,9 @@ Candidate/default OFF builds, 37 JVM tests (zero failures/errors/skips), lints
 Cancel scrolling fix was rebuilt/linted, independently reviewed, and passed.
 Its assertions require a cleared draft, unchanged capture/commit counts, and
 absence of own review controls even when they are offscreen.
-Current compact/visual/default builds also passed 37 unit tests and lint, now
-25 app warnings with zero errors. Its separate device failure is described above.
+Current secure diagnostic/default builds passed 37 unit tests and lint, with
+25 app warnings and2 smoke warnings, zero errors; signatures verified. Default
+and release remain OFF/visual false. The earlier compact failure remains open.
 
 A phone call interrupted one recording before insertion; the unchanged retry
 passed after Andrew was finished. Other startup runs lost fixture focus to
@@ -100,41 +115,39 @@ settings changed. Prompt cessation has not been established.
 
 Galaxy A35 SM-A356E, Android 16/API 36, One UI 8.5; user 0 only. SwiftKey remains
 selected; Wispr remains enabled. Default SMS app is Google Messages. Phone is
-connected for the pending fresh visual check. The prior draft was confirmed ended
-before restart; do not infer the current recording/draft state from that old check.
+connected and unlocked at the latest metadata check. The single-field manual
+fixture is open and Andrew has been asked to edit/review/Insert once. Do not
+infer current draft/microphone state from the earlier automated cleanup baseline.
 Verify live readiness next session. Fixture cleanup may return
 to a real app; never assume the foreground is still synthetic.
 
-TEMPORARILY installed product: `app/build/compact-result/REVIEW-visual-test.apk`.
-SHA-256: `C3A713C02EB97BEDA47182D267226EFD08F2CB37D99C72F90B33B63F01FFFDBA`.
-Restore after visual testing: `app/build/compact-result/REVIEW-secure.apk`,
-SHA-256 `723D5D207AAF00F5F291033D0A28FA79C92D859C0BA9B7411B218A1EB0CD1287`.
+Installed product: `app/build/composition-probe/REVIEW-secure.apk`,
+SHA-256 `980E4299E1B73160E82D874139A7CE04FBA46603DC32A184E0FBF50D5D627D0D`.
 Earlier seven-pass product remains saved at app/build/confirmation-refresh/REVIEW.apk
 with SHA-256 `2B00BE44077579BBD92D3D6A8D7FCED7E7391E17B05F56B5D1652444F4AD4D9E`.
-Installed smoke: `app/build/manual-swiftkey/smoke.apk` (ignored).
-SHA-256: `5D9D7CC793408B8C4C28159918E32810D8512F785425D4339128A36A57F1B648`.
-This adds only the debug launcher; the previously tested smoke FC0A13E5... remains
-saved at app/build/confirmation-refresh/smoke.apk.
+Installed smoke: `app/build/composition-probe/smoke.apk` (ignored).
+SHA-256: `9D3F9563C8A3A21998EC1DD6A067921FD65868CE9F140C26F1BC2CC9CF8F361D`.
+This includes the single-field manual mode and extended diagnostic parser.
+Older smoke/product artifacts remain under their recorded ignored build folders.
 Ordinary `app/build/outputs/apk/debug/app-debug.apk` has been rebuilt as OFF with
 VISUAL_TEST=false. Do not substitute it for the secure REVIEW artifact.
 Prior diagnostic, refresh-only, and earlier smoke APKs are retained in ignored
 build folders. Detailed source review hashes are in DEVICE_TESTS.
 
-Baseline before the manual gate: REVIEW_CANCELLED, proof count 8, draft NONE, destination
-captures 5, commit requests 4, cleanup pending false. Last confirmation UNCERTAIN
-is retained from the preceding ignored-commit test; the final Cancel gate added
-zero captures/commits. Exact-app AppOps confirmed mic use ended after 516ms.
-At that earlier checkpoint, no Send/Enter, real conversation access, screenshots, retained audio, credentials,
-paid calls, permission changes, or keyboard changes occurred. Copy replaced the
-clipboard with the previously disclosed fixed synthetic sample.
+Baseline before the current manual gate: REVIEW_COMPLETED, proof count3, draftNONE,
+destination captures2, commits2, confirmationCOPIED, cleanupfalse. Exact-app
+AppOps confirmed mic ended after542ms. Both diagnostic insertions used only the
+synthetic fixture; Copy replaced the clipboard with the disclosed fixed sample.
+No Send/Enter, real conversation access, screenshots, retained audio, credentials,
+paid calls, permission changes, or keyboard changes occurred in this diagnostic round.
 
 ## Next work and gates
 
-1. Await the current NO-INSERT drag/select report. Inspect one owned-screen
-   screenshot after his reply, then complete cleanup and restore secure REVIEW.
-   Do not poll screenshots. Next diagnose postcommit composing spans without
-   weakening the guard or retrying an uncertain commit; manual editing alone
-   is user-reported, but end-to-end insertion remains unaccepted.
+1. Await Andrew's single-field manual SwiftKey edit/Insert report, then inspect
+   own counters/cleanup against the baseline above. No screen polling. The two
+   automated diagnostic attempts are complete; composition failure remains
+   intermittent/unresolved. Do not change confirmation policy or retry an
+   uncertain commit. End-to-end manual insertion remains unaccepted.
 2. Check current-build contextual bubble and review ergonomics in real apps
    without insertion under the established scoped diagnostics. Any actual
    external insertion trial needs separate specific authorization; the earlier
@@ -170,7 +183,7 @@ they are not full current-build real-app acceptance. See DEVICE_TESTS for histor
 ## Repository and tools
 
 Private repository: https://github.com/drew345/KoScribe . main tracks origin/main.
-Confirmation checkpoint: 70e7b1e. Manual-test launcher work follows that checkpoint.
+Latest published checkpoint before this work: 659cd98 (compact/visual controls).
 Inspect staged files and scan for secrets before publishing.
 
 ADB/SDK: C:\AI\Codex\Tools\android-sdk (API 36/build tools 36.0.0).

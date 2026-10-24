@@ -381,3 +381,24 @@
   and restoration of the saved secure REVIEW APK. Do not take further screenshots
   until he replies. No real-app screenshots/insertion. Ordinary build output has
   been restored to OFF/visual false; product test limitations are in DEVICE_TESTS.
+
+## 2026-10-24 — Visual drag report and bounded composition diagnosis
+
+- Andrew reported moving the compact result by its handle. Two fixture fields
+  and an empty-field hint caused confusion. The screenshot after his reply was
+  already after expiry, which reopened the large menu; no pre-expiry geometry
+  pass is inferred. Own counters remained zero captures/commits, draft cleared,
+  mic ended after 5.111s. Restored secure723D5D20 APK and removed temporary image.
+- Sol is simplifying the manual screen and collapsing expired/cancelled review.
+  Astra Extra High reviews the changes. Astra Ultra's read-only analysis found
+  composition may coexist with exact inserted text, but this conjunction was
+  not measured by the failed product observation. A bounded diagnostic is next;
+  no guard, confirmation policy, retry rule, or phase gate is changed.
+- Reviewed secure980E4299/smoke9D3F9563 built and installed;37 unit tests/lints/
+  signatures passed. Both bounded fresh probes returned NATURAL_CONFIRMED in
+  5.370s/4.638s. Failure did not reproduce; no composing-state diagnosis or fix
+  claimed. Copy dismissal/reappearance passed5.853s. No real-app insertion.
+- Final automated baseline proof3/captures2/commits2, draftNONE, COPIED,
+  cleanupfalse; mic ended542ms. New single-field manual screen opened. Awaiting
+  Andrew's actual SwiftKey edit/Insert report; do not act while he performs it.
+  Ordinary output/release OFF/visual false; installed REVIEW remains secure.

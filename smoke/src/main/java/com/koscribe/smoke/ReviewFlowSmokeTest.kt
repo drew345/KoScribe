@@ -168,12 +168,12 @@ class ReviewFlowSmokeTest {
             "UNCERTAIN" -> {
                 val codes = await("POST_DIAG_COMPLETION_NOT_REPORTED") {
                     postCommitProbeCodes()?.takeIf { events ->
-                        events.any { it.startsWith("POST_DIAG_DONE") ||
-                            it.startsWith("POST_DIAG_ABORT_") }
+                        events.any { it == "POST_DIAG_DONE" || it.startsWith("POST_DIAG_ABORT_") ||
+                            it == "POST_COMPOSE_DONE" || it.startsWith("POST_COMPOSE_ABORT_") }
                     }
                 }
                 reportPostCommitProbeCodes(codes)
-                assertPostCommitProbeComplete(codes)
+                val diagnosticOutcome = assessPostCommitProbe(codes)
                 await("UNCERTAIN_RECOVERY_NOT_AVAILABLE") { ownId("ready_copy")?.takeIf {
                     ownId("ready_cancel") != null
                 } }
@@ -185,15 +185,17 @@ class ReviewFlowSmokeTest {
                 assertTrue("UNCERTAIN_RETRIED_OR_RELABELED", stable.captures == before.captures + 1 &&
                     stable.commits == before.commits + 1 && stable.phase == "UNCERTAIN" &&
                     stable.confirmation == "UNCERTAIN" && !stable.cleanup)
-                assertTrue("UNCERTAIN_REEXPOSED_INSERT", ownId("ready_insert") == null)
+                assertTrue("UNCERTAIN_REEXPOSED_INSERT_OR_EDIT", ownId("ready_insert") == null &&
+                    reviewEditor() == null && ownId("ready_copy") != null &&
+                    ownId("ready_cancel") != null)
                 clickOwnId("ready_cancel")
-                sessionAttempted = false
                 await("CANCEL_DID_NOT_END_DRAFT") { state().takeIf {
                     it.phase == "NONE" && it.confirmation == "UNCERTAIN" && !it.cleanup &&
                         it.captures == before.captures + 1 && it.commits == before.commits + 1
                 } }
+                sessionAttempted = false
                 assertFixtureText(R.id.local_test_editor, edited)
-                reportConfirmationProbe("TERMINAL_UNCERTAIN_DIAG_DONE")
+                reportConfirmationProbe(diagnosticOutcome)
             }
             else -> throw AssertionError("UNEXPECTED_CONFIRMATION_OUTCOME")
         }
@@ -523,32 +525,90 @@ class ReviewFlowSmokeTest {
         return codes.drop(request + 1)
     }
 
-    private fun assertPostCommitProbeComplete(codes: List<String>) {
-        val original = codes.indexOfFirst { it.startsWith("POST_DIAG_ORIG_MS_") }
+    private fun assessPostCommitProbe(codes: List<String>): String {
+        val caretOriginal = codes.indexOfFirst { it.startsWith("POST_DIAG_ORIG_MS_") }
+        val composeOriginal = codes.indexOfFirst { it.startsWith("POST_COMPOSE_ORIG_MS_") }
+        assertTrue("POST_PROBE_ORIGINAL_KIND_UNKNOWN", (caretOriginal >= 0) != (composeOriginal >= 0))
+        val composition = composeOriginal >= 0
+        val prefix = if (composition) "POST_COMPOSE" else "POST_DIAG"
+        val original = if (composition) composeOriginal else caretOriginal
         val terminal = codes.indexOfFirst { it == "FRESH_COMMIT_UNCERTAIN_TARGET_CHANGED" }
-        val t0 = codes.indexOfFirst { it.startsWith("POST_DIAG_T0_MS_") }
-        val t1 = codes.indexOfFirst { it.startsWith("POST_DIAG_T1_MS_") }
-        val done = codes.indexOfFirst { it == "POST_DIAG_DONE" }
-        val aborted = codes.any { it.startsWith("POST_DIAG_ABORT_") }
-        assertTrue("POST_DIAG_ABORTED_OR_INCOMPLETE", !aborted && original >= 0 &&
-            terminal > original && t0 > terminal && t1 > t0 && done > t1)
-        assertTrue("POST_DIAG_UNKNOWN_SAMPLE_FORMAT",
-            knownPostDiagnosticSample(codes[t0], "T0") &&
-                knownPostDiagnosticSample(codes[t1], "T1"))
+        assertTrue("POST_PROBE_TERMINAL_SEQUENCE_INVALID", terminal > original)
+        val originalConjunction = if (composition) {
+            val match = Regex("""POST_COMPOSE_ORIG_MS_\d+_I([01])_CX([01])_CK([01])_NK([01])_NA([01])_SP[01]_SC(?:[0-9]|1[0-6])_SS-?\d+_SE-?\d+_SZ[01]_SM[01]_SX[01]""")
+                .matchEntire(codes[original])
+            val active = codes.indexOfFirst { it == "OBS_ACTIVE_COMPOSITION" }
+            assertTrue("POST_COMPOSE_ORIGINAL_FORMAT_OR_SEQUENCE_INVALID",
+                match != null && active > original && active < terminal)
+            (1..5).all { match!!.groupValues[it] == "1" }
+        } else {
+            assertTrue("POST_DIAG_ORIGINAL_FORMAT_INVALID",
+                Regex("""POST_DIAG_ORIG_MS_\d+_R[01]_N[01]_G[01]_CO-?\d+_CS-?\d+_CE-?\d+_CL-?\d+_CX[01]_CK[01]_B-?\d+_-?\d+_-?\d+_[01]""")
+                    .matches(codes[original]))
+            false
+        }
+        val done = codes.indexOfFirst { it == "${prefix}_DONE" }
+        val abort = codes.indexOfFirst { it.startsWith("${prefix}_ABORT_") }
+        assertTrue("POST_PROBE_OUTCOME_AMBIGUOUS", (done >= 0) != (abort >= 0))
+        val end = if (done >= 0) done else abort
+        assertTrue("POST_PROBE_ENDED_BEFORE_TERMINAL", end > terminal)
+        val labels = if (composition) listOf("T0", "T1", "T2") else listOf("T0", "T1")
+        val samples = labels.map { label ->
+            codes.indexOfFirst { it.startsWith("${prefix}_${label}_MS_") }
+        }
+        assertTrue("POST_PROBE_MISSING_T0", samples.first() > terminal && samples.first() < end)
+        if (done >= 0) {
+            assertTrue("POST_PROBE_SAMPLES_INCOMPLETE", samples.all { it in (terminal + 1) until done } &&
+                samples.zipWithNext().all { (a, b) -> b > a })
+            assertTrue("POST_PROBE_SAMPLE_FORMAT_UNKNOWN", samples.indices.all { index ->
+                knownPostDiagnosticSample(codes[samples[index]], prefix, labels[index])
+            })
+            return when {
+                !composition -> "CARET_DIAGNOSTIC_COMPLETE"
+                originalConjunction -> "COMPOSE_DIAGNOSTIC_COMPLETE_CONJUNCTIVE_ORIG"
+                else -> "COMPOSE_DIAGNOSTIC_COMPLETE_NONPROVING"
+            }
+        }
+        assertTrue("POST_PROBE_ABORT_REASON_UNKNOWN", knownPostDiagnosticAbort(codes[abort], prefix))
+        val observedSamples = samples.filter { it in (terminal + 1) until abort }
+        assertTrue("POST_PROBE_ABORT_SAMPLE_ORDER_INVALID",
+            observedSamples.zipWithNext().all { (a, b) -> b > a } &&
+                observedSamples.all { index -> labels.any { label ->
+                    knownPostDiagnosticSample(codes[index], prefix, label) ||
+                        knownPostDiagnosticRefusal(codes[index], prefix, label)
+                } })
+        return if (composition) "COMPOSE_DIAGNOSTIC_INCOMPLETE_ABORT"
+            else "CARET_DIAGNOSTIC_INCOMPLETE_ABORT"
     }
 
-    private fun knownPostDiagnosticSample(code: String, label: String): Boolean {
-        require(label == "T0" || label == "T1")
-        val full = Regex("""POST_DIAG_${label}_MS_\d+_ENDMS_\d+_RRMS_\d+_FRMS_\d+_R[01]_RR[01]_N[01]_G[01]_E[01]_CO-?\d+_CS-?\d+_CE-?\d+_CL-?\d+_CX[01]_CK[01]_B-?\d+_-?\d+_-?\d+_[01]_FR[01]_A-?\d+_-?\d+_-?\d+_[01]""")
-        return full.matches(code)
+    private fun knownPostDiagnosticSample(code: String, prefix: String, label: String): Boolean {
+        require(prefix == "POST_DIAG" || prefix == "POST_COMPOSE")
+        require(label in listOf("T0", "T1", "T2"))
+        val base = """${prefix}_${label}_MS_\d+_ENDMS_\d+_RRMS_\d+_FRMS_\d+_R[01]_RR[01]_N[01]_G[01]_E[01]_CO-?\d+_CS-?\d+_CE-?\d+_CL-?\d+_CX[01]_CK[01]_B-?\d+_-?\d+_-?\d+_[01]_FR[01]_A-?\d+_-?\d+_-?\d+_[01]"""
+        val span = if (prefix == "POST_COMPOSE")
+            """_SP[01]_SC(?:[0-9]|1[0-6])_SS-?\d+_SE-?\d+_SZ[01]_SM[01]_SX[01]"""
+        else ""
+        return Regex(base + span).matches(code)
+    }
+
+    private fun knownPostDiagnosticRefusal(code: String, prefix: String, label: String): Boolean {
+        val reason = """(?:DEVICE_NOT_READY|INPUT_MISMATCH|WINDOW_MISMATCH|ROOT_MISMATCH|IDENTITY_MISMATCH_R[01]_G[01]|ROOT_REFRESH_FAILED_RRMS_\d+|FOCUS_MISMATCH|IDENTITY_MISMATCH_N[01]_E[01]|CONNECTION_MISSING|FOCUS_REFRESH_FAILED_RRMS_\d+_FRMS_\d+_B-?\d+_-?\d+_-?\d+_[01])"""
+        return Regex("""${prefix}_${label}_MS_\d+_ENDMS_\d+_$reason""").matches(code)
+    }
+
+    private fun knownPostDiagnosticAbort(code: String, prefix: String): Boolean {
+        val lifecycle = """(?:INPUT_STARTED|INPUT_FINISHED|FOCUS_WINDOW_CHANGED|DEADLINE|DRAFT_CHANGED)"""
+        val refusal = """(?:DEVICE_NOT_READY|INPUT_MISMATCH|WINDOW_MISMATCH|ROOT_MISMATCH|IDENTITY_MISMATCH_R[01]_G[01]|ROOT_REFRESH_FAILED_RRMS_\d+|FOCUS_MISMATCH|IDENTITY_MISMATCH_N[01]_E[01]|CONNECTION_MISSING|FOCUS_REFRESH_FAILED_RRMS_\d+_FRMS_\d+_B-?\d+_-?\d+_-?\d+_[01])"""
+        return Regex("""${prefix}_ABORT_(?:$lifecycle|$refusal)""").matches(code)
     }
 
     private fun reportPostCommitProbeCodes(codes: List<String>) {
         val diagnostic = codes.filter {
-            it.startsWith("POST_DIAG_") || it == "FRESH_COMMIT_UNCERTAIN_TARGET_CHANGED"
+            it.startsWith("POST_DIAG_") || it.startsWith("POST_COMPOSE_") ||
+                it == "FRESH_COMMIT_UNCERTAIN_TARGET_CHANGED"
         }
-        assertTrue("POST_DIAG_CODE_OUTPUT_INVALID", diagnostic.size in 2..8 && diagnostic.all {
-            it.length <= 256 && Regex("[A-Z0-9_-]+").matches(it)
+        assertTrue("POST_DIAG_CODE_OUTPUT_INVALID", diagnostic.size in 2..10 && diagnostic.all {
+            it.length <= 384 && Regex("[A-Z0-9_-]+").matches(it)
         })
         instrumentation.sendStatus(0, Bundle().apply {
             putString("koscribe_confirmation_probe_codes", diagnostic.joinToString("|"))

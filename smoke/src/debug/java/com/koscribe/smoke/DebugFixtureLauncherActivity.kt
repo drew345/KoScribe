@@ -10,7 +10,7 @@ class DebugFixtureLauncherActivity : Activity() {
         super.onCreate(savedInstanceState)
         // Construct a fresh explicit Intent; never forward caller extras, data, or actions.
         startActivity(Intent(this, SmokeEditorActivity::class.java).apply {
-            putExtra(SmokeEditorActivity.EXTRA_OMIT_PROTECTED_EDITOR, true)
+            putExtra(SmokeEditorActivity.EXTRA_MANUAL_FIXTURE, true)
         })
         finish()
     }

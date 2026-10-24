@@ -360,6 +360,33 @@ The framework resource is corroborated by [AOSP autofill CTS UiBot](https://andr
 The one Oct24 invocation returned NOT_FOUND, so it made no click. Subsequent
 synthetic passes do not establish that the reported prompt can no longer recur.
 
+## Postcommit composition policy (2026-10-24)
+
+Documentation finding: Android 16's accessibility commit path calls batch-start,
+finishComposingText, commitText, then batch-end. Its normal BaseInputConnection
+commit implementation uses a noncomposing replacement. An IME can subsequently
+mark existing characters composing: setComposingRegion changes neither text
+contents nor cursor position. Exact inserted text and composition can therefore
+coexist; a composing marker alone does not prove an incorrect insertion.
+
+- [Android 16 accessibility commit implementation](https://raw.githubusercontent.com/aosp-mirror/platform_frameworks_base/android16-release/core/java/android/view/inputmethod/RemoteInputConnectionImpl.java)
+- [Android 16 BaseInputConnection](https://raw.githubusercontent.com/aosp-mirror/platform_frameworks_base/android16-release/core/java/android/view/inputmethod/BaseInputConnection.java)
+- [setComposingRegion contract](https://developer.android.com/reference/android/view/inputmethod/InputConnection#setComposingRegion(int,%20int))
+
+Measured limitation: the compact candidate's postcommit observation rejected
+SPAN_COMPOSING before exact expected-context and complete target matching. Its
+separate smoke text assertion does not establish all those conditions at the
+same instant. SwiftKey re-marking text is a hypothesis; producer/timing/range
+have not been measured. Composition still indicates active IME editing state.
+
+Decision: retain every precommit guard and current terminal uncertainty rule.
+Gather the missing conjunction using a bounded, debug REVIEW, synthetic-only
+diagnostic, without another mutation or later rehabilitation. Stop after at
+most two fresh attempts. Any proposed completion-policy change must distinguish
+permission to mutate from observed result, retain one consumed attempt, and
+come back for discussion with measured evidence. Copy & close remains the
+practical fallback if a small correction cannot demonstrate a usable flow.
+
 ## Credential and data handling
 
 OpenAI recommends keeping API keys server-side and out of client code. Andrew

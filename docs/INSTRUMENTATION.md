@@ -280,33 +280,47 @@ lifecycle counters, window-type counts, package classifications, and flag bits.
 The confirmation probe is a diagnostic, not an insertion acceptance test. Use its
 sole flag with that exact method. It makes one synthetic empty-field commit and
 handles natural CONFIRMED separately from terminal UNCERTAIN. The latter path
-prints only bounded POST_DIAG codes before cleanup, requires ordered original/
-T0/T1/DONE samples, verifies no retry/rearm/success relabeling, then Cancels while
-preserving the expected fixture text. ABORT is incomplete evidence; never retry
-automatically. The product probe exists only in debug REVIEW for the synthetic
-package, and starts after a NODE_CARET_MISMATCH has already ended eligibility.
-Its same-field before/after-refresh observations cannot rehabilitate that
-transaction or prove uninterrupted insertion continuity.
+prints only bounded POST_DIAG or POST_COMPOSE codes before cleanup, verifies no
+retry/rearm/success relabeling, then Cancels while preserving the expected fixture
+text. Outcomes distinguish natural confirmation, complete diagnostics, a complete
+but nonproving composition observation, and incomplete ABORT. None of the
+diagnostic outcomes is an insertion acceptance pass. Run at most two fresh
+attempts for the Oct24 composition investigation; no automatic retry.
+
+The probe exists only in debug REVIEW for the synthetic package, after
+NODE_CARET_MISMATCH or ACTIVE_COMPOSITION has already ended eligibility. CARET
+retains original/T0/T1/DONE; COMPOSITION has ORIG plus T0/T1/T2/DONE, targeted at
+immediate/150ms/500ms after probe start. A 750ms check refuses delayed-sample
+admission; Android IPC can still take longer. The ORIG composition record uses
+the existing observation: I=complete same-target/host identity, CX=expected
+context+offset, CK=expected connection caret, NK=expected node caret, NA=node/
+connection agreement. Span metadata reports presence, count capped at16, first
+start/end, zero-length flag, more-than-cap and unavailable/error flags; never
+span objects, text, or hashes. Later same-field observations cannot rehabilitate
+the transaction or prove uninterrupted insertion continuity.
 
 ## Manual SwiftKey review gate (2026-10-24)
 
-This Insert procedure describes the earlier manual gate. The current visual
-checkpoint below stops after dragging and selecting a field, WITHOUT Insert.
+This Insert procedure describes the manual gate; it has not passed. The Oct24
+visual checkpoint stopped after dragging/selecting, without Insert, and is over.
 
 The debug smoke APK has a launcher named **KoScribe test editor**. Its exported
 DebugFixtureLauncherActivity ignores caller data/extras/actions and constructs
-only a fixed intent to the existing nonexported SmokeEditorActivity, omitting
-the unused protected field. It never types, focuses, records, copies, or inserts.
+only a fixed manual-mode intent to the existing nonexported SmokeEditorActivity.
+The manual mode has one ordinary field under "Test message" with a hint, no
+prefilled text, and no protected/uncertain editors. Automated default and REVIEW
+fixture modes retain their respective fields. It never types, focuses a message
+field, records, copies, or inserts.
 Root can open it without changing the product APK:
 
 ```powershell
 adb -d shell am start --user 0 -W -n com.koscribe.smoke/.DebugFixtureLauncherActivity
 ```
 
-Andrew verifies the TOP normal fixture field is empty, taps it, then Ko -> EN ->
+Andrew verifies the single manual fixture field is empty, taps it, then Ko -> EN ->
 Stop after about two seconds. In the review he taps the END of the fixed sample,
 types ` Please wait.` using actual SwiftKey keys, taps Confirm English, returns
-to the top destination field, and taps Insert once. Scroll inside the own review
+to that destination field, and taps Insert once. Scroll inside the own review
 if its Confirm control is below the viewport. Leaving review before confirming
 cancels it. Recording has a 15-second deadline; review/result has three minutes
 from review creation, not renewed by edits. No automatic retries on uncertainty.

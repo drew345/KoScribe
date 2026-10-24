@@ -958,3 +958,69 @@ call ended and requested restart. The old draft had ended by DEADLINE, still wit
 zero captures/commits. A fresh manual drag-and-select check is pending; no dragging
 or manual insertion pass is yet claimed. No conversation screenshots or real-app
 insertion; the incidental incoming-call image was removed as described above.
+
+### Visual session completion and next diagnostic (2026-10-24)
+
+User report: the Move handle dragged the entire compact control into the blank
+area. Andrew tapped both fixture fields, ending with the normal top field; he
+mistook its "Synthetic text only" hint for residual content. The screenshot
+taken after his reply already showed the three-minute expiry and a large mode
+menu obscuring that field. It confirmed top-field focus after expiry, not the
+pre-expiry dragged geometry. No manual insertion was requested or attempted.
+
+Own state: REVIEW_CANCELLED, proof count2, draftNONE, captures0, commits0,
+confirmationNONE, cleanupfalse. Both flows ended by deadline; latest microphone
+use ended after 5.111s. Secure APK 723D5D20... was restored successfully and the
+temporary screenshot removed. Visual C3A713C0... is no longer installed.
+
+Next source changes: collapse non-completed review back to contextual Ko, and
+give the debug manual launcher one clearly labelled ordinary field. Their device
+behavior is not yet accepted. A separate bounded synthetic diagnostic will
+observe the composition failure without changing confirmation or allowing retry.
+
+### Secure composition diagnostic round (2026-10-24)
+
+Sol6/xhigh implemented; Astra/xhigh independently cleared:
+
+- Service F09C70C92574AC0FAF821902FFB31B06A1996B1F4D862A968E06BB3B78032FCB.
+- ReviewFlowSmokeTest 299E595CE41AD8E90872365D34439F2B24D8CA7FC9BD231E49FD78401912E2CA.
+- SmokeEditorActivity BE2DCDE070A7365D71C07362B4C238E06C6ACEE04A370B62C9606E8819E02D7C.
+- DebugFixtureLauncherActivity C96196D52D6A805E92FDF6D3D5909BB1186FCA57908F59E4E579DDFF6BC9ABE5.
+
+All composing/identity/context/caret/one-attempt checks are unchanged. The new
+diagnostic logs a same-observation identity/context/caret conjunction and capped
+numeric span metadata before the existing refusal, then samples terminal state
+at nominal0/150/500ms. It cannot rehabilitate a transaction. The750ms delayed-read
+admission cap does not bound Android IPC completion time. Debug REVIEW and the
+owned synthetic package are required; no diagnostic text or hash output.
+
+Saved and installed under ignored app/build/composition-probe:
+
+- REVIEW-secure.apk: 980E4299E1B73160E82D874139A7CE04FBA46603DC32A184E0FBF50D5D627D0D.
+- smoke.apk: 9D3F9563C8A3A21998EC1DD6A067921FD65868CE9F140C26F1BC2CC9CF8F361D.
+
+Secure REVIEW/default OFF builds passed,37 JVM tests passed with zero failures,
+errors or skips; lint zero errors (app25/smoke2 warnings); signatures verified.
+Generated diagnostic config REVIEW/visual false; ordinary output and release
+OFF/visual false. Ordinary output was not installed over the secure candidate.
+
+Two exact fresh runs of
+editedEnglishEmptyInsertReportsNaturalConfirmationOrTerminalProbe, sole flag
+reviewConfirmationProbeReady, both returned NATURAL_CONFIRMED:5.370s and4.638s.
+Each passed exact fixture text, confirmed dismissal, one capture/commit, stable
+state/text after500ms, and SwiftKey visible. Own traces showed focus refresh,
+READY_UNKNOWN and INSERT_CONFIRMED; no composition refusal/probe fired. Mic ended
+after610ms and622ms respectively. The two-run diagnostic round is closed: this
+does not reproduce or explain the intermittent composition failure, and does
+not establish a root-cause fix or manual/real-app acceptance.
+
+Current Copy regression editedEnglishCopyClosesAndReappearsAfterImeCycle passed
+in5.853s: fixed edited sample copied, original fixture text preserved, no capture/
+commit delta, dismissal until a new IME cycle. Final own baseline proof3,
+captures2/commits2, confirmationCOPIED, draftNONE, cleanupfalse; mic ended542ms.
+No Send/Enter, real-app field reads, screenshots, retained audio or API calls.
+
+The manual launcher opened the new one-field fixture successfully. Andrew was
+asked to edit the fixed sample with actual SwiftKey keys, Confirm, briefly select
+the single destination and Insert once. Await his report before phone actions;
+no manual pass or expiry-collapse device pass is claimed yet.

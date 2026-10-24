@@ -99,7 +99,11 @@ class KoScribeService : AccessibilityService() {
         var commitRequestedUptimeMs: Long = 0L
     )
     private var freshDestination: FreshDestination? = null
+    private enum class PostCommitProbeKind(val prefix: String) {
+        CARET("POST_DIAG"), COMPOSITION("POST_COMPOSE")
+    }
     private data class PostCommitProbe(
+        val kind: PostCommitProbeKind,
         val draftId: String,
         val node: AccessibilityNodeInfo,
         val root: AccessibilityNodeInfo,
@@ -112,9 +116,20 @@ class KoScribeService : AccessibilityService() {
         val expectedLength: Int,
         val expectedDigest: ByteArray,
         val commitRequestedUptimeMs: Long,
+        var startedUptimeMs: Long = 0L,
         var delayed: Runnable? = null
     )
     private var postCommitProbe: PostCommitProbe? = null
+
+    private data class ComposingSpanMetrics(
+        val count: Int, val firstStart: Int, val firstEnd: Int,
+        val firstZeroLength: Boolean, val more: Boolean, val error: Boolean
+    ) {
+        private fun Boolean.bit(): Int = if (this) 1 else 0
+        fun code(): String = "_SP${(count > 0).bit()}_SC${count}" +
+            "_SS${firstStart}_SE${firstEnd}_SZ${firstZeroLength.bit()}" +
+            "_SM${more.bit()}_SX${error.bit()}"
+    }
     @Volatile private var commitRequestCount = 0
     @Volatile private var commitConfirmation = "NONE"
     @Volatile private var unboundRecordingProofCount = 0
@@ -1364,7 +1379,8 @@ class KoScribeService : AccessibilityService() {
             expanded = false
             renderBubble()
         } else {
-            status = "Review cancelled."
+            expanded = false
+            status = if (reason == "DEADLINE") "Review expired." else "Review cancelled."
             refreshIdleBubble(forceRender = true)
         }
     }
@@ -1487,6 +1503,20 @@ class KoScribeService : AccessibilityService() {
                     now.editorFieldId == original.editorFieldId && now.inputType == original.inputType
             } == true
 
+    /** Diagnostic equivalent of sameFreshTarget before composition permits a safe snapshot. */
+    private fun diagnosticFreshIdentity(transaction: FreshDestination, node: AccessibilityNodeInfo,
+        root: AccessibilityNodeInfo, method: TrackingInputMethod, info: EditorInfo,
+        unique: String): Boolean =
+        sameFreshHost(transaction) && node == transaction.node && root == transaction.root &&
+            method.generation == transaction.generation &&
+            guard.session(transaction.id)?.target?.let { original ->
+                info.packageName != packageName && info.packageName == original.packageName &&
+                    node.windowId == original.windowId && unique == original.uniqueNodeId &&
+                    node.viewIdResourceName == original.viewId &&
+                    node.className?.toString() == original.className &&
+                    info.fieldId == original.editorFieldId && info.inputType == original.inputType
+            } == true
+
     private fun verifyFreshCommit(transaction: FreshDestination, poll: Int) {
         if (freshDestination !== transaction || transaction.phase != DestinationPhase.OBSERVING)
             return
@@ -1521,11 +1551,16 @@ class KoScribeService : AccessibilityService() {
     private fun finishUncertain(transaction: FreshDestination, code: String) {
         if (freshDestination !== transaction) return
         val original = guard.session(transaction.id)?.target
+        val probeKind = when (observationCode) {
+            ObservationCode.NODE_CARET_MISMATCH -> PostCommitProbeKind.CARET
+            ObservationCode.ACTIVE_COMPOSITION -> PostCommitProbeKind.COMPOSITION
+            else -> null
+        }
         val probe = if (BuildConfig.DEBUG && startupExperiment == StartupExperiment.REVIEW &&
-            code == "TARGET_CHANGED" && observationCode == ObservationCode.NODE_CARET_MISMATCH &&
+            code == "TARGET_CHANGED" && probeKind != null &&
             original?.packageName == "com.koscribe.smoke") {
             val expected = transaction.expected
-            PostCommitProbe(transaction.draftId, transaction.node, transaction.root,
+            PostCommitProbe(probeKind, transaction.draftId, transaction.node, transaction.root,
                 original.windowId, original.editorFieldId, original.inputType, transaction.generation,
                 expected.oldOffset, expected.caret, expected.text.length,
                 digestContext(expected.text), transaction.commitRequestedUptimeMs)
@@ -1546,21 +1581,42 @@ class KoScribeService : AccessibilityService() {
     private fun beginPostCommitProbe(probe: PostCommitProbe) {
         clearPostCommitProbe()
         postCommitProbe = probe
+        probe.startedUptimeMs = SystemClock.uptimeMillis()
         readPostCommitProbe(probe, "T0")
         if (postCommitProbe !== probe) return
+        schedulePostCommitProbe(probe, 1)
+    }
+
+    private fun schedulePostCommitProbe(probe: PostCommitProbe, index: Int) {
+        if (postCommitProbe !== probe) return
+        val targetElapsed = if (index == 1) 150L else 500L
         val delayed = Runnable {
-            if (postCommitProbe === probe &&
-                unboundDraft.current()?.takeIf { it.id == probe.draftId &&
-                    it.phase == UnboundDraftState.Phase.UNCERTAIN } != null) {
-                readPostCommitProbe(probe, "T1")
+            if (postCommitProbe !== probe) return@Runnable
+            if (probe.kind == PostCommitProbeKind.COMPOSITION &&
+                SystemClock.uptimeMillis() - probe.startedUptimeMs > 750L) {
+                abortPostCommitProbe("DEADLINE")
+                return@Runnable
             }
+            if (unboundDraft.current()?.takeIf { it.id == probe.draftId &&
+                    it.phase == UnboundDraftState.Phase.UNCERTAIN } == null) {
+                abortPostCommitProbe("DRAFT_CHANGED")
+                return@Runnable
+            }
+            readPostCommitProbe(probe, "T$index")
             if (postCommitProbe === probe) {
-                note("POST_DIAG_DONE")
-                clearPostCommitProbe()
+                if (probe.kind == PostCommitProbeKind.COMPOSITION && index == 1)
+                    schedulePostCommitProbe(probe, 2)
+                else {
+                    note("${probe.kind.prefix}_DONE")
+                    clearPostCommitProbe()
+                }
             }
         }
         probe.delayed = delayed
-        main.postDelayed(delayed, 150L)
+        val delay = if (probe.kind == PostCommitProbeKind.CARET) 150L
+            else (probe.startedUptimeMs + targetElapsed - SystemClock.uptimeMillis())
+                .coerceAtLeast(0L)
+        main.postDelayed(delayed, delay)
     }
 
     private fun clearPostCommitProbe() {
@@ -1569,13 +1625,37 @@ class KoScribeService : AccessibilityService() {
     }
 
     private fun abortPostCommitProbe(reason: String) {
-        if (postCommitProbe == null) return
-        note("POST_DIAG_ABORT_$reason")
+        val probe = postCommitProbe ?: return
+        note("${probe.kind.prefix}_ABORT_$reason")
         clearPostCommitProbe()
     }
 
     private fun digestContext(value: String): ByteArray =
         MessageDigest.getInstance("SHA-256").digest(value.toByteArray(Charsets.UTF_8))
+
+    /** Bounded numeric metadata only; never retain or print span objects or text. */
+    private fun composingSpanMetrics(value: CharSequence?): ComposingSpanMetrics {
+        val styled = value as? Spanned ?: return ComposingSpanMetrics(0, -1, -1,
+            firstZeroLength = false, more = false, error = true)
+        return runCatching {
+            var count = 0
+            var firstStart = -1
+            var firstEnd = -1
+            var more = false
+            for (span in styled.getSpans(0, styled.length, Any::class.java)) {
+                if (styled.getSpanFlags(span) and Spanned.SPAN_COMPOSING == 0) continue
+                count++
+                if (count == 1) {
+                    firstStart = styled.getSpanStart(span)
+                    firstEnd = styled.getSpanEnd(span)
+                }
+                if (count > 16) { more = true; break }
+            }
+            ComposingSpanMetrics(count.coerceAtMost(16), firstStart, firstEnd,
+                firstStart >= 0 && firstStart == firstEnd, more, error = false)
+        }.getOrElse { ComposingSpanMetrics(0, -1, -1,
+            firstZeroLength = false, more = false, error = true) }
+    }
 
     private fun readPostCommitProbe(probe: PostCommitProbe, label: String) {
         // All reads stay inside the own synthetic editor. Never traverse another app.
@@ -1583,7 +1663,7 @@ class KoScribeService : AccessibilityService() {
         val elapsed = (SystemClock.uptimeMillis() - probe.commitRequestedUptimeMs).coerceAtLeast(0L)
         fun stop(reason: String) {
             val ended = (SystemClock.uptimeMillis() - probe.commitRequestedUptimeMs).coerceAtLeast(0L)
-            note("POST_DIAG_${label}_MS_${elapsed}_ENDMS_${ended}_$reason")
+            note("${probe.kind.prefix}_${label}_MS_${elapsed}_ENDMS_${ended}_$reason")
             abortPostCommitProbe(reason)
         }
         val interactive = (getSystemService(POWER_SERVICE) as PowerManager).isInteractive
@@ -1681,7 +1761,7 @@ class KoScribeService : AccessibilityService() {
         val afterContextMatches = !focus.isShowingHintText && afterLength == probe.expectedLength &&
             focus.text?.let { digestContext(it.toString()).contentEquals(probe.expectedDigest) } == true
         val ended = (SystemClock.uptimeMillis() - probe.commitRequestedUptimeMs).coerceAtLeast(0L)
-        note("POST_DIAG_${label}_MS_${elapsed}_ENDMS_${ended}" +
+        note("${probe.kind.prefix}_${label}_MS_${elapsed}_ENDMS_${ended}" +
             "_RRMS_${rootRefreshDuration}_FRMS_${focusRefreshDuration}" +
             "_R${rootSame.b()}_RR${rootRefreshed.b()}" +
             "_N${nodeSame.b()}_G${generationSame.b()}_E${editorSame.b()}" +
@@ -1689,7 +1769,9 @@ class KoScribeService : AccessibilityService() {
             "_CE${surrounding?.selectionEnd ?: -1}_CL${connectionText?.length ?: -1}" +
             "_CX${connectionContextMatches.b()}_CK${connectionCaretMatches.b()}" +
             "_B${beforeStart}_${beforeEnd}_${beforeLength}_${beforeContextMatches.b()}" +
-            "_FR${refreshed.b()}_A${afterStart}_${afterEnd}_${afterLength}_${afterContextMatches.b()}")
+            "_FR${refreshed.b()}_A${afterStart}_${afterEnd}_${afterLength}_${afterContextMatches.b()}" +
+            if (probe.kind == PostCommitProbeKind.COMPOSITION)
+                composingSpanMetrics(connectionText).code() else "")
     }
 
     private fun Boolean.b(): Int = if (this) 1 else 0
@@ -2046,10 +2128,11 @@ class KoScribeService : AccessibilityService() {
             surrounding.selectionStart == 0 && surrounding.selectionEnd == 0
         val nodeUnknownPair = focus.textSelectionStart == -1 && focus.textSelectionEnd == -1
         val nodeEmptyOrHint = focus.isShowingHintText || focus.text.isNullOrEmpty()
-        if (!EditorCaretAgreement.matches(
+        val nodeCaretAgrees = EditorCaretAgreement.matches(
                 focus.textSelectionStart, focus.textSelectionEnd, surrounding.offset,
                 surrounding.selectionStart, surrounding.selectionEnd, text.isEmpty(), nodeEmptyOrHint
-            )) {
+            )
+        if (!nodeCaretAgrees) {
             val transaction = freshDestination
             if (postCommit && BuildConfig.DEBUG && startupExperiment == StartupExperiment.REVIEW &&
                 info.packageName == "com.koscribe.smoke" &&
@@ -2083,6 +2166,28 @@ class KoScribeService : AccessibilityService() {
         if (nodeUnknownPair) note("OBS_VERIFIED_EMPTY_CARET")
         val composition = if (postCommit) CompositionState.UNKNOWN else method.compositionAt(caret)
         if (composition == CompositionState.COMPOSING || composing) {
+            val transaction = freshDestination
+            if (postCommit && composing && BuildConfig.DEBUG &&
+                startupExperiment == StartupExperiment.REVIEW &&
+                info.packageName == "com.koscribe.smoke" &&
+                transaction?.phase == DestinationPhase.OBSERVING &&
+                guard.session(transaction.id)?.target?.packageName == "com.koscribe.smoke") {
+                val expected = transaction.expected
+                val expectedAbsoluteCaret = expected.oldOffset.toLong() + expected.caret
+                val elapsed = (SystemClock.uptimeMillis() - transaction.commitRequestedUptimeMs)
+                    .coerceAtLeast(0L)
+                val identity = diagnosticFreshIdentity(transaction, focus, root, method, info, unique)
+                val context = surrounding.offset == expected.oldOffset &&
+                    text.toString() == expected.text
+                val connectionCaret = surrounding.offset == expected.oldOffset &&
+                    surrounding.selectionStart == expected.caret &&
+                    surrounding.selectionEnd == expected.caret
+                val nodeCaret = focus.textSelectionStart.toLong() == expectedAbsoluteCaret &&
+                    focus.textSelectionEnd.toLong() == expectedAbsoluteCaret
+                note("POST_COMPOSE_ORIG_MS_${elapsed}_I${identity.b()}_CX${context.b()}" +
+                    "_CK${connectionCaret.b()}_NK${nodeCaret.b()}_NA${nodeCaretAgrees.b()}" +
+                    composingSpanMetrics(text).code())
+            }
             return refuse(ObservationCode.ACTIVE_COMPOSITION)
         }
         if (composition == CompositionState.SELECTION_MISMATCH) {

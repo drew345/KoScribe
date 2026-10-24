@@ -48,8 +48,8 @@ class ReviewFlowSmokeTest {
         val args = InstrumentationRegistry.getArguments()
         val reviewFlags = listOf("reviewCopyReady", "reviewInsertEmptyReady",
             "reviewInsertMiddleReady", "reviewKoreanReady", "reviewSelectionReady",
-            "reviewKoreanEditReady", "reviewUncertainReady")
-        val olderFlags = listOf("externalDraftReady", "externalRecordCancelReady",
+            "reviewKoreanEditReady", "reviewUncertainReady", "reviewConfirmationProbeReady")
+        val olderFlags = listOf("autofillSaveNoReady", "externalDraftReady", "externalRecordCancelReady",
             "startupHoldReady", "startupCollapseReady", "startupPanelReady", "overlayReady",
             "reselectReady", "bubbleIdleReady", "bubbleMicReady", "bubbleRestoreReady")
         assumeTrue("REVIEW_TEST_REQUIRES_ONE_EXACT_OPT_IN",
@@ -72,9 +72,12 @@ class ReviewFlowSmokeTest {
     @After fun cancelOwnDraftOnFailure() {
         if (!::instrumentation.isInitialized || !sessionAttempted) return
         runCatching {
-            listOf("review_cancel", "ready_cancel").firstNotNullOfOrNull { ownId(it) }
-                ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                ?: ownButton("Cancel")?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+            if (ownReviewCancelCandidate() != null) {
+                revealOwnReviewCancel(1_500)?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+            } else {
+                ownId("ready_cancel")?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                    ?: ownButton("Cancel")?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+            }
         }
         // The product's own deadline and mic owner also terminate an interrupted capture.
     }
@@ -123,6 +126,77 @@ class ReviewFlowSmokeTest {
         tapDestination(R.id.local_test_editor)
         clickOwnId("ready_insert")
         successfulInsert(before, R.id.local_test_editor, edited)
+    }
+
+    @Test fun editedEnglishEmptyInsertReportsNaturalConfirmationOrTerminalProbe() {
+        only("reviewConfirmationProbeReady")
+        val edited = "Edited English for empty synthetic editor."
+        seedFixture(R.id.local_test_editor, "", 0)
+        val before = state()
+        startReview("EN", before)
+        editReview(edited)
+        confirmReady(before)
+        tapDestination(R.id.local_test_editor)
+        clickOwnId("ready_insert") // One synthetic commit attempt; no recovery Insert.
+        await("SYNTHETIC_INSERT_RESULT_TIMEOUT") {
+            fixtureEditor(R.id.local_test_editor)?.takeIf { fixtureText(it) == edited }
+        }
+        val terminal = await("POST_COMMIT_TERMINAL_OUTCOME_NOT_REPORTED") {
+            val current = state()
+            if (current.captures > before.captures + 1 || current.commits > before.commits + 1)
+                throw AssertionError("INSERT_RETRIED_OR_RECAPTURED")
+            if (current.captures == before.captures + 1 && current.commits == before.commits + 1 &&
+                ((current.phase == "NONE" && current.confirmation == "CONFIRMED") ||
+                    (current.phase == "UNCERTAIN" && current.confirmation == "UNCERTAIN"))) current
+            else null
+        }
+        assertTrue("MIC_CLEANUP_PENDING_AFTER_INSERT", !terminal.cleanup)
+        assertTrue("SWIFTKEY_NOT_VISIBLE_AFTER_PROBE_INSERT", imeVisible() && selectedSwiftKey())
+        when (terminal.confirmation) {
+            "CONFIRMED" -> {
+                sessionAttempted = false
+                assertTrue("CONFIRMED_INSERT_DID_NOT_DISMISS", !visibleOwnUi())
+                assertTrue("CONFIRMED_INSERT_EXPOSED_RETRY", ownId("ready_insert") == null)
+                SystemClock.sleep(500)
+                assertFixtureText(R.id.local_test_editor, edited)
+                val stable = state()
+                assertTrue("CONFIRMED_INSERT_RETRIED_OR_CHANGED", stable.captures == before.captures + 1 &&
+                    stable.commits == before.commits + 1 && stable.phase == "NONE" &&
+                    stable.confirmation == "CONFIRMED" && !stable.cleanup)
+                reportConfirmationProbe("NATURAL_CONFIRMED")
+            }
+            "UNCERTAIN" -> {
+                val codes = await("POST_DIAG_COMPLETION_NOT_REPORTED") {
+                    postCommitProbeCodes()?.takeIf { events ->
+                        events.any { it.startsWith("POST_DIAG_DONE") ||
+                            it.startsWith("POST_DIAG_ABORT_") }
+                    }
+                }
+                reportPostCommitProbeCodes(codes)
+                assertPostCommitProbeComplete(codes)
+                await("UNCERTAIN_RECOVERY_NOT_AVAILABLE") { ownId("ready_copy")?.takeIf {
+                    ownId("ready_cancel") != null
+                } }
+                assertTrue("UNCERTAIN_EXPOSED_RETRY_OR_EDIT", ownId("ready_insert") == null &&
+                    reviewEditor() == null)
+                SystemClock.sleep(500)
+                assertFixtureText(R.id.local_test_editor, edited)
+                val stable = state()
+                assertTrue("UNCERTAIN_RETRIED_OR_RELABELED", stable.captures == before.captures + 1 &&
+                    stable.commits == before.commits + 1 && stable.phase == "UNCERTAIN" &&
+                    stable.confirmation == "UNCERTAIN" && !stable.cleanup)
+                assertTrue("UNCERTAIN_REEXPOSED_INSERT", ownId("ready_insert") == null)
+                clickOwnId("ready_cancel")
+                sessionAttempted = false
+                await("CANCEL_DID_NOT_END_DRAFT") { state().takeIf {
+                    it.phase == "NONE" && it.confirmation == "UNCERTAIN" && !it.cleanup &&
+                        it.captures == before.captures + 1 && it.commits == before.commits + 1
+                } }
+                assertFixtureText(R.id.local_test_editor, edited)
+                reportConfirmationProbe("TERMINAL_UNCERTAIN_DIAG_DONE")
+            }
+            else -> throw AssertionError("UNEXPECTED_CONFIRMATION_OUTCOME")
+        }
     }
 
     @Test fun longEnglishInsertsAtMiddlePreservingKoreanAndEmoji() {
@@ -198,9 +272,12 @@ class ReviewFlowSmokeTest {
         assertTrue("KOREAN_EDIT_PREPARED_RESULT", ownId("ready_insert") == null &&
             ownId("ready_copy") == null)
         assertTrue("DESTINATION_CAPTURED_DURING_REVIEW", state().captures == before.captures)
-        clickOwnId("review_cancel")
+        clickOwnReviewCancel()
+        await("REVIEW_CANCEL_DID_NOT_CLOSE") { state().takeIf {
+            it.phase == "NONE" && it.captures == before.captures &&
+                it.commits == before.commits && !ownReviewControlsRemain()
+        } }
         sessionAttempted = false
-        await("REVIEW_CANCEL_DID_NOT_CLOSE") { (reviewEditor() == null).takeIf { it } }
         assertFixtureText(R.id.local_test_editor, original)
         assertTrue("CANCEL_COMMITTED", state().commits == before.commits)
         assertTrue("MIC_CLEANUP_PENDING", !state().cleanup)
@@ -293,12 +370,16 @@ class ReviewFlowSmokeTest {
         instrumentation.context.startActivity(Intent(instrumentation.context,
             SmokeEditorActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            putExtra(SmokeEditorActivity.EXTRA_OMIT_PROTECTED_EDITOR, true)
         })
         val end = SystemClock.elapsedRealtime() + 8_000L
         while (SystemClock.elapsedRealtime() < end) {
-            if (focusedFixtureApp()) return
+            if (focusedFixtureApp() && nodes(fixture).none {
+                it.viewIdResourceName == "$fixture:id/local_protected_editor"
+            }) return
             SystemClock.sleep(100)
         }
+        if (focusedFixtureApp()) throw AssertionError("REVIEW_PROTECTED_FIELD_NOT_OMITTED")
         // Snapshot before JUnit cleanup can destroy the fixture. Codes/counts only.
         throw AssertionError("FIXTURE_NOT_AVAILABLE_${fixtureLaunchSnapshot()}")
     }
@@ -426,6 +507,60 @@ class ReviewFlowSmokeTest {
         return result
     }
 
+    private fun postCommitProbeCodes(): List<String>? {
+        val descriptor = automation().executeShellCommand(
+            "dumpsys activity service com.koscribe.prototype/.KoScribeService")
+        val lines = ParcelFileDescriptor.AutoCloseInputStream(descriptor).bufferedReader().use {
+            it.lineSequence().take(128).map(String::trim).toList()
+        }
+        val heading = lines.indexOf("Recent guard events (codes only):")
+        if (heading < 0) throw AssertionError("PRODUCT_GUARD_CODES_UNAVAILABLE")
+        val codes = lines.drop(heading + 1).mapNotNull { line ->
+            Regex("^[0-9]{1,9} ([A-Z0-9_-]+)$").matchEntire(line)?.groupValues?.get(1)
+        }
+        val request = codes.indexOfLast { it == "FRESH_COMMIT_REQUESTED_ONCE" }
+        if (request < 0) return null
+        return codes.drop(request + 1)
+    }
+
+    private fun assertPostCommitProbeComplete(codes: List<String>) {
+        val original = codes.indexOfFirst { it.startsWith("POST_DIAG_ORIG_MS_") }
+        val terminal = codes.indexOfFirst { it == "FRESH_COMMIT_UNCERTAIN_TARGET_CHANGED" }
+        val t0 = codes.indexOfFirst { it.startsWith("POST_DIAG_T0_MS_") }
+        val t1 = codes.indexOfFirst { it.startsWith("POST_DIAG_T1_MS_") }
+        val done = codes.indexOfFirst { it == "POST_DIAG_DONE" }
+        val aborted = codes.any { it.startsWith("POST_DIAG_ABORT_") }
+        assertTrue("POST_DIAG_ABORTED_OR_INCOMPLETE", !aborted && original >= 0 &&
+            terminal > original && t0 > terminal && t1 > t0 && done > t1)
+        assertTrue("POST_DIAG_UNKNOWN_SAMPLE_FORMAT",
+            knownPostDiagnosticSample(codes[t0], "T0") &&
+                knownPostDiagnosticSample(codes[t1], "T1"))
+    }
+
+    private fun knownPostDiagnosticSample(code: String, label: String): Boolean {
+        require(label == "T0" || label == "T1")
+        val full = Regex("""POST_DIAG_${label}_MS_\d+_ENDMS_\d+_RRMS_\d+_FRMS_\d+_R[01]_RR[01]_N[01]_G[01]_E[01]_CO-?\d+_CS-?\d+_CE-?\d+_CL-?\d+_CX[01]_CK[01]_B-?\d+_-?\d+_-?\d+_[01]_FR[01]_A-?\d+_-?\d+_-?\d+_[01]""")
+        return full.matches(code)
+    }
+
+    private fun reportPostCommitProbeCodes(codes: List<String>) {
+        val diagnostic = codes.filter {
+            it.startsWith("POST_DIAG_") || it == "FRESH_COMMIT_UNCERTAIN_TARGET_CHANGED"
+        }
+        assertTrue("POST_DIAG_CODE_OUTPUT_INVALID", diagnostic.size in 2..8 && diagnostic.all {
+            it.length <= 256 && Regex("[A-Z0-9_-]+").matches(it)
+        })
+        instrumentation.sendStatus(0, Bundle().apply {
+            putString("koscribe_confirmation_probe_codes", diagnostic.joinToString("|"))
+        })
+    }
+
+    private fun reportConfirmationProbe(code: String) {
+        instrumentation.sendStatus(0, Bundle().apply {
+            putString("koscribe_confirmation_probe", code)
+        })
+    }
+
     private fun fixtureEditor(id: Int): AccessibilityNodeInfo? {
         val name = when (id) {
             R.id.local_test_editor -> "local_test_editor"
@@ -440,6 +575,60 @@ class ReviewFlowSmokeTest {
     }
 
     private fun reviewEditor(): AccessibilityNodeInfo? = ownId("review_english")
+
+    private fun ownReviewCancelCandidate(): AccessibilityNodeInfo? {
+        val reviewRoots = automation().windows.asSequence()
+            .filter { it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.isFocused }
+            .mapNotNull { it.getRoot(0) }
+            .filter { it.packageName?.toString() == product }
+            .filter { root ->
+                root.findAccessibilityNodeInfosByViewId("$product:id/review_english")
+                    .singleOrNull()?.let { it.packageName?.toString() == product && it.isEditable } == true &&
+                    root.findAccessibilityNodeInfosByViewId("$product:id/review_confirm")
+                        .singleOrNull()?.packageName?.toString() == product
+            }.toList()
+        if (reviewRoots.size > 1) throw AssertionError("AMBIGUOUS_OWN_REVIEW_WINDOW")
+        val matches = reviewRoots.singleOrNull()
+            ?.findAccessibilityNodeInfosByViewId("$product:id/review_cancel").orEmpty()
+            .filter { it.packageName?.toString() == product &&
+                it.viewIdResourceName == "$product:id/review_cancel" &&
+                it.className?.toString() == "android.widget.Button" &&
+                it.text?.toString()?.equals("Cancel", ignoreCase = true) == true }
+        if (matches.size > 1) throw AssertionError("AMBIGUOUS_OWN_REVIEW_CANCEL")
+        return matches.singleOrNull()
+    }
+
+    private fun revealOwnReviewCancel(timeoutMs: Long): AccessibilityNodeInfo? {
+        val original = ownReviewCancelCandidate() ?: return null
+        if (!original.isEnabled || !original.isClickable) return null
+        if (original.isVisibleToUser) return original
+        original.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN.id)
+        val end = SystemClock.elapsedRealtime() + timeoutMs
+        while (SystemClock.elapsedRealtime() < end) {
+            val current = ownReviewCancelCandidate() ?: return null
+            if (current != original || current.windowId != original.windowId)
+                throw AssertionError("OWN_REVIEW_CANCEL_CHANGED_DURING_REVEAL")
+            if (current.isVisibleToUser && current.isEnabled && current.isClickable) return current
+            SystemClock.sleep(100)
+        }
+        return null
+    }
+
+    private fun clickOwnReviewCancel() {
+        val cancel = revealOwnReviewCancel(4_000)
+            ?: throw AssertionError("OWN_REVIEW_CANCEL_NOT_REVEALED")
+        assertTrue("OWN_REVIEW_CANCEL_CLICK_FAILED",
+            cancel.performAction(AccessibilityNodeInfo.ACTION_CLICK))
+    }
+
+    private fun ownReviewControlsRemain(): Boolean = automation().windows.asSequence()
+        .filter { it.type == AccessibilityWindowInfo.TYPE_APPLICATION }
+        .mapNotNull { it.getRoot(0) }
+        .filter { it.packageName?.toString() == product }
+        .any { root ->
+            root.findAccessibilityNodeInfosByViewId("$product:id/review_english").isNotEmpty() ||
+                root.findAccessibilityNodeInfosByViewId("$product:id/review_cancel").isNotEmpty()
+        }
 
     private fun ownId(name: String): AccessibilityNodeInfo? {
         require(name in listOf("review_english", "review_confirm", "review_cancel",

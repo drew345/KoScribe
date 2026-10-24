@@ -6,9 +6,11 @@ First Kakao flow safely refused insertion; other external-app checks and actual
 SwiftKey keystroke editing remain pending.
 On 2026-10-24 the RESELECT candidate also passed three exact synthetic bubble
 gates: visibility/drag/Hide, service-restart position restoration, and recording
-through keyboard transitions. The later REVIEW candidate passed editable EN ->
-Copy and completion dismissal; its empty Insert gate observed the expected text
-but could not confirm caret agreement. Current insertion acceptance is unresolved.
+through keyboard transitions. The final REVIEW candidate passed all seven exact
+synthetic acceptance methods, including Copy and confirmed empty/middle/Korean
+insertion with completion dismissal. A measured stale focused-node snapshot was
+corrected by refresh plus unchanged confirmation guards. Current-build real-app
+acceptance and manual SwiftKey keystrokes remain unresolved.
 See the final sections for scope and limits; earlier passes apply to their builds.
 
 ## Environment to verify
@@ -43,7 +45,7 @@ inferences from unit tests.
 | Selected text or unknown caret refuses automatic insertion | Selected range refused; exact draft preserved | Pending | Pending | Pending |
 | Changed text/field/app/conversation (including switch-back) refuses | Pending | Pending | Pending | Pending |
 | Cancel, repeated controls, rotation, service loss do not insert late | Cancel and leaving review passed; other cases pending | Pending | Pending | Pending |
-| No automatic Send/Enter; uncertain outcome never auto-retries | Pending | Pending | Pending | Pending |
+| No automatic Send/Enter; uncertain outcome never auto-retries | No Send/Enter in reviewed tests; ignored-commit uncertainty passed on window/focus-change trigger | Pending | Pending | Pending |
 | Explicit Copy recovery works after refusal | Pending | Pending | Pending | Pending |
 
 Separately check password/PIN/nontext fields, unavailable microphone, denied
@@ -736,3 +738,148 @@ screenshots, retained audio, Send/Enter, credential or paid API call were involv
 Copy replaced the clipboard with the disclosed fixed sample. Confirmed insertion,
 middle/Korean safety gates, current-build real-app compatibility, and full Phase 1
 acceptance remain open.
+
+## Focused-node confirmation fix and final REVIEW gates (2026-10-24)
+
+Andrew resumed the saved checkpoint to resolve insertion confirmation. All work
+remained API-free and synthetic. Sol 6 Extra High implemented the diagnostic,
+fix, and smoke changes; Astra Extra High independently reviewed exact sources.
+Root alone built/installed/operated ADB. Real-app insertion scope was not reopened.
+
+### Measured diagnostic
+
+The bounded debug REVIEW diagnostic ran only against com.koscribe.smoke after
+NODE_CARET_MISMATCH had already made the transaction terminally UNCERTAIN. It
+stored transient expected-context digests and emitted only timing, identity,
+generation, caret/length, and context-match codes. It never retried, rearmed,
+or relabeled the failed attempt. Own postterminal overlay events were permitted
+for observation only; this is not uninterrupted insertion-continuity evidence.
+
+`editedEnglishEmptyInsertReportsNaturalConfirmationOrTerminalProbe` passed in
+5.473s on diagnostic product `88577CC5396C4D66693CD3943EC59CF0B9F6D775D88DA34BE5AFEEC094ACDABE`
+and smoke `36E14FD3448E3D61C199CF02526D3A8DA49CCD90B8809F9C77446BAE3284A5C0`,
+saved under ignored app/build/confirmation-diagnostic. Reviewed service source:
+`914D03E3CB9A74E526D1435A19205C7383A939C7BD56CCB1F5FF113D4D3EE546`;
+review test source `0035D789EFA06A597ED986AA5D1ECE2204C9CA7C6D043BADBCBD3DD207E890F2`.
+
+| Observation | Measured evidence |
+| --- | --- |
+| Original at +15ms | Same root/node/input generation; connection caret 42/42 and exact 42 UTF-16 unit expected context. Node still -1/-1 and hint length 19. |
+| T0 +43 to +60ms | Same identities; discrepancy persisted before focused-node refresh. Root refresh 4ms; focused-node refresh 4ms supplied caret 42/42 and exact 42-unit node text. |
+| T1 +210 to +221ms | Connection/node already consistent before refresh; root refresh 1ms, focused refresh 3ms. |
+
+Stale focused-node metadata is the measured proximate cause in this run. Cache
+versus commit/read ordering was not isolated. The diagnostic transaction remained
+UNCERTAIN: one capture/commit, Cancel -> draft NONE, cleanup false. Exact-app
+AppOps reported microphone use ended after 575ms.
+
+### Reviewed fix and ready-control layout
+
+REVIEW now refreshes the same focused node after reading connection context,
+then revalidates transaction/window/root/node, input generation/EditorInfo, focus,
+editable/enabled/protected/type state, and unlocked/interactive state. It retains
+exact caret agreement, safe snapshots, sameFreshTarget, and CommitConfirmation.
+Refresh failure after an attempted commit is terminal UNCERTAIN; no retry,
+grace period, event exception, or success
+from a void commit return. Android 16 creates a new connection wrapper per getter,
+so wrapper identity is deliberately not used as a continuity check (see RESEARCH).
+
+The first refresh-only product
+`6C80B1CD9DB2BFB86416D4CAFF59254B056B54F5A032B5562F6E9804EE539022`
+(source `12E12A324659FBC14F7E7147357FF79B99E0ABF25850991071580884230BE98A`)
+passed empty insertion in 4.873s with POSTCOMMIT_FOCUS_REFRESHED and confirmed
+bubble dismissal. Ignored commit passed terminal-uncertainty checks in 4.253s.
+The long-result gate then stopped before insertion at READY_CONTROLS_NOT_VISIBLE
+in 11.598s; captures/commits stayed 2/2 and mic ended after 627ms. Controls were
+below the fixed 260x320dp scrolling panel's visible area.
+
+Final product keeps a scrolling preview body and fixed Insert / Copy & close
+row plus Cancel footer. UNCERTAIN has Copy and Cancel only. Same handlers, IDs,
+nonfocusable secure window, host ownership, and safety checks remain. General
+small-height/large-font/split-screen/rotation geometry is not yet tested.
+
+Final reviewed source SHA-256:
+
+- Service: `ABC4F0473E7F3FA77046DECFA1EB438220214357D03BFBBAD1BF93507989D48C`.
+- Review test: `6514370531DD951DB03B589E89964F18DCC9C6AE3CAD480BFEA757DB1B2D3AEB`.
+- Fixture: `A02ED4A44E82E3FEF90470885851C34A63EA2085550632CC75ADECF730B118B6`.
+- Optional save-prompt helper: `765B585128FB6E482193DF70231FCADD1D4DA670C1F53F3FB539DDC14F644F5E`.
+- CommitConfirmation and UnboundDraftState are unchanged from the earlier review.
+
+Final product (P), installed throughout all seven passes below:
+`2B00BE44077579BBD92D3D6A8D7FCED7E7391E17B05F56B5D1652444F4AD4D9E`.
+Saved as ignored `app/build/confirmation-refresh/REVIEW.apk`.
+
+| Smoke version | SHA-256 | Changes / saved filename under confirmation-refresh |
+| --- | --- | --- |
+| A | `F3093D1BC5466F1A688D4B061DE47BD019D7E97F5A3B5AA1C03C2CB19844E693` | Autofill opt-out; protected fixture still present. smoke-with-protected-field.apk |
+| B | `309FE53C06C4155326D0E8B53649A28AE473B8E40BA646D98A57BF0F31C5A078` | REVIEW omits unused protected field; adds exact opt-in save-prompt negative helper. smoke-before-cancel-scroll.apk |
+| C (final installed) | `FC0A13E58BF297AC49DD7E102384647D330644E6A43DD43FB0EC9F0D8AAD79AD` | B plus bounded same-control Cancel reveal and stronger closure assertion. smoke.apk |
+
+All exact methods below are in ReviewFlowSmokeTest and ran separately with their
+sole flags. These are seven acceptance-method passes on one product across
+reviewed smoke versions, not a whole-suite run.
+
+| Method | Smoke | Result on P |
+| --- | --- | --- |
+| editedEnglishCopyClosesAndReappearsAfterImeCycle | B | PASS 6.708s; edited sample copied with sensitive metadata, original fixture text retained, zero captures/commits for the flow, bubble hidden until verified IME cycle. |
+| editedEnglishInsertsIntoEmptyFixtureOnce | B | PASS 4.372s; exact sample/caret confirmation, one capture/commit, POSTCOMMIT_FOCUS_REFRESHED, confirmed dismissal. |
+| longEnglishInsertsAtMiddlePreservingKoreanAndEmoji | A | PASS 4.207s; long insertion preserved Korean/emoji surrounding text and confirmed dismissal. |
+| fixedKoreanSampleInsertsIntoEmptyFixture | A | PASS 4.826s; exact fixed Korean insertion and confirmed dismissal. |
+| selectedRangeRefusesAndPreservesResult | A | PASS 4.724s; selected text unchanged, insertion refused, result retained for explicit recovery. |
+| koreanEditRejectsThenCancelPreservesFixture | C | PASS 4.012s; edited Korean source rejected, Cancel cleared draft, fixture/counters unchanged and own review nodes gone. |
+| acknowledgedButUnchangedCommitIsTerminallyUncertain | B | PASS 4.538s; one attempted commit, no text change or confirmed success, terminal uncertainty with no second Insert, then Cancel. |
+
+Ignored-commit runs ended with FRESH_COMMIT_UNCERTAIN_WINDOW_OR_FOCUS_CHANGED,
+not the settled POSTCONTEXT_UNCONFIRMED timeout branch. They establish no-retry
+behavior for that observed trigger; do not overstate branch coverage. Unit tests
+separately cover unchanged-context rejection.
+
+Before the long-middle pass, a 10.682s attempt stopped at STOP_NOT_AVAILABLE after
+OVERLAY_MIC_SILENCED; proof/capture/commit counts were zero, mic ended after 1ms.
+Andrew reported a phone call and authorized retry; the unchanged test passed.
+Korean and selection startup attempts stopped before fixture focus in 8.538s and
+8.563s with four SYSTEM windows. Andrew later cleared notifications; a subsequent
+bounded focus check classified the fixture. Their cause is not conclusively
+identified. No guard was weakened, and no conversation content was inspected.
+
+The first Korean-edit Cancel gate on B failed in 11.850s at
+OWN_CONTROL_NOT_FOUND_review_cancel after correctly rejecting the edit. Cancel
+was below the own review viewport. C issues one ACTION_SHOW_ON_SCREEN on the
+exact original hidden/enabled/clickable own Cancel node, enforces the same
+node/window through bounded visibility checks, and clicks once. No generic
+scroll, Back, coordinates, or other app navigation. Final assertions require
+draft NONE, unchanged destination/commit counts, and absence of review controls
+regardless of visibility, preventing an offscreen editor from falsely passing.
+
+### Proton Pass and cleanup
+
+Andrew reported repeated save-password prompts. No password was required or
+entered; the fixture's empty protected editor is a plausible autofill heuristic
+trigger, not a confirmed Proton diagnosis. Per-view/root opt-out did not prevent
+recurrence. B/C omit that unused field only for REVIEW; the default protected
+fixture remains for its explicit bubble exclusion gate. No Proton/global autofill
+setting was changed. Prompt cessation is not yet established.
+
+Andrew explicitly authorized clicking the visible negative save action. The
+independently reviewed exact Android negative-button helper ran once on B in
+0.038s and reported NOT_FOUND; no click occurred. It did not inspect proposed
+credentials or vault contents. See INSTRUMENTATION for its sole opt-in scope.
+
+Final own service: REVIEW_CANCELLED, recording proof count 8, draft NONE,
+destination captures 5, commit requests 4, cleanup pending false. Last confirmation
+UNCERTAIN belongs to the prior ignored-commit test; the final cancellation gate
+added no captures/commits. Exact-app AppOps confirmed microphone use ended after
+516ms. SwiftKey remained selected. No more tests/builds were left running.
+
+Candidate/default OFF builds, 37 unit tests (zero failures/errors/skips), lints
+(zero errors; app 23/smoke 3 warnings), and APK signatures passed. Final C
+smoke-only build/lint passed after review, then only the affected cancellation
+method reran. Ordinary app-debug.apk is OFF; it was not installed over P.
+
+No real-chat traversal, Send/Enter, screenshots, retained audio, credentials,
+paid/API calls, or permission changes occurred. Copy replaced the clipboard
+with the disclosed synthetic sample. Automated review edits used the own
+EditText action with SwiftKey visible, not actual keyboard keypresses. Real-app
+insertion, manual typing/composition, navigation/recovery and general geometry
+remain open Phase 1 gates. Do not advance to speech/API work on these results alone.

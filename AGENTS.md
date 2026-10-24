@@ -53,6 +53,10 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   A commit request returning is not success. Require observed same-destination
   text/caret confirmation before dismissal; an ambiguous attempted commit must
   never regain Insert through retries, editing, or stale callbacks.
+- Andrew authorized dismissing the visible save-password prompt with its
+  "No, thanks" action during testing. This permits a narrowly targeted
+  Android system negative-button helper, not credential reads, saving entries,
+  blind Back/coordinate actions, or changing Proton Pass/global autofill settings.
 
 ## Nonnegotiable product constraints
 

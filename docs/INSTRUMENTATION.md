@@ -141,8 +141,9 @@ This bounded candidate displays the selected mode, recording status, Stop,
 and Cancel. Stop requires positive reads and its own non-null recorder
 configuration reporting unsilenced capture, then releases the microphone and
 shows readonly fixed English with Cancel. It does not demonstrate speech
-recognition, editable review, translation, or insertion. All non-OFF builds
-hard-block insertion and clipboard recovery. The compact window does not cover
+recognition, editable review, translation, or insertion. These recording-only
+experiment arms hard-block insertion and clipboard recovery; the later REVIEW
+arm has its own separate synthetic gates below. The compact window does not cover
 the whole screen; external target/focus/input changes retain terminal refusal.
 An eight-second cancellation deadline ends the session. Cleanup
 exceptions are reported as uncertain, block new capture, and trigger bounded
@@ -190,8 +191,9 @@ Andrew chose review first, then tap the intended field and Insert. The debug
 RESELECT arm starts a separate recording session with no destination capture.
 It returns before accessibility target handling and passive editor callbacks.
 Own host stability, microphone proof, screen-off/lock, interruption, destruction,
-and a 15-second session deadline still govern cleanup. All non-OFF builds block
-commit and Copy. Default/release remains OFF until replacement gates pass.
+and a 15-second session deadline still govern cleanup. RESELECT blocks commit
+and Copy; REVIEW has separate synthetic gates below. Default/release remains OFF
+until replacement gates pass.
 
 Stage 1 provides recording -> Stop -> readonly fixed English review -> Cancel.
 It does not implement editable review, translation, destination selection, or
@@ -232,6 +234,7 @@ not the earlier RESELECT recording-only candidate. Run only exact methods in
 | `selectedRangeRefusesAndPreservesResult` | `reviewSelectionReady` |
 | `koreanEditRejectsThenCancelPreservesFixture` | `reviewKoreanEditReady` |
 | `acknowledgedButUnchangedCommitIsTerminallyUncertain` | `reviewUncertainReady` |
+| `editedEnglishEmptyInsertReportsNaturalConfirmationOrTerminalProbe` | `reviewConfirmationProbeReady` |
 
 ```powershell
 adb -d shell am instrument --user 0 -w -r -e class 'com.koscribe.smoke.ReviewFlowSmokeTest#editedEnglishCopyClosesAndReappearsAfterImeCycle' -e reviewCopyReady true com.koscribe.smoke/com.koscribe.smoke.KoScribeTestRunner
@@ -244,6 +247,10 @@ with a fixed synthetic result; do not read or restore earlier clipboard content.
 The Copy test checks our clip metadata before examining the known synthetic text.
 The uncertainty fixture acknowledges both commit overloads without changing
 text, exercising terminal uncertainty and the absence of another Insert action.
+The measured Oct24 runs ended on WINDOW_OR_FOCUS_CHANGED, not the settled
+POSTCONTEXT_UNCONFIRMED timeout branch; check the actual terminal code each time.
+REVIEW launches omit the unused protected editor and opt out of autofill. The
+default fixture still includes that editor for explicit protected-field tests.
 
 Tests check zero destination captures/commits during recording and review, then
 fresh capture only after explicit Insert. Exact text/one-commit counters and
@@ -251,6 +258,10 @@ bubble dismissal are assertions, not conclusions from a void API return. English
 edits use the owned review EditText's accessibility action; this verifies editable
 content handling with the keyboard visible, not actual SwiftKey keystrokes or
 prediction. Those still require a manual device check. No real translation runs.
+The Korean-edit Cancel test may reveal its exact own Cancel node with one
+ACTION_SHOW_ON_SCREEN. Bounded polling remains on that original node/window;
+no generic scroll, Back, or coordinates. Closure requires draft NONE, unchanged
+capture/commit counters, and absent review controls regardless of visibility.
 
 Inspect each result before continuing. Root operates ADB; coding/review agents
 do not. Read only exact app AppOps, fixed service codes, own nodes, and keyboard
@@ -265,6 +276,35 @@ product guards or timeout. Never read notification contents to diagnose this.
 Fixture publication follows setContentView; never query hasWindowFocus off the
 main thread during construction. Startup timeout diagnostics contain only own
 lifecycle counters, window-type counts, package classifications, and flag bits.
+
+The confirmation probe is a diagnostic, not an insertion acceptance test. Use its
+sole flag with that exact method. It makes one synthetic empty-field commit and
+handles natural CONFIRMED separately from terminal UNCERTAIN. The latter path
+prints only bounded POST_DIAG codes before cleanup, requires ordered original/
+T0/T1/DONE samples, verifies no retry/rearm/success relabeling, then Cancels while
+preserving the expected fixture text. ABORT is incomplete evidence; never retry
+automatically. The product probe exists only in debug REVIEW for the synthetic
+package, and starts after a NODE_CARET_MISMATCH has already ended eligibility.
+Its same-field before/after-refresh observations cannot rehabilitate that
+transaction or prove uninterrupted insertion continuity.
+
+## Authorized save-prompt dismissal (2026-10-24)
+
+Andrew explicitly authorized clicking the visible save prompt's negative action.
+The separate helper must be run as its exact method with its sole flag:
+
+```powershell
+adb -d shell am instrument --user 0 -w -r -e class 'com.koscribe.smoke.AutofillSaveDismissSmokeTest#dismissVisibleAndroidAutofillSaveNoOnce' -e autofillSaveNoReady true com.koscribe.smoke/com.koscribe.smoke.KoScribeTestRunner
+```
+
+It launches no Activity and changes no focus. It queries only Android SYSTEM
+roots for android:id/autofill_save_no, requires a unique visible enabled clickable
+negative button with an allowed dismiss-only label, refreshes/rechecks the same
+node, and clicks at most once. It rejects Never. No credential/vault reads,
+generic dialog navigation, Back, coordinates, or provider/global settings.
+NOT_FOUND means no click. CLICK_ACCEPTED means action acceptance, not independent
+proof of dialog dismissal. Oct24's one invocation returned NOT_FOUND in 0.038s.
+Do not use this as an automatic retry loop or run it with other test flags.
 
 ## Contextual bubble synthetic checks (2026-10-24)
 

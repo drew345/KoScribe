@@ -268,7 +268,7 @@ uses setPrimaryClip and recommends marking sensitive content with
 ClipDescription.EXTRA_IS_SENSITIVE to suppress the system's content preview.
 KoScribe copies only after an explicit action, never reads or restores the prior
 clipboard, and dismisses its result only after the write returns without an
-exception. Device verification of Copy and dismissal is still required.
+exception. Synthetic Copy and dismissal passed on Oct24; see DEVICE_TESTS.
 
 ## Models and API separation
 
@@ -307,6 +307,58 @@ Extra High should be evaluated for both quality and interactive latency.
 No authenticated OpenAI model list or inference call was made. Account-specific
 model access and billing remain unverified. No API key was found in the current
 process; no credential from another project was read or copied.
+
+## Focused-node confirmation investigation (2026-10-24)
+
+Pre-fix source finding: `observeEditor` refreshed the root, obtained its focused
+descendant, then synchronously read InputConnection context. It did not refresh
+that focused node. Android documents that [refresh](https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo#refresh())
+updates the represented view; refreshing a container does not promise to refresh
+its descendants. AOSP's [Android 16 findFocus implementation](https://raw.githubusercontent.com/aosp-mirror/platform_frameworks_base/android16-release/core/java/android/view/accessibility/AccessibilityInteractionClient.java)
+can return a cached focused node. Samsung behavior still requires measurement.
+
+Inference, not a device conclusion: the node snapshot and connection context may
+straddle commit application or cache updates. The first diagnostic compares the
+original mismatch and bounded same-destination reads before/after node refresh,
+only for the synthetic fixture in debug REVIEW. It must leave terminal uncertainty
+and the one-commit decision untouched. A stale snapshot is not permission to
+ignore an unknown caret, identity mismatch, or navigation event.
+
+Measured diagnostic: at 15ms after the commit, the same node/root/input generation
+matched while the connection contained the exact 42-unit expected context/caret
+and the node still reported -1/-1 with hint text. At 43-60ms the same discrepancy
+remained before node refresh; a successful 4ms refresh supplied the expected
+42/42 caret and text. At 210-221ms both observations were already consistent.
+This establishes a stale focused-node snapshot as the proximate failure on that
+run; cache timing versus commit/read ordering was not isolated. The diagnostic
+left the transaction terminally UNCERTAIN and never retried it.
+
+The reviewed fix refreshes the same focused node after the connection read,
+rechecks current transaction/window/root/node/input metadata, then applies the
+unchanged exact caret/context confirmation. Android 16's [InputMethod source](https://raw.githubusercontent.com/aosp-mirror/platform_frameworks_base/android16-release/core/java/android/accessibilityservice/InputMethod.java)
+returns a new connection wrapper per getter, so wrapper object equality is not a
+valid continuity test. Input generation and the stored EditorInfo remain checks.
+
+Andrew reported repeated Proton Pass save-password prompts during synthetic tests.
+No credential was entered. The fixture's empty password-type editor is a likely
+autofill heuristic trigger, not a confirmed Proton diagnosis. Android documents
+[autofill heuristics and per-view opt-out](https://developer.android.com/identity/autofill/autofill-optimize).
+The fixture now marks its own root NO_EXCLUDE_DESCENDANTS and its editors NO,
+retaining the empty protected field and its input type. No Proton/global setting
+was changed; prompt cessation still requires observation.
+
+Andrew subsequently reported the prompt again, so hierarchy opt-out alone did
+not establish a fix. REVIEW insertion tests now request a fixture without the
+unused password editor; its default remains present for the protected-field
+bubble test. Andrew also explicitly authorized clicking the visible "No, thanks"
+save action. A separate opt-in helper targets only the Android SYSTEM-window
+negative resource `android:id/autofill_save_no`, with a unique visible enabled
+clickable node and a dismiss-only label (No thanks / No thank you / Not now).
+It rejects "Never" and all other labels, rechecks before one click, and otherwise
+reports NOT_FOUND. It reads no proposed credentials and changes no provider settings.
+The framework resource is corroborated by [AOSP autofill CTS UiBot](https://android.googlesource.com/platform/cts/+/798fbbbb9ae7fb51b61c8ad5fec90db4fdb9bcea/tests/autofillservice/src/android/autofillservice/cts/testcore/UiBot.java).
+The one Oct24 invocation returned NOT_FOUND, so it made no click. Subsequent
+synthetic passes do not establish that the reported prompt can no longer recur.
 
 ## Credential and data handling
 

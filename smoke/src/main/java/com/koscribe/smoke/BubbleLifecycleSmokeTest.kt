@@ -63,7 +63,7 @@ class BubbleLifecycleSmokeTest {
             "startupCollapseReady", "startupPanelReady", "overlayReady", "reselectReady",
             "reviewCopyReady", "reviewInsertEmptyReady", "reviewInsertMiddleReady",
             "reviewKoreanReady", "reviewSelectionReady", "reviewKoreanEditReady",
-            "reviewUncertainReady")
+            "reviewUncertainReady", "reviewConfirmationProbeReady", "autofillSaveNoReady")
             .any { args.getString(it) == "true" }
         assumeTrue("BUBBLE_TEST_REQUIRES_ONE_EXACT_OPT_IN",
             listOf(idle, mic, restore).count { it } == 1 && !other)

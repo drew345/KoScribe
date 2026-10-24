@@ -42,8 +42,9 @@ post-insertion context request by the result's UTF-16 length so long results
 cannot appear successful from a truncated fragment. Unsupported or ambiguous
 confirmation is terminal for insertion of that draft; only deliberate recovery
 or cancellation remains. Copy or confirmed insertion clears transient content
-and suppresses idle redisplay until a verified new keyboard cycle. These are
-implementation requirements; phone acceptance is still pending.
+and suppresses idle redisplay until a verified new keyboard cycle. Seven synthetic
+REVIEW device gates passed on Oct24; actual SwiftKey typing and real-app acceptance
+are still pending. The ready controls stay outside the scrolling result body.
 
 The accepted fallback is a launcher Activity with mic -> editable English ->
 요/반말 translation -> Copy & close, followed by manual paste. Design content
@@ -69,8 +70,12 @@ The original captured destination still invalidates during longer recordings.
 RESELECT Stage 1 now separates recording from destination capture and passed
 one >3-second recording -> Stop -> readonly review -> Cancel device gate.
 Editable review and fresh guarded insertion are now implemented in REVIEW.
-Copy dismissal passed its synthetic device gate; insertion confirmation remains
-unresolved after one observed sample insertion with a postcommit caret mismatch.
+Copy and confirmed-insertion dismissal passed their synthetic device gates.
+Measured stale focused-node metadata caused the earlier postcommit mismatch.
+The REVIEW fix refreshes that same node after the connection read, rechecks
+transaction/window/root/node/input continuity, then applies the unchanged exact
+context/caret confirmation. A failed refresh or changed destination is terminal;
+no retry or timing exemption was added. See DEVICE_TESTS for measured limits.
 Never keep the microphone recording simply to keep a bubble alive.
 
 Andrew selected OpenAI cloud speech recognition for the first version and

@@ -7,17 +7,18 @@ the focused text field, while continuing to use Microsoft SwiftKey.
 The prototype tests the bubble, microphone lifecycle, English review, and safe
 insertion with fixed example messages. It does not transcribe or translate yet
 and needs no API key. See [build and device test instructions](docs/PHASE1.md).
-Eight synthetic cross-app checks pass on the A35, including middle insertion,
+The earlier prototype passed eight synthetic cross-app checks on the A35, including middle insertion,
 edited review, Korean/emoji preservation, and cancellation/refusal. Real
 messaging-app acceptance and actual SwiftKey typing remain pending.
 
 The installed Oct24 REVIEW build adds editable English review and Copy & close
-to the contextual, draggable bubble. Its synthetic Copy gate passed, including
-bubble dismissal and return after a new keyboard cycle. Direct insertion placed
-the expected sample in the test editor, but caret confirmation failed safely;
-confirmed-insertion dismissal remains unresolved. Earlier bubble visibility,
-dragging, and position-restoration gates passed on the RESELECT build. The ordinary
-default build remains the older prototype until the replacement flow passes.
+to the contextual, draggable bubble. All seven synthetic REVIEW gates now pass:
+Copy, confirmed empty/middle/Korean insertion, selection refusal, cancellation,
+and terminal uncertainty without retry. Refreshing a stale focused-node snapshot
+resolved insertion confirmation while retaining the safety checks. Copy and
+confirmed insertion dismiss the bubble. Earlier visibility, dragging, and saved
+position gates passed on the RESELECT build. Actual SwiftKey typing and current
+real-app acceptance remain pending; the ordinary default build is still OFF.
 
 ## Agreed interaction
 

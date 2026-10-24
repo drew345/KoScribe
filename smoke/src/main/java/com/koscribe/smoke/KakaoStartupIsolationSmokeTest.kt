@@ -59,7 +59,8 @@ class KakaoStartupIsolationSmokeTest {
             arguments.getString("bubbleRestoreReady") == "true" ||
             listOf("reviewCopyReady", "reviewInsertEmptyReady", "reviewInsertMiddleReady",
                 "reviewKoreanReady", "reviewSelectionReady", "reviewKoreanEditReady",
-                "reviewUncertainReady").any { arguments.getString(it) == "true" }
+                "reviewUncertainReady", "reviewConfirmationProbeReady", "autofillSaveNoReady")
+                .any { arguments.getString(it) == "true" }
         assumeTrue("STARTUP_PROBE_REQUIRES_ONE_EXPLICIT_FLAG",
             selected == 1 && !olderExternalFlag)
         assertTrue("WRONG_INSTRUMENTATION_PACKAGE",

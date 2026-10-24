@@ -53,7 +53,7 @@ class KakaoReselectRecordingSmokeTest {
             "bubbleIdleReady", "bubbleMicReady", "bubbleRestoreReady",
             "reviewCopyReady", "reviewInsertEmptyReady", "reviewInsertMiddleReady",
             "reviewKoreanReady", "reviewSelectionReady", "reviewKoreanEditReady",
-            "reviewUncertainReady")
+            "reviewUncertainReady", "reviewConfirmationProbeReady", "autofillSaveNoReady")
             .any { args.getString(it) == "true" }
         assumeTrue("RESELECT_TEST_REQUIRES_SOLE_OPT_IN", args.getString("reselectReady") == "true" && !older)
         assertTrue("WRONG_INSTRUMENTATION_PACKAGE",

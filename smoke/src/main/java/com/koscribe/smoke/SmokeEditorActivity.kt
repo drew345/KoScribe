@@ -2,10 +2,12 @@ package com.koscribe.smoke
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.text.InputType
+import android.view.View
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.Display
@@ -21,6 +23,7 @@ import java.lang.ref.WeakReference
 /** One standard editor containing only synthetic fixture text; no send action. */
 class SmokeEditorActivity : Activity() {
     companion object {
+        const val EXTRA_OMIT_PROTECTED_EDITOR = "com.koscribe.smoke.OMIT_PROTECTED_EDITOR"
         @Volatile
         var current = WeakReference<SmokeEditorActivity>(null)
             private set
@@ -43,6 +46,8 @@ class SmokeEditorActivity : Activity() {
             private set
     }
 
+    private lateinit var fixtureRoot: LinearLayout
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         createCount++
@@ -55,8 +60,10 @@ class SmokeEditorActivity : Activity() {
         val margin = (20 * density + 0.5f).toInt()
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
+            importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
             setPadding(margin, margin, margin, margin)
         }
+        fixtureRoot = root
         root.addView(TextView(this).apply {
             text = "KoScribe synthetic editor test"
             textSize = 18f
@@ -66,16 +73,15 @@ class SmokeEditorActivity : Activity() {
             hint = "Synthetic text only"
             minLines = 4
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
         }, LinearLayout.LayoutParams(-1, (160 * density + 0.5f).toInt()))
-        root.addView(EditText(this).apply {
-            id = R.id.local_protected_editor
-            hint = "Synthetic protected field"
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-        }, LinearLayout.LayoutParams(-1, -2))
+        if (!intent.getBooleanExtra(EXTRA_OMIT_PROTECTED_EDITOR, false))
+            root.addView(protectedEditor(), LinearLayout.LayoutParams(-1, -2))
         root.addView(UncertainCommitEditor(this).apply {
             id = R.id.local_uncertain_editor
             hint = "Synthetic uncertain commit field"
             inputType = InputType.TYPE_CLASS_TEXT
+            importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
         }, LinearLayout.LayoutParams(-1, -2))
         root.setOnApplyWindowInsetsListener { view, insets ->
             val bars = insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
@@ -92,6 +98,28 @@ class SmokeEditorActivity : Activity() {
         // Publish only after PhoneWindow has installed its decor/content container.
         current = WeakReference(this)
         lifecycleCode = "CONTENT_READY"
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (::fixtureRoot.isInitialized) syncProtectedEditor()
+    }
+
+    private fun syncProtectedEditor() {
+        val existing = fixtureRoot.findViewById<EditText>(R.id.local_protected_editor)
+        if (intent.getBooleanExtra(EXTRA_OMIT_PROTECTED_EDITOR, false)) {
+            if (existing != null) fixtureRoot.removeView(existing)
+        } else if (existing == null) {
+            fixtureRoot.addView(protectedEditor(), 2, LinearLayout.LayoutParams(-1, -2))
+        }
+    }
+
+    private fun protectedEditor(): EditText = EditText(this).apply {
+        id = R.id.local_protected_editor
+        hint = "Synthetic protected field"
+        inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
     }
 
     override fun onResume() {

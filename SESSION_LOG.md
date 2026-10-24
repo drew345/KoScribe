@@ -316,3 +316,31 @@
   synthetic observations, preserving terminal uncertainty. Other five REVIEW
   gates, confirmed insertion dismissal, and real-app acceptance remain pending.
   Exact evidence/source/APK hashes are in DEVICE_TESTS; restart from PROGRESS.
+
+## 2026-10-24 — Confirmation fixed in synthetic REVIEW tests
+
+- Resumed at Andrew's request. Sol 6 Extra High implemented a bounded diagnostic,
+  focused-node refresh, and fixed ready-control footer; Astra Extra High reviewed
+  each change. Root alone operated the phone. No API or real-app insertion.
+- Diagnostic proved stale focused-node metadata: connection already contained
+  expected text/caret; refreshing the same node supplied matching values. The
+  diagnosed transaction stayed UNCERTAIN, with one commit and no retry/rearm.
+- Final fix preserves all identity/context/selection/event and one-attempt checks.
+  Seven exact synthetic REVIEW methods passed on product 2B00BE44... across smoke
+  versions: Copy, empty/middle/Korean confirmed insertion, selection refusal,
+  Korean-edit rejection/Cancel, and terminal ignored-commit uncertainty. The last
+  used WINDOW_OR_FOCUS_CHANGED; settled timeout branch was not device-proven.
+- A call caused one silenced startup; retry after Andrew finished passed. Other
+  SYSTEM-window focus interruptions remain unattributed. A test-only Cancel
+  reveal fix addressed an offscreen button and strengthened closure assertions.
+- Repeated Proton Pass prompts required no password. REVIEW fixtures now omit
+  their unused empty password field after autofill opt-out alone proved insufficient.
+  The authorized exact negative-button helper returned NOT_FOUND, so no click;
+  no global/provider settings changed. Prompt cessation remains unverified.
+- Final product/smoke saved in ignored app/build/confirmation-refresh. Final smoke
+  FC0A13E5...; exact hashes/source reviews/results in DEVICE_TESTS. Default output
+  stays OFF. Builds/lints/signatures and 37 unit tests passed.
+- Final own draft NONE, cleanup false; last mic use ended after 516ms. No test remains
+  running; Andrew may disconnect. Checkpoint preserves pending manual SwiftKey
+  keystrokes, current real-app acceptance, and broader lifecycle/geometry gates.
+  Phase 1 remains open; next actions are in PROGRESS.

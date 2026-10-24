@@ -40,6 +40,7 @@ import android.widget.Button
 import java.io.FileDescriptor
 import java.io.PrintWriter
 import java.lang.ref.WeakReference
+import java.security.MessageDigest
 
 class KoScribeService : AccessibilityService() {
     companion object {
@@ -92,9 +93,26 @@ class KoScribeService : AccessibilityService() {
         val host: View,
         val hostToken: IBinder?,
         val hostWindowId: Int,
-        var phase: DestinationPhase = DestinationPhase.PRECOMMIT
+        var phase: DestinationPhase = DestinationPhase.PRECOMMIT,
+        var commitRequestedUptimeMs: Long = 0L
     )
     private var freshDestination: FreshDestination? = null
+    private data class PostCommitProbe(
+        val draftId: String,
+        val node: AccessibilityNodeInfo,
+        val root: AccessibilityNodeInfo,
+        val windowId: Int,
+        val fieldId: Int,
+        val inputType: Int,
+        val generation: Int,
+        val expectedOffset: Int,
+        val expectedCaret: Int,
+        val expectedLength: Int,
+        val expectedDigest: ByteArray,
+        val commitRequestedUptimeMs: Long,
+        var delayed: Runnable? = null
+    )
+    private var postCommitProbe: PostCommitProbe? = null
     @Volatile private var commitRequestCount = 0
     @Volatile private var commitConfirmation = "NONE"
     @Volatile private var unboundRecordingProofCount = 0
@@ -108,7 +126,8 @@ class KoScribeService : AccessibilityService() {
         MULTIPLE_FOCUSED_APP_WINDOWS, WRONG_DISPLAY, OWN_EDITOR,
         NO_FOCUSED_NODE, NODE_EDITOR_MISMATCH, NODE_DISABLED,
         PROTECTED_OR_NON_TEXT_NODE, SURROUNDING_UNAVAILABLE, UNKNOWN_TEXT_OFFSET,
-        SELECTION_NOT_COLLAPSED, NODE_CARET_MISMATCH, ACTIVE_COMPOSITION,
+        SELECTION_NOT_COLLAPSED, NODE_CARET_MISMATCH, POSTCOMMIT_REFRESH_FAILED,
+        POSTCOMMIT_TARGET_CHANGED, ACTIVE_COMPOSITION,
         CALLBACK_CARET_MISMATCH, NODE_CLASS_UNKNOWN, SNAPSHOT_INVALID, READY
     }
     @Volatile
@@ -301,6 +320,7 @@ class KoScribeService : AccessibilityService() {
             if (startupExperiment == StartupExperiment.REVIEW) {
                 generation++
                 composition.reset()
+                abortPostCommitProbe("INPUT_STARTED")
                 freshDestination?.let {
                     if (it.phase == DestinationPhase.PRECOMMIT) guard.invalidate(it.id)
                     else finishUncertain(it, "INPUT_STARTED")
@@ -326,6 +346,7 @@ class KoScribeService : AccessibilityService() {
             }
             if (startupExperiment == StartupExperiment.REVIEW) {
                 composition.reset()
+                abortPostCommitProbe("INPUT_FINISHED")
                 freshDestination?.let {
                     if (it.phase == DestinationPhase.PRECOMMIT) guard.invalidate(it.id)
                     else finishUncertain(it, "INPUT_FINISHED")
@@ -516,6 +537,13 @@ class KoScribeService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         if (unboundArm()) {
+            postCommitProbe?.let { probe ->
+                if ((event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED ||
+                        event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) &&
+                    event.windowId != probe.windowId &&
+                    event.packageName?.toString() != packageName)
+                    abortPostCommitProbe("FOCUS_WINDOW_CHANGED")
+            }
             val destination = freshDestination
             val target = destination?.let { guard.session(it.id)?.target }
             if (destination?.phase == DestinationPhase.OBSERVING &&
@@ -893,6 +921,7 @@ class KoScribeService : AccessibilityService() {
 
     override fun onDestroy() {
         serviceConnected = false
+        clearPostCommitProbe()
         unboundRecording.endActive()
         unboundDraft.current()?.id?.let(ReviewActivity::closeDraft)
         unboundDraft.endActive()
@@ -1308,6 +1337,7 @@ class KoScribeService : AccessibilityService() {
 
     private fun endDraft(id: String, reason: String, completed: Boolean = false) {
         if (!unboundDraft.end(id)) return
+        clearPostCommitProbe()
         ReviewActivity.closeDraft(id)
         freshDestination?.takeIf { it.draftId == id }?.let { guard.cancel(it.id); guard.end(it.id) }
         freshDestination = null
@@ -1415,6 +1445,7 @@ class KoScribeService : AccessibilityService() {
         experimentPhase = "REVIEW_COMMIT_OBSERVING"
         try {
             commitRequestCount++
+            transaction.commitRequestedUptimeMs = SystemClock.uptimeMillis()
             note("FRESH_COMMIT_REQUESTED_ONCE")
             second!!.connection.commitText(result, 1, null)
         } catch (_: Exception) {
@@ -1475,6 +1506,16 @@ class KoScribeService : AccessibilityService() {
 
     private fun finishUncertain(transaction: FreshDestination, code: String) {
         if (freshDestination !== transaction) return
+        val original = guard.session(transaction.id)?.target
+        val probe = if (BuildConfig.DEBUG && startupExperiment == StartupExperiment.REVIEW &&
+            code == "TARGET_CHANGED" && observationCode == ObservationCode.NODE_CARET_MISMATCH &&
+            original?.packageName == "com.koscribe.smoke") {
+            val expected = transaction.expected
+            PostCommitProbe(transaction.draftId, transaction.node, transaction.root,
+                original.windowId, original.editorFieldId, original.inputType, transaction.generation,
+                expected.oldOffset, expected.caret, expected.text.length,
+                digestContext(expected.text), transaction.commitRequestedUptimeMs)
+        } else null
         guard.end(transaction.id)
         freshDestination = null
         resetFreshComposition()
@@ -1483,7 +1524,160 @@ class KoScribeService : AccessibilityService() {
         note("FRESH_COMMIT_UNCERTAIN_$code")
         status = "Insertion could not be confirmed. Check the field before Copy or manual paste."
         refreshIdleBubble(forceRender = true)
+        if (probe != null) beginPostCommitProbe(probe)
     }
+
+    /** Diagnostic only. A terminal synthetic transaction never becomes eligible again. */
+    private fun beginPostCommitProbe(probe: PostCommitProbe) {
+        clearPostCommitProbe()
+        postCommitProbe = probe
+        readPostCommitProbe(probe, "T0")
+        if (postCommitProbe !== probe) return
+        val delayed = Runnable {
+            if (postCommitProbe === probe &&
+                unboundDraft.current()?.takeIf { it.id == probe.draftId &&
+                    it.phase == UnboundDraftState.Phase.UNCERTAIN } != null) {
+                readPostCommitProbe(probe, "T1")
+            }
+            if (postCommitProbe === probe) {
+                note("POST_DIAG_DONE")
+                clearPostCommitProbe()
+            }
+        }
+        probe.delayed = delayed
+        main.postDelayed(delayed, 150L)
+    }
+
+    private fun clearPostCommitProbe() {
+        postCommitProbe?.delayed?.let(main::removeCallbacks)
+        postCommitProbe = null
+    }
+
+    private fun abortPostCommitProbe(reason: String) {
+        if (postCommitProbe == null) return
+        note("POST_DIAG_ABORT_$reason")
+        clearPostCommitProbe()
+    }
+
+    private fun digestContext(value: String): ByteArray =
+        MessageDigest.getInstance("SHA-256").digest(value.toByteArray(Charsets.UTF_8))
+
+    private fun readPostCommitProbe(probe: PostCommitProbe, label: String) {
+        // All reads stay inside the own synthetic editor. Never traverse another app.
+        if (postCommitProbe !== probe) return
+        val elapsed = (SystemClock.uptimeMillis() - probe.commitRequestedUptimeMs).coerceAtLeast(0L)
+        fun stop(reason: String) {
+            val ended = (SystemClock.uptimeMillis() - probe.commitRequestedUptimeMs).coerceAtLeast(0L)
+            note("POST_DIAG_${label}_MS_${elapsed}_ENDMS_${ended}_$reason")
+            abortPostCommitProbe(reason)
+        }
+        val interactive = (getSystemService(POWER_SERVICE) as PowerManager).isInteractive
+        val unlocked = !(getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked
+        if (!interactive || !unlocked) {
+            stop("DEVICE_NOT_READY")
+            return
+        }
+        val method = inputMethod as? TrackingInputMethod
+        val info = method?.currentInputEditorInfo
+        if (method == null || info == null || !method.currentInputStarted ||
+            info.packageName != "com.koscribe.smoke" || info.fieldId != probe.fieldId ||
+            info.inputType != probe.inputType || !safeInputType(info.inputType)) {
+            stop("INPUT_MISMATCH")
+            return
+        }
+        val focusedWindow = windows.singleOrNull {
+            it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.isFocused
+        }
+        if (focusedWindow?.id != probe.windowId ||
+            focusedWindow.displayId != Display.DEFAULT_DISPLAY) {
+            stop("WINDOW_MISMATCH")
+            return
+        }
+        val root = runCatching { focusedWindow.getRoot(0) }.getOrNull()
+        if (root?.packageName?.toString() != "com.koscribe.smoke") {
+            stop("ROOT_MISMATCH")
+            return
+        }
+        val rootSame = root == probe.root
+        val generationSame = method.generation == probe.generation
+        if (!rootSame || !generationSame) {
+            stop("IDENTITY_MISMATCH_R${rootSame.b()}_G${generationSame.b()}")
+            return
+        }
+        val rootRefreshStart = SystemClock.uptimeMillis()
+        val rootRefreshed = runCatching { root.refresh() }.getOrDefault(false)
+        val rootRefreshDuration = SystemClock.uptimeMillis() - rootRefreshStart
+        if (!rootRefreshed || root.packageName?.toString() != "com.koscribe.smoke" ||
+            root.windowId != probe.windowId) {
+            stop("ROOT_REFRESH_FAILED_RRMS_$rootRefreshDuration")
+            return
+        }
+        val focus = runCatching { root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) }.getOrNull()
+        if (focus?.packageName?.toString() != "com.koscribe.smoke" || !focus.isFocused ||
+            !focus.isEditable || !focus.isEnabled || focus.isPassword ||
+            !safeInputType(focus.inputType)) {
+            stop("FOCUS_MISMATCH")
+            return
+        }
+        val nodeSame = focus == probe.node
+        val editorSame = info.fieldId == probe.fieldId && info.inputType == probe.inputType &&
+            focus.inputType == probe.inputType && focus.windowId == probe.windowId
+        if (!nodeSame || !editorSame) {
+            stop("IDENTITY_MISMATCH_N${nodeSame.b()}_E${editorSame.b()}")
+            return
+        }
+        val connection = method.currentInputConnection
+        if (connection == null) {
+            stop("CONNECTION_MISSING")
+            return
+        }
+        val surrounding = runCatching {
+            connection.getSurroundingText(probe.expectedLength, probe.expectedLength,
+                InputConnection.GET_TEXT_WITH_STYLES)
+        }.getOrNull()
+        val connectionText = surrounding?.text
+        val connectionContextMatches = surrounding?.offset == probe.expectedOffset &&
+            connectionText?.length == probe.expectedLength &&
+            connectionText?.let { digestContext(it.toString()).contentEquals(probe.expectedDigest) } == true
+        val connectionCaretMatches = surrounding?.offset == probe.expectedOffset &&
+            surrounding?.selectionStart == probe.expectedCaret &&
+            surrounding?.selectionEnd == probe.expectedCaret
+        val beforeStart = focus.textSelectionStart
+        val beforeEnd = focus.textSelectionEnd
+        val beforeLength = focus.text?.length ?: -1
+        val beforeContextMatches = !focus.isShowingHintText && beforeLength == probe.expectedLength &&
+            focus.text?.let { digestContext(it.toString()).contentEquals(probe.expectedDigest) } == true
+        val focusRefreshStart = SystemClock.uptimeMillis()
+        val refreshed = runCatching { focus.refresh() }.getOrDefault(false)
+        val focusRefreshDuration = SystemClock.uptimeMillis() - focusRefreshStart
+        if (!refreshed || focus != probe.node || focus.packageName?.toString() != "com.koscribe.smoke" ||
+            focus.windowId != probe.windowId || !focus.isFocused || !focus.isEditable ||
+            !focus.isEnabled || focus.isPassword || focus.inputType != probe.inputType ||
+            method.generation != probe.generation ||
+            method.currentInputEditorInfo?.fieldId != probe.fieldId ||
+            method.currentInputEditorInfo?.packageName != "com.koscribe.smoke") {
+            stop("FOCUS_REFRESH_FAILED_RRMS_${rootRefreshDuration}_FRMS_${focusRefreshDuration}" +
+                "_B${beforeStart}_${beforeEnd}_${beforeLength}_${beforeContextMatches.b()}")
+            return
+        }
+        val afterStart = focus.textSelectionStart
+        val afterEnd = focus.textSelectionEnd
+        val afterLength = focus.text?.length ?: -1
+        val afterContextMatches = !focus.isShowingHintText && afterLength == probe.expectedLength &&
+            focus.text?.let { digestContext(it.toString()).contentEquals(probe.expectedDigest) } == true
+        val ended = (SystemClock.uptimeMillis() - probe.commitRequestedUptimeMs).coerceAtLeast(0L)
+        note("POST_DIAG_${label}_MS_${elapsed}_ENDMS_${ended}" +
+            "_RRMS_${rootRefreshDuration}_FRMS_${focusRefreshDuration}" +
+            "_R${rootSame.b()}_RR${rootRefreshed.b()}" +
+            "_N${nodeSame.b()}_G${generationSame.b()}_E${editorSame.b()}" +
+            "_CO${surrounding?.offset ?: -1}_CS${surrounding?.selectionStart ?: -1}" +
+            "_CE${surrounding?.selectionEnd ?: -1}_CL${connectionText?.length ?: -1}" +
+            "_CX${connectionContextMatches.b()}_CK${connectionCaretMatches.b()}" +
+            "_B${beforeStart}_${beforeEnd}_${beforeLength}_${beforeContextMatches.b()}" +
+            "_FR${refreshed.b()}_A${afterStart}_${afterEnd}_${afterLength}_${afterContextMatches.b()}")
+    }
+
+    private fun Boolean.b(): Int = if (this) 1 else 0
 
     private fun refuseFreshInsertion(code: String) {
         commitConfirmation = "REFUSED"
@@ -1772,11 +1966,55 @@ class KoScribeService : AccessibilityService() {
             return refuse(ObservationCode.NODE_DISABLED)
         if (focus.isPassword || !safeInputType(focus.inputType))
             return refuse(ObservationCode.PROTECTED_OR_NON_TEXT_NODE)
-        val unique = focus.uniqueId?.takeIf(String::isNotBlank) ?: "source-node"
+        val initialUnique = focus.uniqueId?.takeIf(String::isNotBlank) ?: "source-node"
         val surrounding = try {
             connection.getSurroundingText(beforeCount, afterCount,
                 InputConnection.GET_TEXT_WITH_STYLES)
         } catch (_: Exception) { null } ?: return refuse(ObservationCode.SURROUNDING_UNAVAILABLE)
+        if (postCommit && startupExperiment == StartupExperiment.REVIEW) {
+            val transaction = freshDestination
+                ?: return refuse(ObservationCode.POSTCOMMIT_TARGET_CHANGED)
+            if (transaction.phase != DestinationPhase.OBSERVING ||
+                root != transaction.root || focus != transaction.node ||
+                method.generation != transaction.generation)
+                return refuse(ObservationCode.POSTCOMMIT_TARGET_CHANGED)
+            // findFocus can return a cached descendant even after root.refresh().
+            // Refresh this same node only after the connection read; a failed
+            // refresh is terminal uncertainty, not permission to use old metadata.
+            if (!runCatching { focus.refresh() }.getOrDefault(false))
+                return refuse(ObservationCode.POSTCOMMIT_REFRESH_FAILED)
+            val currentInfo = method.currentInputEditorInfo
+            val currentWindows = windows.filter {
+                it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.isFocused
+            }
+            val currentWindow = currentWindows.singleOrNull()
+            val currentRoot = currentWindow?.getRoot(0)
+            val rootStillCurrent = currentRoot != null && currentRoot == root &&
+                runCatching { currentRoot.refresh() }.getOrDefault(false)
+            val currentFocus = if (rootStillCurrent)
+                runCatching { currentRoot?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) }.getOrNull()
+                else null
+            val unlockedNow = !(getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked
+            val interactiveNow = (getSystemService(POWER_SERVICE) as PowerManager).isInteractive
+            if (freshDestination !== transaction || !unlockedNow || !interactiveNow ||
+                !method.currentInputStarted || method.generation != transaction.generation ||
+                currentInfo !== info || currentInfo?.packageName != info.packageName ||
+                currentInfo?.fieldId != info.fieldId || currentInfo?.inputType != info.inputType ||
+                method.currentInputConnection == null || currentWindow?.id != focusedWindow.id ||
+                currentWindow?.displayId != Display.DEFAULT_DISPLAY || !rootStillCurrent ||
+                currentRoot?.windowId != focusedWindow.id ||
+                currentRoot?.packageName?.toString() != info.packageName ||
+                currentFocus != focus || !focus.isFocused || !focus.isEditable ||
+                !focus.isEnabled || focus.isPassword || !safeInputType(focus.inputType) ||
+                focus.windowId != focusedWindow.id ||
+                focus.packageName?.toString() != info.packageName ||
+                focus.inputType != info.inputType)
+                return refuse(ObservationCode.POSTCOMMIT_TARGET_CHANGED)
+            note("POSTCOMMIT_FOCUS_REFRESHED")
+        }
+        val unique = if (postCommit && startupExperiment == StartupExperiment.REVIEW)
+            focus.uniqueId?.takeIf(String::isNotBlank) ?: "source-node"
+            else initialUnique
         val text = surrounding.text
         val composing = (text as? Spanned)?.let { spanText ->
             spanText.getSpans(0, spanText.length, Any::class.java)
@@ -1794,6 +2032,31 @@ class KoScribeService : AccessibilityService() {
                 focus.textSelectionStart, focus.textSelectionEnd, surrounding.offset,
                 surrounding.selectionStart, surrounding.selectionEnd, text.isEmpty(), nodeEmptyOrHint
             )) {
+            val transaction = freshDestination
+            if (postCommit && BuildConfig.DEBUG && startupExperiment == StartupExperiment.REVIEW &&
+                info.packageName == "com.koscribe.smoke" &&
+                transaction?.phase == DestinationPhase.OBSERVING &&
+                guard.session(transaction.id)?.target?.packageName == "com.koscribe.smoke") {
+                val expected = transaction.expected
+                val elapsed = (SystemClock.uptimeMillis() - transaction.commitRequestedUptimeMs)
+                    .coerceAtLeast(0L)
+                val contextMatches = surrounding.offset == expected.oldOffset &&
+                    text.toString() == expected.text
+                val caretMatches = surrounding.offset == expected.oldOffset &&
+                    surrounding.selectionStart == expected.caret &&
+                    surrounding.selectionEnd == expected.caret
+                val nodeText = focus.text
+                val nodeContextMatches = !focus.isShowingHintText &&
+                    nodeText?.toString() == expected.text
+                note("POST_DIAG_ORIG_MS_${elapsed}_R${(root == transaction.root).b()}" +
+                    "_N${(focus == transaction.node).b()}" +
+                    "_G${(method.generation == transaction.generation).b()}" +
+                    "_CO${surrounding.offset}_CS${surrounding.selectionStart}" +
+                    "_CE${surrounding.selectionEnd}_CL${text.length}" +
+                    "_CX${contextMatches.b()}_CK${caretMatches.b()}" +
+                    "_B${focus.textSelectionStart}_${focus.textSelectionEnd}" +
+                    "_${nodeText?.length ?: -1}_${nodeContextMatches.b()}")
+            }
             note("CARET_EMPTY_PROBE_C${if (connectionEmptyAtZero) "Y" else "N"}" +
                 "_N${if (nodeUnknownPair) "Y" else "N"}" +
                 "_H${if (nodeEmptyOrHint) "Y" else "N"}")
@@ -2060,6 +2323,7 @@ class KoScribeService : AccessibilityService() {
         val controls = if (unboundArm() && expanded)
             LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         else holder
+        var resultFooter: LinearLayout? = null
         if (expanded) {
             controls.addView(caption("KoScribe · sample only", true))
             controls.addView(caption(status))
@@ -2072,14 +2336,22 @@ class KoScribeService : AccessibilityService() {
                     maxLines = 3
                     ellipsize = android.text.TextUtils.TruncateAt.END
                 })
+                val primaryRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
                 if (draft.phase == UnboundDraftState.Phase.READY) {
-                    controls.addView(action("Insert") { insertDraft(draft.id) }
-                        .apply { id = R.id.ready_insert })
+                    primaryRow.addView(action("Insert") { insertDraft(draft.id) }
+                        .apply { id = R.id.ready_insert },
+                        LinearLayout.LayoutParams(0, -2, 1f))
                 }
-                controls.addView(action("Copy & close") { copyDraft(draft.id) }
-                    .apply { id = R.id.ready_copy })
-                controls.addView(action("Cancel") { endDraft(draft.id, "USER_CANCELLED") }
-                    .apply { id = R.id.ready_cancel })
+                primaryRow.addView(action("Copy & close") { copyDraft(draft.id) }
+                    .apply { id = R.id.ready_copy },
+                    LinearLayout.LayoutParams(0, -2, 1f))
+                resultFooter = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    addView(primaryRow, LinearLayout.LayoutParams(-1, -2))
+                    addView(action("Cancel") { endDraft(draft.id, "USER_CANCELLED") }
+                        .apply { id = R.id.ready_cancel },
+                        LinearLayout.LayoutParams(-1, -2))
+                }
             } else {
             val modeRow = if (unboundArm())
                 LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
@@ -2111,7 +2383,10 @@ class KoScribeService : AccessibilityService() {
             }
             if (controls !== holder) {
                 val viewport = android.widget.ScrollView(this).apply { addView(controls) }
-                holder.addView(viewport, LinearLayout.LayoutParams(-1, -1))
+                if (resultFooter != null) {
+                    holder.addView(viewport, LinearLayout.LayoutParams(-1, 0, 1f))
+                    holder.addView(resultFooter, LinearLayout.LayoutParams(-1, -2))
+                } else holder.addView(viewport, LinearLayout.LayoutParams(-1, -1))
             }
         } else {
             val pill = Button(this).apply {

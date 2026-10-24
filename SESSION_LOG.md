@@ -533,3 +533,16 @@
   passing current guard units, and preserved original-target/event checks. No
   extra mandatory target-change fixture; finish Instagram then decide Phase1.
   Same-view switch-back and broader lifecycle cases remain untested limits.
+
+## 2026-10-24 — Instagram passed; Phase2 begins
+
+- User reported expected Korean in Instagram DM and flow worked perfectly.
+  Own proof10/captures9/commits8 (each+1), CONFIRMED, draftNONE/cleanupfalse,
+  mic ended3.087s; SwiftKey selected. No chat inspection or phone mutation.
+- All three named app flows passed. Combined with synthetic/unit/source evidence,
+  the bounded Phase1 gate is met. Other lifecycle/geometry/navigation limits
+  remain explicit, not silently accepted. One-attempt app scopes are consumed.
+- Official OpenAI docs reconfirm gpt-transcribe recorded-file transcription.
+  Sol6/xhigh credential and speech integration agents started, Astra/xhigh review;
+  secure on-phone key entry remains agreed. Opt-in speech debug candidate,
+  unchanged sample baseline, no actual key/audio upload/paid test yet.

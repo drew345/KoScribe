@@ -3,7 +3,7 @@
 Personal Android dictation app: speak English and insert natural Korean into
 the focused text field, while continuing to use Microsoft SwiftKey.
 
-**Status: Phase 1 feasibility prototype implemented; A35 device testing underway.**
+**Status: Phase 1 feasibility passed on A35; Phase 2 speech implementation underway.**
 The prototype tests the bubble, microphone lifecycle, English review, and safe
 insertion with fixed example messages. It does not transcribe or translate yet
 and needs no API key. See [build and device test instructions](docs/PHASE1.md).
@@ -26,7 +26,8 @@ The subsequent approved confirmation change passed seven scoped synthetic checks
 including exact composed results, composed mismatches, and preservation. It keeps
 all pre-insertion guards; see PROGRESS for the installed candidate and next gate.
 Manual fixed Korean insertion into empty Kakao self-chat and Google Messages
-fields also passed on that candidate. Instagram acceptance remains pending.
+fields also passed on that candidate, followed by Instagram DMs. These are
+bounded empty-field checks; broader daily-use reliability remains untested.
 A newer compact movable result control is being tested after manual use exposed
 an obstructed destination field. See PROGRESS for the current build and open checks.
 

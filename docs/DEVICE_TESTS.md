@@ -1290,3 +1290,26 @@ target-change fixture is not mandatory solely because the build changed. Finish
 the planned app round and decide Phase1 from combined evidence. Actual same-view
 conversation switching/back, lifecycle and broad geometry coverage remain
 explicit limits and future hardening; no pass is inferred for those cases.
+
+### Instagram manual insertion PASS and Phase1 decision (2026-10-24)
+
+Same secure3AA18446/smoke168091D7; already-authorized one-attempt empty-field
+procedure, baseline9/8/7. Andrew reported the flow worked perfectly and expected
+Korean appeared in the proper Instagram DM field. This answers the combined
+exact-text/dismissal question; root did not view/read the conversation. Sending
+was not requested or performed by KoScribe/agent; no extra user Send claim is made.
+
+Own proof10/captures9/commits8, current CONFIRMED/REVIEW_COMPLETED, draftNONE,
+cleanupfalse. New POLITE -> positive unsilenced mic -> Stop/proved stopped ->
+two VERIFIED_EMPTY_CARET -> one FRESH_COMMIT_REQUESTED_ONCE -> refreshed focus
+-> READY -> INSERT_CONFIRMED. Mic ended3.087s; SwiftKey remained selected. All
+three real-app scopes are consumed. Agent made no UI mutation, screenshot, or
+conversation read; only own diagnostics/AppOps/keyboard metadata were checked.
+
+Decision: bounded Phase1 feasibility gate met using the three app happy paths,
+synthetic preservation/refusal/composition/uncertainty and manual editing passes,
+plus earlier REVIEW focus-event termination and current guard units/source
+review. No additional fixture merely due to a new build. Broader lifecycle,
+geometry, same-view switch-back and daily-use compatibility remain explicit
+limits. Proceed to separately reviewed Phase2 speech/credential implementation;
+this is not transcription, translation, or secret-storage device acceptance.

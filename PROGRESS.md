@@ -10,8 +10,10 @@ Exact composed results confirm and dismiss; wrong composed results remain
 terminally uncertain. Middle preservation, Korean insertion, selection refusal,
 edited-Korean cancellation, and unchanged-commit uncertainty all passed. Forty
 unit tests passed; lints have zero errors. Manual empty-field Korean insertion
-now passed in Kakao self-chat and Google Messages. Instagram is the last planned
-app check before the Phase1 feasibility decision; no speech/translation/API yet.
+now passed in Kakao self-chat, Google Messages and Instagram. The bounded Phase1
+feasibility gate is met from combined device/unit/source evidence. Phase2 speech
+and credentials implementation is underway; no real transcription/translation
+or paid API call has yet run.
 
 Andrew's newly approved one-attempt Kakao trial PASSED and is now complete.
 He reported the exact expected Korean sample appeared and remained unsent,
@@ -26,16 +28,38 @@ manual unsent sample insertion per Google Messages and Instagram. Google
 Messages PASSED: user reported insertion and flow as expected; proof9/captures8/
 commits7, CONFIRMED, draftNONE/cleanupfalse, mic ended5.100s, SwiftKey selected.
 He described addressing himself; whether he personally sent it is unspecified.
-No automated Send occurred. Instagram instructions are now pending, with this
-9/8/7 baseline. Await his report before further phone actions; no retries.
+No automated Send occurred. Instagram also PASSED: user reported expected Korean
+in the proper DM field and the flow worked perfectly; own proof10/captures9/
+commits8, CONFIRMED, draftNONE/cleanupfalse, mic ended3.087s, SwiftKey selected.
+Both one-attempt scopes are consumed. No more user phone work pending now.
 
 Astra/xhigh reassessed the remaining gate and withdrew an unnecessary proposal
 for another target-change fixture. Earlier REVIEW device tests exercised window/
 focus termination without retry; current guard units passed and source retains
-event/input invalidation and same-target/host checks before confirmation. Finish
-Instagram, then decide Phase1 from this combined evidence. Actual same-view
+event/input invalidation and same-target/host checks before confirmation. All
+three app checks now passed, satisfying the bounded Phase1 decision. Actual same-view
 conversation switch-back, broad geometry/lifecycle, and daily-use reliability
 remain limitations/future tests, not silently claimed passes or new ASR blockers.
+
+## Active Phase2 work
+
+Two Sol6/xhigh subagents implement credential UI/storage and speech integration;
+Astra/xhigh independently reviews security/lifecycle and final source. Root alone
+builds/tests/operates the phone and updates documentation. Speech candidate is
+opt-in debug `koscribeSpeech=true`, requiring REVIEW and visualfalse; release
+and ordinary defaults remain disabled. Existing sample baseline is preserved.
+User enters a dedicated key privately on phone after review; no key search/reuse,
+embedding, chat entry, build constant, logging or paid tests during implementation.
+
+First speech flow: EN recording -> explicit Stop -> OpenAI gpt-transcribe ->
+editable English -> Confirm -> existing guarded Insert/Copy. Korean translation
+remains Phase3; actual speech must never receive a fixed Korean sample. Bounded
+in-memory mono16kHz/16-bit PCM/WAV, maximum60s; upload only after successful Stop/
+release. Cancel/lock/service loss/limit must discard audio and cancel/ignore late
+requests. Fixed HTTPS endpoint, no redirects or automatic retries, bounded
+response/timeouts, sanitized errors. Keystore AES-GCM storage in noBackupFilesDir,
+secure masked UI without key readback/saved state/autofill, explicit full backup
+and device-transfer exclusions. No device result claimed until reviewed tests.
 
 Previous secure980E build Kakao self-chat microphone -> Stop -> English review -> Cancel
 PASSED. Andrew reported the sample review closed and the composer cursor/SwiftKey
@@ -214,12 +238,12 @@ VISUAL_TEST=false. Do not substitute it for the secure REVIEW artifact.
 Prior diagnostic, refresh-only, and earlier smoke APKs are retained in ignored
 build folders. Detailed source review hashes are in DEVICE_TESTS.
 
-Latest checkpoint after successful Google Messages trial: REVIEW_COMPLETED, proof9,
-draftNONE, destination captures8, commits7, confirmationCONFIRMED,
-cleanupfalse. Exact-app AppOps confirmed mic ended after5.100s. Counts restarted
+Latest checkpoint after successful Instagram trial: REVIEW_COMPLETED, proof10,
+draftNONE, destination captures9, commits8, confirmationCONFIRMED,
+cleanupfalse. Exact-app AppOps confirmed mic ended after3.087s. Counts restarted
 when the new APK was installed. Explicitly approved fixed samples were inserted
-into Kakao and Messages; Instagram is now pending. Do not infer its live state
-from the baseline while Andrew performs the test.
+into Kakao, Messages and Instagram. User can manually delete the fixed unsent
+samples. No new phone action is pending while Phase2 is implemented/reviewed.
 No Send/Enter, agent conversation inspection, screenshots, retained audio,
 credentials, paid calls, permission changes, or keyboard changes occurred.
 
@@ -231,12 +255,10 @@ credentials, paid calls, permission changes, or keyboard changes occurred.
    recorded tests; do not generalize this empty-field pass to those cases.
    The old composition diagnostic round is complete. The approved fix passed its
    scoped checks; do not retry uncertain commits or reopen that probe round.
-2. Preserve passed Kakao and Google Messages trials; their scopes are consumed.
-   Await the already-approved Instagram report; verify own counters against9/8/7,
-   current confirmation/cleanup and mic state. Scope is one manual unsent sample
-   in a user-prepared empty field. No Send, Copy/Paste substitute, or retry after
-   uncertainty. No old tests or suites. Then make the bounded Phase1 decision;
-   do not add another synthetic fixture without a new failure or guard change.
+2. Preserve all three app passes; their scopes are consumed. Complete/review
+   Phase2 code with fake/synthetic inputs and no credential. Build/unit/lint,
+   then reviewed synthetic device checks before asking Andrew to enter a key
+   privately and dictate a deliberate sample. No API keys in chat or shell.
 3. For broader daily-use reliability, extend selected/caret/navigation and
    composition coverage, small-height/large-font/rotation/split-screen, and
    lock/service recovery. These remain limits; do not silently turn the full
@@ -244,7 +266,9 @@ credentials, paid calls, permission changes, or keyboard changes occurred.
 4. Assess direct insertion's benefit against the accepted launcher -> mic ->
    editable English -> 요/반말 -> Copy & close -> manual paste fallback. Do not
    spend indefinitely on integration without measured user benefit.
-5. Keep Phase 2 speech/credentials gated. No API key is needed for current work.
+5. Phase2 paid/account/device speech acceptance remains pending. No API key is
+   needed for implementation or fake tests. Request private on-phone entry only
+   when the reviewed credential screen is ready; remind DeveloperStuff backup.
 
 Earlier RESELECT synthetic gates proved keyboard-based visibility, dragging,
 Hide suppression, and saved position after service restart. Earlier Stage 1

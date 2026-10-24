@@ -428,3 +428,26 @@ writing the app's privacy explanation.
 Current API documentation distinguishes soft budget alerts from enforceable
 organization/project hard limits. Hard-limit enforcement can lag slightly;
 verify the configured account control rather than treating alerts as a cap.
+# Phase2 transcription contract recheck — 2026-10-24
+
+Official [file transcription guide](https://developers.openai.com/api/docs/guides/speech-to-text)
+recommends `gpt-transcribe` for completed recordings. Use one multipart request
+after explicit Stop with file/model and an English `languages[]` hint; use the
+JSON transcript for editable review. Published upload limit25MB; our initial
+60s mono16kHz/16-bit in-memory PCM cap is much smaller. No contextual editor text
+or chat history belongs in the request. Account access/quality remain untested.
+
+The [request reference](https://developers.openai.com/api/reference/resources/audio/subresources/transcriptions/methods/create)
+defines POST `/v1/audio/transcriptions`, file metadata and JSON `text` output.
+Use filename `recording.wav`, content type `audio/wav`, `response_format=json`,
+`languages[]=en`; do not send the deprecated singular language field with this
+model. Fixed API host, no redirects, no automatic retry, sanitized errors and
+bounded request lifetime are application design decisions, not provider guarantees.
+
+Android [backup documentation](https://developer.android.com/identity/data/autobackup)
+defines independent file/database/sharedpref/external/root and device-protected
+domains. Store encrypted credentials in noBackupFilesDir, exclude all applicable
+domains from cloud and transfer rules, retain allowBackup=false and legacy rules.
+The [Keystore AES-GCM example](https://developer.android.com/reference/android/security/keystore/KeyGenParameterSpec)
+supports generating the AES encryption key inside AndroidKeyStore. Device storage
+and backup configuration need review/tests; hardware backing is not assumed.

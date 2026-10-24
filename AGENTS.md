@@ -12,6 +12,13 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
 - Andrew authorized Phase 1 implementation on 2026-10-23. Build and review
   the API-free feasibility prototype; do not advance beyond its device-test
   gate without the required results. Later phases remain gated.
+- Phase1's bounded feasibility gate was met on2026-10-24: current guarded
+  sample insertion passed in Kakao, Google Messages and Instagram, together
+  with documented synthetic/unit/source safety evidence. Proceed to Phase2
+  speech/credentials under the selected on-phone-key approach. Broader
+  lifecycle/geometry/same-view switch-back remain explicit later limitations.
+  Keep the tested REVIEW sample baseline; speech is a separate explicit debug
+  flag, release/default disabled until reviewed. No paid call or real key yet.
 - Andrew subsequently authorized continued scoped KakaoTalk self-chat
   diagnostics using recording -> Stop -> Cancel, without inserting or sending.
   This scope permits repeat non-inserting diagnostics as needed; do not ask
@@ -77,7 +84,7 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   on. No retry, Copy/Paste substitute, or Send; no conversation inspection.
   PROGRESS tracks which one-attempt scopes remain. Do not request this same
   approval again while those authorized trials are pending.
-  Google Messages passed and its scope is consumed; Instagram remains pending.
+  Google Messages and Instagram passed; both one-attempt scopes are consumed.
 - Andrew authorized dismissing the visible save-password prompt with its
   "No, thanks" action during testing. This permits a narrowly targeted
   Android system negative-button helper, not credential reads, saving entries,

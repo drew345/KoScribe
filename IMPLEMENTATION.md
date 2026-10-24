@@ -230,6 +230,17 @@ security design to carry into implementation review.
 
 ## Phases and acceptance gates
 
+Oct24 decision: Phase1 bounded feasibility gate met after current sample flows
+passed in all three named apps, plus synthetic preservation/refusal/uncertainty,
+manual SwiftKey editing and documented focus-termination/unit/source evidence.
+This does not claim full daily-use or every navigation/geometry state. Phase2
+now proceeds as a separate debug speech flag, preserving REVIEW samples and
+release/default disabled. Its first actual speech path is EN only; Korean modes
+must not return canned output for real speech before Phase3. Record bounded audio
+in memory, upload only after explicit successful Stop, cancel stale requests,
+and review the real transcript before existing guarded insertion. Credential
+architecture remains the previously selected personal on-phone Keystore approach.
+
 | Phase | Scope | Gate before advancing |
 | --- | --- | --- |
 | 0: Planning | Settle UX, credentials, models, speech provider, installation and latency goals. | Andrew approves implementation plan. |

@@ -26,8 +26,9 @@ The recording-controls candidate reserves a fixed Stop/Cancel row below
 scrollable explanatory text inside the existing host. Stop appears after
 microphone proof and disables on its first tap; Cancel stays available during
 preparation, recording and processing. This addresses the reported clipped Stop
-button. Current-phone visibility still requires the user check in PROGRESS;
-broader menu styling and recording-state prominence remain deferred.
+button. On A35, Andrew confirmed both controls fully visible and direct recording
+Cancel working; own state confirmed microphone cleanup and no draft/commit.
+Broader geometry, menu styling and recording-state prominence remain deferred.
 
 ## Credential flow
 

@@ -4,6 +4,13 @@ Updated: 2026-10-24 (Asia/Seoul).
 
 ## Current state
 
+Stopped for the night at Andrew's request. No test, recording, transcription
+request or insertion transaction is running. Resume only when he returns.
+Tomorrow: reconnect/unlock the phone if needed, verify own idle state, then plan
+one deliberate offline-error/recovery check with Andrew changing connectivity
+himself. Preserve the saved key. If recovery passes, review the Phase 2 gate
+before starting Korean translation; do not restart earlier successful tests.
+
 The approved postcommit confirmation change is implemented, independently
 reviewed, and passed seven separate synthetic phone checks on secure3AA18446.
 Exact composed results confirm and dismiss; wrong composed results remain
@@ -13,9 +20,10 @@ unit tests passed; lints have zero errors. Manual empty-field Korean insertion
 now passed in Kakao self-chat, Google Messages and Instagram. The bounded Phase1
 feasibility gate is met from combined device/unit/source evidence. Phase 2's
 first real EN transcription -> review -> Cancel and real speech -> SwiftKey edit
--> guarded insertion/dismissal tests now passed. User reported Stop half clipped;
-a narrow recording-controls layout fix is installed for manual checking. Korean translation
-remains unimplemented; Phase 2 cancel/error recovery checks are pending.
+-> guarded insertion/dismissal tests now passed. The clipped Stop fix also passed
+manual visibility and active-recording Cancel on controls v4: both buttons fully
+visible, no review or text change, microphone stopped. Korean translation remains
+unimplemented; Phase 2's controlled network failure/recovery check is pending.
 
 Andrew's newly approved one-attempt Kakao trial PASSED and is now complete.
 He reported the exact expected Korean sample appeared and remained unsent,
@@ -111,10 +119,13 @@ and key guards remain intact; broader status/menu polish stays deferred.
 Controls v4 built/signed, all53 units passed, app lint zero errors/37 warnings.
 Installed with replace-in-place, no uninstall/data clearing/key access. Default
 debug/release outputs restored OFF, visualfalse/SPEECHfalse. Own service reconnected
-idle with proof/captures/commits0, draftNONE/cleanupfalse. Test message is open;
-await user report that both buttons are fully visible and direct recording Cancel
-closes without review or text changes. No Stop/upload/insertion is requested.
-Device layout acceptance remains pending; do not claim clipping fixed yet.
+idle with proof/captures/commits0, draftNONE/cleanupfalse. Andrew then confirmed
+both buttons fully visible without scrolling and direct Cancel behaved exactly
+as requested, without review or text changes. Own proof0->1, RESELECT_CANCELLED,
+draftNONE/captures0/commits0/cleanupfalse, no Stop event; microphone ended8.803s.
+SwiftKey stays selected. This accepts current-phone control visibility and active
+Cancel; it does not accept every font/window geometry or cancellation in processing.
+Andrew requested tonight's stopping point. Save checkpoint; no more device work.
 
 Previous secure980E build Kakao self-chat microphone -> Stop -> English review -> Cancel
 PASSED. Andrew reported the sample review closed and the composer cursor/SwiftKey
@@ -300,14 +311,16 @@ build folders. Detailed source review hashes are in DEVICE_TESTS.
 
 Last v3 checkpoint: REVIEW_COMPLETED, proof3/captures1/commits1, draftNONE,
 CONFIRMED/cleanupfalse; mic ended4.368s. Newly installed controls v4 reset own
-counters: NOT_CAPTURED, proof/captures/commits0, draftNONE, confirmationNONE,
-cleanupfalse. SwiftKey remains selected. All three real-app scopes are consumed;
+counters. Final controls v4 state: RESELECT_CANCELLED, proof1/captures0/commits0,
+draftNONE, confirmationNONE, cleanupfalse; microphone ended8.803s, no Stop event.
+SwiftKey remains selected. All three real-app scopes are consumed;
 fixed unsent drafts are for Andrew to remove manually. Only the static fake
 credential marker was saved/deleted during setup. Andrew subsequently saved his
 real key privately and confirmed backup; it was not inspected. Real transcription,
 review Cancel and edited-text insertion are user-confirmed. No Send/Enter,
-conversation inspection, screenshot, or keyboard change occurred. The controls
-layout/active-recording Cancel check is pending on the reviewed installed candidate.
+conversation inspection, screenshot, or keyboard change occurred. Current-phone
+control visibility and active-recording Cancel passed. No work remains running;
+the phone may be disconnected and locked for the night.
 
 ## Next work and gates
 
@@ -321,11 +334,11 @@ layout/active-recording Cancel check is pending on the reviewed installed candid
    reviewed, built and unit/lint checked. Credential fake test passed; missing-key
    safety assertions passed, with full-method Close cleanup failures recorded.
    Key entry and backup are user-confirmed. Synthetic real speech/review/Cancel
-   and speech/edit/Insert passed. First fix the clipped Stop control, then use
-   a manual active-recording Cancel check to verify reachable controls and cleanup.
+   and speech/edit/Insert passed. The clipped Stop fix and manual active-recording
+   Cancel also passed on controls v4. Do not repeat those gates without new evidence.
    No API keys in chat or shell; no unattended audio upload, fake-key/deletion
-   or missing-key reruns. Astra's remaining Phase 2 checks are active Cancel and one
-   controlled network failure followed by a fresh successful recording. Any
+   or missing-key reruns. Tomorrow's remaining Phase 2 check is one controlled
+   network failure followed by a fresh successful recording. Any
    connectivity change should be deliberate and performed by Andrew; keep the
    saved key intact. Broader reliability remains a later phase.
 3. For broader daily-use reliability, extend selected/caret/navigation and
@@ -335,7 +348,7 @@ layout/active-recording Cancel check is pending on the reviewed installed candid
 4. Assess direct insertion's benefit against the accepted launcher -> mic ->
    editable English -> 요/반말 -> Copy & close -> manual paste fallback. Do not
    spend indefinitely on integration without measured user benefit.
-5. Phase 2 broader device speech/error/cancel acceptance remains pending. First
+5. Phase 2 error recovery acceptance remains pending. First
    actual transcription succeeded. Private key entry and DeveloperStuff backup
    are user-confirmed; preserve that credential. Improve recording-state prominence
    in the later UI phase as Andrew requested.

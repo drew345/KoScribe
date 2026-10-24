@@ -603,3 +603,19 @@
   Live key/data preserved. Service idle baseline0/0/0, draftNONE/cleanupfalse.
   Asked for button visibility plus direct recording Cancel (no Stop/upload),
   awaiting user report. No clipping-fix claim until device confirmation.
+
+## 2026-10-24 — Night checkpoint: visible controls and active Cancel passed
+
+- Andrew confirmed both Stop/Cancel fully visible and the requested Cancel flow
+  working exactly as described. Own RESELECT_CANCELLED, proof1/captures0/commits0,
+  draftNONE/cleanupfalse, no Stop event; microphone ended8.803s, SwiftKey selected.
+  No new build, key/content read, screenshot, insertion or Send.
+- Stopped for the night at Andrew's request. Installed controls v4 52413362 and
+  smoke v4 2782686D retained; default/release OFF. No test or recording running;
+  live key is preserved and its DeveloperStuff backup already user-confirmed.
+- Tomorrow: verify connection/idle state, then one controlled network failure
+  and fresh-recording recovery with Andrew changing connectivity. Review Phase 2
+  acceptance before Korean translation. Do not repeat completed app/ASR/edit/
+  visibility/Cancel gates or resume automated Close cleanup diagnostics.
+- General recording-status prominence/menu polish and broad geometry remain
+  deferred. No overnight automation or further phone actions were started.

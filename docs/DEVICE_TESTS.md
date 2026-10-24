@@ -1460,3 +1460,23 @@ Asked Andrew to tap field -> Ko -> EN, inspect both buttons without scrolling,
 then Cancel directly without Stop. No speech/upload/review/insertion is requested.
 Await report and own microphone/zero-commit verification. Source review alone
 does not establish visibility on the phone or larger-font/smaller-window layouts.
+
+### Controls v4 visibility and active-recording Cancel PASS; night stop (2026-10-24)
+
+Andrew confirmed both Stop and Cancel were completely visible without scrolling
+and the requested direct Cancel flow worked exactly as described. This answers
+the combined no-review/no-text-change question. Same controls v4 52413362 and
+unchanged smoke v4 2782686D; no new build or agent UI action after his report.
+
+Own baseline proof0/captures0/commits0 -> proof1/captures0/commits0;
+RESELECT_CANCELLED, draftNONE, confirmationNONE, cleanupfalse. Trace shows mode
+EN, positive unsilenced microphone and USER_CANCELLED, with no Stop entry.
+AppOps confirms recording ended8.803s; SwiftKey remains selected. Direct Cancel
+does not hand audio to transcription. No transcript, key or conversation was read,
+no screenshot taken, and no insertion or sending occurred.
+
+Accept current A35 button visibility and active-recording Cancel/cleanup.
+Processing cancellation, broader geometry and network recovery are not inferred
+from this pass. Andrew requested stopping for the night; no further tests or UI
+actions. Tomorrow's remaining scoped Phase 2 gate is deliberate network failure
+and recovery with Andrew controlling connectivity, then phase acceptance review.

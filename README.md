@@ -22,6 +22,9 @@ confirmed insertion dismiss the bubble. Earlier visibility, dragging, and saved
 position gates passed on the RESELECT build. The compact build now passed both
 manual SwiftKey edit/Insert variants in the synthetic editor. Current real-app and
 broader composition acceptance remain pending; the ordinary default build is OFF.
+The subsequent approved confirmation change passed seven scoped synthetic checks,
+including exact composed results, composed mismatches, and preservation. It keeps
+all pre-insertion guards; see PROGRESS for the installed candidate and next gate.
 A newer compact movable result control is being tested after manual use exposed
 an obstructed destination field. See PROGRESS for the current build and open checks.
 

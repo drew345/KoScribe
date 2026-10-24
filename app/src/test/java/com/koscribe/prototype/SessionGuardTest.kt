@@ -51,4 +51,19 @@ class SessionGuardTest {
         guard.invalidate(session.id)
         assertEquals(GuardDecision.Refused(GuardFailure.TARGET_CHANGED), guard.check(session.id, editor, 201))
     }
+
+    @Test fun composingCannotConsumeOrBypassPrecommitReservation() {
+        val guard = SessionGuard()
+        assertNull(guard.begin(OutputMode.ENGLISH, editor.copy(composing = true), 100))
+        val session = guard.begin(OutputMode.ENGLISH, editor, 100)!!
+        assertTrue(guard.publish(session.id, "hello"))
+        val composed = editor.copy(composing = true)
+        assertEquals(GuardDecision.Refused(GuardFailure.COMPOSING),
+            guard.check(session.id, composed, 200))
+        assertEquals(GuardDecision.Refused(GuardFailure.COMPOSING),
+            guard.reserveCommit(session.id, composed, 200))
+        assertFalse(session.attempted)
+        assertEquals(GuardDecision.Ready, guard.reserveCommit(session.id, editor, 201))
+        assertTrue(session.attempted)
+    }
 }

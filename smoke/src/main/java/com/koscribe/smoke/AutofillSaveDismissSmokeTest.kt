@@ -27,7 +27,8 @@ class AutofillSaveDismissSmokeTest {
             "reselectReady", "bubbleIdleReady", "bubbleMicReady", "bubbleRestoreReady",
             "reviewCopyReady", "reviewInsertEmptyReady", "reviewInsertMiddleReady",
             "reviewKoreanReady", "reviewSelectionReady", "reviewKoreanEditReady",
-            "reviewUncertainReady", "reviewConfirmationProbeReady")
+            "reviewUncertainReady", "reviewConfirmationProbeReady", "reviewComposedExactReady",
+            "reviewComposedMismatchReady")
         assumeTrue("AUTOFILL_DISMISS_REQUIRES_SOLE_EXACT_OPT_IN",
             args.getString("autofillSaveNoReady") == "true" &&
                 otherFlags.none { args.getString(it) == "true" })

@@ -234,6 +234,8 @@ not the earlier RESELECT recording-only candidate. Run only exact methods in
 | `selectedRangeRefusesAndPreservesResult` | `reviewSelectionReady` |
 | `koreanEditRejectsThenCancelPreservesFixture` | `reviewKoreanEditReady` |
 | `acknowledgedButUnchangedCommitIsTerminallyUncertain` | `reviewUncertainReady` |
+| `exactComposedCommitConfirmsAndDismissesOnce` | `reviewComposedExactReady` |
+| `wrongComposedCommitStaysTerminallyUncertain` | `reviewComposedMismatchReady` |
 | `editedEnglishEmptyInsertReportsNaturalConfirmationOrTerminalProbe` | `reviewConfirmationProbeReady` |
 
 ```powershell
@@ -247,8 +249,9 @@ with a fixed synthetic result; do not read or restore earlier clipboard content.
 The Copy test checks our clip metadata before examining the known synthetic text.
 The uncertainty fixture acknowledges both commit overloads without changing
 text, exercising terminal uncertainty and the absence of another Insert action.
-The measured Oct24 runs ended on WINDOW_OR_FOCUS_CHANGED, not the settled
-POSTCONTEXT_UNCONFIRMED timeout branch; check the actual terminal code each time.
+Earlier Oct24 runs ended on WINDOW_OR_FOCUS_CHANGED. The composed-confirmation
+candidate later reached POSTCONTEXT_UNCONFIRMED after unchanged observations;
+check the actual terminal code each time.
 REVIEW launches omit the unused protected editor and opt out of autofill. The
 default fixture still includes that editor for explicit protected-field tests.
 
@@ -276,6 +279,20 @@ product guards or timeout. Never read notification contents to diagnose this.
 Fixture publication follows setContentView; never query hasWindowFocus off the
 main thread during construction. Startup timeout diagnostics contain only own
 lifecycle counters, window-type counts, package classifications, and flag bits.
+
+The new composed tests enable two extra synthetic editors only for their exact
+opt-in flags. Each delegates one commit and leaves a framework composing span
+on the resulting text. One uses the requested result; the other substitutes a
+fixed incorrect synthetic result. Both require POSTCOMMIT_COMPOSING_OBSERVED
+after the current commit, so losing the span before observation fails branch
+proof. Exact requires confirmation/dismissal and stable text; mismatch requires
+COMPOSED_POSTCONTEXT_UNCONFIRMED, no Insert or editing recovery, preserved result,
+one product/fixture commit, and Cancel cleanup. Default/manual fixtures are unchanged.
+
+The following probe instructions describe the previous secure980E diagnostic.
+That bounded round is closed. The approved postcommit rule now admits composed
+observations and removed the old ORIG composition-rejection record; use the new
+deterministic methods for acceptance, not a rerun of the old probe.
 
 The confirmation probe is a diagnostic, not an insertion acceptance test. Use its
 sole flag with that exact method. It makes one synthetic empty-field commit and

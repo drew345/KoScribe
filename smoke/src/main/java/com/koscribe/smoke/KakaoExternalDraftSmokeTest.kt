@@ -54,6 +54,7 @@ class KakaoExternalDraftSmokeTest {
             "bubbleRestoreReady", "reviewCopyReady", "reviewInsertEmptyReady",
             "reviewInsertMiddleReady", "reviewKoreanReady", "reviewSelectionReady",
             "reviewKoreanEditReady", "reviewUncertainReady", "reviewConfirmationProbeReady",
+            "reviewComposedExactReady", "reviewComposedMismatchReady",
             "autofillSaveNoReady")
             .any { InstrumentationRegistry.getArguments().getString(it) == "true" }
         assumeTrue("EXTERNAL_TEST_REQUIRES_ONE_EXPLICIT_OPT_IN",

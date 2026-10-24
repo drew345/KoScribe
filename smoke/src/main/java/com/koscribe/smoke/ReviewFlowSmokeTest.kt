@@ -48,7 +48,8 @@ class ReviewFlowSmokeTest {
         val args = InstrumentationRegistry.getArguments()
         val reviewFlags = listOf("reviewCopyReady", "reviewInsertEmptyReady",
             "reviewInsertMiddleReady", "reviewKoreanReady", "reviewSelectionReady",
-            "reviewKoreanEditReady", "reviewUncertainReady", "reviewConfirmationProbeReady")
+            "reviewKoreanEditReady", "reviewUncertainReady", "reviewConfirmationProbeReady",
+            "reviewComposedExactReady", "reviewComposedMismatchReady")
         val olderFlags = listOf("autofillSaveNoReady", "externalDraftReady", "externalRecordCancelReady",
             "startupHoldReady", "startupCollapseReady", "startupPanelReady", "overlayReady",
             "reselectReady", "bubbleIdleReady", "bubbleMicReady", "bubbleRestoreReady")
@@ -231,6 +232,79 @@ class ReviewFlowSmokeTest {
         successfulInsert(before, R.id.local_test_editor, "안녕하세요. 10분 후에 도착할게요.")
     }
 
+    @Test fun exactComposedCommitConfirmsAndDismissesOnce() {
+        only("reviewComposedExactReady")
+        val editorId = R.id.local_composed_match_editor
+        val edited = "Exact synthetic composed result."
+        await("COMPOSED_MATCH_EDITOR_NOT_AVAILABLE") { fixtureEditor(editorId) }
+        seedFixture(editorId, "", 0)
+        val fixtureCommits = composedFixtureCommitCount(editorId)
+        val before = state()
+        startReview("EN", before)
+        editReview(edited)
+        confirmReady(before)
+        tapDestination(editorId)
+        clickOwnId("ready_insert")
+        successfulInsert(before, editorId, edited)
+        assertTrue("COMPOSED_EXACT_CARET_MISMATCH", fixtureEditor(editorId)?.let {
+            it.textSelectionStart == edited.length && it.textSelectionEnd == edited.length
+        } == true)
+        assertTrue("COMPOSED_FIXTURE_COMMITTED_MORE_THAN_ONCE",
+            composedFixtureCommitCount(editorId) == fixtureCommits + 1)
+        assertProductObservedPostcommitComposition()
+    }
+
+    @Test fun wrongComposedCommitStaysTerminallyUncertain() {
+        only("reviewComposedMismatchReady")
+        val editorId = R.id.local_composed_mismatch_editor
+        val edited = "Expected synthetic composed result."
+        await("COMPOSED_MISMATCH_EDITOR_NOT_AVAILABLE") { fixtureEditor(editorId) }
+        seedFixture(editorId, "", 0)
+        val fixtureCommits = composedFixtureCommitCount(editorId)
+        val before = state()
+        startReview("EN", before)
+        editReview(edited)
+        confirmReady(before)
+        tapDestination(editorId)
+        clickOwnId("ready_insert")
+        await("WRONG_COMPOSED_FIXTURE_RESULT_NOT_VISIBLE") { fixtureEditor(editorId)?.takeIf {
+            fixtureText(it) == SmokeEditorActivity.COMPOSED_WRONG_RESULT
+        } }
+        assertTrue("WRONG_COMPOSED_CARET_NOT_COLLAPSED", fixtureEditor(editorId)?.let {
+            val end = SmokeEditorActivity.COMPOSED_WRONG_RESULT.length
+            it.textSelectionStart == end && it.textSelectionEnd == end
+        } == true)
+        await("WRONG_COMPOSED_COMMIT_NOT_UNCERTAIN") { state().takeIf {
+            it.captures == before.captures + 1 && it.commits == before.commits + 1 &&
+                it.phase == "UNCERTAIN" && it.confirmation == "UNCERTAIN" && !it.cleanup
+        } }
+        assertTrue("COMPOSED_FIXTURE_COMMITTED_MORE_THAN_ONCE",
+            composedFixtureCommitCount(editorId) == fixtureCommits + 1)
+        val codes = assertProductObservedPostcommitComposition()
+        assertTrue("WRONG_COMPOSED_RESULT_WAS_NOT_THE_TERMINAL_CAUSE",
+            codes.contains("FRESH_COMMIT_UNCERTAIN_COMPOSED_POSTCONTEXT_UNCONFIRMED"))
+        await("WRONG_COMPOSED_RECOVERY_NOT_AVAILABLE") { ownId("ready_copy")?.takeIf {
+            ownId("ready_cancel") != null
+        } }
+        assertTrue("WRONG_COMPOSED_EXPOSED_RETRY_OR_EDIT", ownId("ready_insert") == null &&
+            reviewEditor() == null)
+        SystemClock.sleep(500)
+        assertFixtureText(editorId, SmokeEditorActivity.COMPOSED_WRONG_RESULT)
+        val stable = state()
+        assertTrue("WRONG_COMPOSED_RETRIED_OR_RELABELED", stable.captures == before.captures + 1 &&
+            stable.commits == before.commits + 1 && stable.phase == "UNCERTAIN" &&
+            stable.confirmation == "UNCERTAIN" && !stable.cleanup &&
+            ownId("ready_insert") == null && reviewEditor() == null &&
+            ownId("ready_copy") != null && ownId("ready_cancel") != null)
+        clickOwnId("ready_cancel")
+        await("WRONG_COMPOSED_CANCEL_DID_NOT_CLEAR_DRAFT") { state().takeIf {
+            it.phase == "NONE" && it.confirmation == "UNCERTAIN" && !it.cleanup &&
+                it.captures == before.captures + 1 && it.commits == before.commits + 1
+        } }
+        sessionAttempted = false
+        assertFixtureText(editorId, SmokeEditorActivity.COMPOSED_WRONG_RESULT)
+    }
+
     @Test fun selectedRangeRefusesAndPreservesResult() {
         only("reviewSelectionReady")
         val original = "Synthetic alpha omega."
@@ -369,16 +443,28 @@ class ReviewFlowSmokeTest {
     }
 
     private fun launchFixture() {
+        val args = InstrumentationRegistry.getArguments()
+        val composed = args.getString("reviewComposedExactReady") == "true" ||
+            args.getString("reviewComposedMismatchReady") == "true"
         instrumentation.context.startActivity(Intent(instrumentation.context,
             SmokeEditorActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
             putExtra(SmokeEditorActivity.EXTRA_OMIT_PROTECTED_EDITOR, true)
+            putExtra(SmokeEditorActivity.EXTRA_COMPOSED_FIXTURES, composed)
         })
         val end = SystemClock.elapsedRealtime() + 8_000L
         while (SystemClock.elapsedRealtime() < end) {
-            if (focusedFixtureApp() && nodes(fixture).none {
-                it.viewIdResourceName == "$fixture:id/local_protected_editor"
-            }) return
+            if (focusedFixtureApp()) {
+                val fixtureNodes = nodes(fixture)
+                val protectedAbsent = fixtureNodes.none {
+                    it.viewIdResourceName == "$fixture:id/local_protected_editor"
+                }
+                val composedCount = fixtureNodes.count {
+                    it.viewIdResourceName in listOf("$fixture:id/local_composed_match_editor",
+                        "$fixture:id/local_composed_mismatch_editor")
+                }
+                if (protectedAbsent && composedCount == (if (composed) 2 else 0)) return
+            }
             SystemClock.sleep(100)
         }
         if (focusedFixtureApp()) throw AssertionError("REVIEW_PROTECTED_FIELD_NOT_OMITTED")
@@ -625,6 +711,8 @@ class ReviewFlowSmokeTest {
         val name = when (id) {
             R.id.local_test_editor -> "local_test_editor"
             R.id.local_uncertain_editor -> "local_uncertain_editor"
+            R.id.local_composed_match_editor -> "local_composed_match_editor"
+            R.id.local_composed_mismatch_editor -> "local_composed_mismatch_editor"
             else -> throw AssertionError("UNAPPROVED_FIXTURE_EDITOR")
         }
         val matches = nodes(fixture).filter {
@@ -632,6 +720,23 @@ class ReviewFlowSmokeTest {
         }
         if (matches.size > 1) throw AssertionError("AMBIGUOUS_FIXTURE_EDITOR")
         return matches.singleOrNull()
+    }
+
+    private fun composedFixtureCommitCount(id: Int): Int {
+        var count = -1
+        instrumentation.runOnMainSync {
+            count = SmokeEditorActivity.current.get()?.composedCommitCount(id)
+                ?: throw AssertionError("COMPOSED_FIXTURE_ACTIVITY_MISSING")
+        }
+        return count
+    }
+
+    private fun assertProductObservedPostcommitComposition(): List<String> {
+        val codes = postCommitProbeCodes()
+            ?: throw AssertionError("COMPOSED_PRODUCT_COMMIT_TRACE_MISSING")
+        assertTrue("COMPOSING_NOT_OBSERVED_AFTER_CURRENT_COMMIT",
+            codes.count { it == "POSTCOMMIT_COMPOSING_OBSERVED" } == 1)
+        return codes
     }
 
     private fun reviewEditor(): AccessibilityNodeInfo? = ownId("review_english")

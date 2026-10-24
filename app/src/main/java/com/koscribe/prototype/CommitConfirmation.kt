@@ -2,6 +2,8 @@ package com.koscribe.prototype
 
 /** Exact local-context proof of one insertion; uncertainty is never success. */
 internal object CommitConfirmation {
+    enum class PostCommitVerdict { CONFIRMED, COMPOSED_UNCONFIRMED, OTHER_UNCONFIRMED }
+
     data class Expected(
         val oldOffset: Int,
         val oldText: String,
@@ -23,8 +25,15 @@ internal object CommitConfirmation {
     }
 
     fun matches(expected: Expected, observed: EditorSnapshot?): Boolean =
-        observed != null && observed.offset == expected.oldOffset &&
+        observed != null && observed.isStructurallyValid() &&
+            observed.offset == expected.oldOffset &&
             observed.surroundingText == expected.text &&
             observed.selectionStart == expected.caret &&
-            observed.selectionEnd == expected.caret && !observed.composing
+            observed.selectionEnd == expected.caret
+
+    fun verdict(expected: Expected, observed: EditorSnapshot): PostCommitVerdict = when {
+        matches(expected, observed) -> PostCommitVerdict.CONFIRMED
+        observed.composing -> PostCommitVerdict.COMPOSED_UNCONFIRMED
+        else -> PostCommitVerdict.OTHER_UNCONFIRMED
+    }
 }

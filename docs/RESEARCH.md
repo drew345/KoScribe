@@ -387,6 +387,26 @@ permission to mutate from observed result, retain one consumed attempt, and
 come back for discussion with measured evidence. Copy & close remains the
 practical fallback if a small correction cannot demonstrate a usable flow.
 
+Later measured evidence on the same secure diagnostic build: a single ordinary
+middle-insertion regression reproduced the composing refusal. ORIG29ms supplied
+complete same-target/host identity and exact expected context/caret/node agreement.
+One composing span occupied only the new result's last word plus punctuation;
+the original prefix and suffix were preserved. Read-only postterminal samples
+through557-572ms retained the exact context/caret and same composing span. These
+samples do not establish uninterrupted transaction continuity or future stability.
+They support discussing confirmation based on the observed exact result; no
+confirmation contract was changed, no transaction rehabilitated, and no second
+commit issued. The earlier two-attempt empty diagnostic round remains closed.
+
+User decision after Astra Ultra review: approve prospective confirmation of an
+exact observed result even with postcommit composition, retaining all precommit
+eligibility checks. The keyboard may subsequently edit text; this is not a
+composition-free completion guarantee. Implementation must keep true composing
+metadata, require full destination continuity and exact context/offset/caret,
+terminate composed nonmatches immediately, and never upgrade an ended uncertain
+transaction. Deterministic exact and mismatching composed fixtures are required
+to demonstrate the changed branch before external insertion is proposed.
+
 ## Credential and data handling
 
 OpenAI recommends keeping API keys server-side and out of client code. Andrew

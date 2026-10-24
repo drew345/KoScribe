@@ -7,6 +7,8 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.text.InputType
+import android.text.Spanned
+import android.text.style.UnderlineSpan
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowManager
@@ -25,6 +27,8 @@ class SmokeEditorActivity : Activity() {
     companion object {
         const val EXTRA_OMIT_PROTECTED_EDITOR = "com.koscribe.smoke.OMIT_PROTECTED_EDITOR"
         const val EXTRA_MANUAL_FIXTURE = "com.koscribe.smoke.MANUAL_FIXTURE"
+        const val EXTRA_COMPOSED_FIXTURES = "com.koscribe.smoke.COMPOSED_FIXTURES"
+        const val COMPOSED_WRONG_RESULT = "Incorrect synthetic composed result."
         @Volatile
         var current = WeakReference<SmokeEditorActivity>(null)
             private set
@@ -52,6 +56,11 @@ class SmokeEditorActivity : Activity() {
     private lateinit var messageEditor: EditText
 
     private fun manualFixture(): Boolean = intent.getBooleanExtra(EXTRA_MANUAL_FIXTURE, false)
+    private fun composedFixtures(): Boolean = !manualFixture() &&
+        intent.getBooleanExtra(EXTRA_COMPOSED_FIXTURES, false)
+
+    fun composedCommitCount(id: Int): Int =
+        (findViewById<EditText>(id) as? ComposedCommitEditor)?.delegatedCommitCount ?: -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,6 +93,12 @@ class SmokeEditorActivity : Activity() {
             importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
         }
         root.addView(messageEditor, LinearLayout.LayoutParams(-1, (160 * density + 0.5f).toInt()))
+        if (composedFixtures()) {
+            root.addView(composedEditor(R.id.local_composed_match_editor, false),
+                LinearLayout.LayoutParams(-1, -2))
+            root.addView(composedEditor(R.id.local_composed_mismatch_editor, true),
+                LinearLayout.LayoutParams(-1, -2))
+        }
         if (!manual && !intent.getBooleanExtra(EXTRA_OMIT_PROTECTED_EDITOR, false))
             root.addView(protectedEditor(), LinearLayout.LayoutParams(-1, -2))
         if (!manual) root.addView(uncertainEditor(), LinearLayout.LayoutParams(-1, -2))
@@ -130,6 +145,16 @@ class SmokeEditorActivity : Activity() {
         } else if (uncertain == null) {
             fixtureRoot.addView(uncertainEditor(), LinearLayout.LayoutParams(-1, -2))
         }
+        for ((id, mismatch) in listOf(R.id.local_composed_match_editor to false,
+            R.id.local_composed_mismatch_editor to true)) {
+            val existing = fixtureRoot.findViewById<EditText>(id)
+            if (!composedFixtures()) {
+                if (existing != null) fixtureRoot.removeView(existing)
+            } else if (existing == null) {
+                fixtureRoot.addView(composedEditor(id, mismatch),
+                    if (mismatch) 3 else 2, LinearLayout.LayoutParams(-1, -2))
+            }
+        }
     }
 
     private fun protectedEditor(): EditText = EditText(this).apply {
@@ -145,6 +170,14 @@ class SmokeEditorActivity : Activity() {
         inputType = InputType.TYPE_CLASS_TEXT
         importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
     }
+
+    private fun composedEditor(id: Int, mismatch: Boolean): EditText =
+        ComposedCommitEditor(this, mismatch).apply {
+            this.id = id
+            hint = "Synthetic composed test field"
+            inputType = InputType.TYPE_CLASS_TEXT
+            importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+        }
 
     override fun onResume() {
         super.onResume()
@@ -213,6 +246,51 @@ private class UncertainCommitEditor(context: Context) : EditText(context) {
             override fun commitText(text: CharSequence?, newCursorPosition: Int): Boolean = true
             override fun commitText(text: CharSequence, newCursorPosition: Int,
                 textAttribute: TextAttribute?): Boolean = true
+        }
+    }
+}
+
+/** One ordinary commit, followed by a transferable composing span on its inserted range. */
+private class ComposedCommitEditor(context: Context, private val mismatch: Boolean) : EditText(context) {
+    @Volatile var delegatedCommitCount = 0
+        private set
+
+    override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection? {
+        val delegate = super.onCreateInputConnection(outAttrs) ?: return null
+        return object : InputConnectionWrapper(delegate, true) {
+            private var inCommit = false
+
+            private fun commitOnce(requested: CharSequence?, cursor: Int,
+                attribute: TextAttribute?, attributed: Boolean): Boolean {
+                if (inCommit) return false
+                inCommit = true
+                try {
+                    val inserted = if (mismatch) SmokeEditorActivity.COMPOSED_WRONG_RESULT else requested
+                    val applied = if (attributed)
+                        delegate.commitText(inserted ?: "", cursor, attribute)
+                    else delegate.commitText(inserted, cursor)
+                    if (!applied) return false
+                    delegatedCommitCount++
+                    val editable = this@ComposedCommitEditor.text
+                    val end = this@ComposedCommitEditor.selectionStart
+                    val start = end - (inserted?.length ?: 0)
+                    if (start >= 0 && end <= editable.length && end > start &&
+                        editable.subSequence(start, end).toString() == inserted.toString()) {
+                        editable.setSpan(UnderlineSpan(), start, end,
+                            Spanned.SPAN_COMPOSING or Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    }
+                    return true
+                } finally {
+                    inCommit = false
+                }
+            }
+
+            override fun commitText(text: CharSequence?, newCursorPosition: Int): Boolean =
+                commitOnce(text, newCursorPosition, null, false)
+
+            override fun commitText(text: CharSequence, newCursorPosition: Int,
+                textAttribute: TextAttribute?): Boolean =
+                commitOnce(text, newCursorPosition, textAttribute, true)
         }
     }
 }

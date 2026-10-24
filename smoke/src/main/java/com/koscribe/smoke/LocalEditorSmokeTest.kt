@@ -51,6 +51,7 @@ class LocalEditorSmokeTest {
         val reviewFlags = listOf("reviewCopyReady", "reviewInsertEmptyReady",
             "reviewInsertMiddleReady", "reviewKoreanReady", "reviewSelectionReady",
             "reviewKoreanEditReady", "reviewUncertainReady", "reviewConfirmationProbeReady",
+            "reviewComposedExactReady", "reviewComposedMismatchReady",
             "autofillSaveNoReady")
         assumeTrue("LEGACY_LOCAL_TEST_EXCLUDES_REVIEW_OPT_IN", reviewFlags.none {
             InstrumentationRegistry.getArguments().getString(it) == "true"

@@ -58,6 +58,13 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   A commit request returning is not success. Require observed same-destination
   text/caret confirmation before dismissal; an ambiguous attempted commit must
   never regain Insert through retries, editing, or stale callbacks.
+- On 2026-10-24, after measured persistent composing metadata on an exact inserted
+  result, Andrew explicitly approved changing postcommit confirmation: a live
+  transaction may confirm only verified original destination/session, exact
+  expected context and collapsed caret even if the result is still marked
+  composing. Keep every precommit guard, styled reads, and one-attempt rule.
+  Composed nonmatches remain immediately uncertain; ended uncertain transactions
+  never become confirmed later. This grants no real-app insertion trial.
 - Andrew authorized dismissing the visible save-password prompt with its
   "No, thanks" action during testing. This permits a narrowly targeted
   Android system negative-button helper, not credential reads, saving entries,

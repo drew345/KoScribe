@@ -4,21 +4,44 @@ Updated: 2026-10-24 (Asia/Seoul).
 
 ## Current state
 
-The earlier API-free REVIEW product passed all seven synthetic acceptance
-methods after its stale focused-node fix. A newer compact-controls candidate is
-now under evaluation and has a separate postcommit-composition failure described
-below. No real-app insertion acceptance, speech recognition, translation, or API
-integration is claimed. Phase 1 remains open.
+The approved postcommit confirmation change is implemented, independently
+reviewed, and passed seven separate synthetic phone checks on secure3AA18446.
+Exact composed results confirm and dismiss; wrong composed results remain
+terminally uncertain. Middle preservation, Korean insertion, selection refusal,
+edited-Korean cancellation, and unchanged-commit uncertainty all passed. Forty
+unit tests passed; lints have zero errors. Phase 1 remains open: no real-app
+insertion acceptance, speech recognition, translation, or API integration yet.
 
-Andrew asked to proceed and choose between KakaoTalk and speech input. Next is
-current-build KakaoTalk self-chat recording -> Stop -> Cancel in the English
-review, under the existing non-inserting scope. Phone connected/unlocked,
-SwiftKey selected, secure REVIEW unchanged. Baseline proof6/captures4/commits4,
-CONFIRMED, draftNONE, cleanupfalse. Andrew has been asked to start with an empty
-self-chat composer and report recording/review, Cancel, empty-field preservation
-and keyboard return. Await his report; no screenshots or conversation reads,
-no Confirm/Insert/Copy/Paste/Send, and no old instrumentation suite. Speech/API
-work remains gated; a later real-app insertion needs separate specific scope.
+Next: propose one new manual unsent fixed Korean insertion in Kakao self-chat.
+Astra/xhigh cleared the evidence for that narrow proposal. The earlier trial is
+closed, so obtain explicit new scope before asking Andrew to perform it. No more
+synthetic diagnosis is needed for this approved change unless new evidence fails.
+
+Previous secure980E build Kakao self-chat microphone -> Stop -> English review -> Cancel
+PASSED. Andrew reported the sample review closed and the composer cursor/SwiftKey
+returned, with no Confirm/Insert/Copy/Paste/Send. Own proof6 -> 7, captures/commits
+unchanged4/4, REVIEW_CANCELLED, draftNONE, cleanupfalse; microphone ended5.265s.
+No field/chat content or screenshots were read. Clarified that the microphone
+runs and audio is discarded; the displayed sentence is fixed, not transcription.
+
+The first remaining synthetic regression, long middle insertion preserving
+Korean/emoji, then FAILED in12.853s at SUCCESS_NOT_CONFIRMED. Its exact-text
+assertion passed. The installed diagnostic now measured the missing conjunction:
+at29ms, full target/host identity, exact expected context/caret and node agreement
+all true while one composing span115..121 remained. Later samples at57-67,
+207-217 and557-572ms retained exact125-unit context/caret121 and that same span.
+Transaction stayed UNCERTAIN with one commit; test Cancel cleared the draft.
+Final proof8/captures5/commits5, cleanupfalse, mic ended624ms. No retry.
+Astra Ultra reviewed this new evidence and proposed exact-result confirmation
+independent of postcommit composing metadata, with every precommit guard intact.
+Andrew explicitly APPROVED that prospective change. Sol6/xhigh implemented product/
+unit changes and deterministic smoke fixtures; Astra/xhigh cleared both.
+Composed exact result may confirm only with full original-target continuity;
+composed nonmatch remains immediately uncertain, and no ended transaction can
+be upgraded or retried. The reviewed candidate passed the seven checks above;
+the old failure remains a historical failure, not retrospectively confirmed.
+The new middle pass did not observe composition; the deterministic exact and
+natural Korean checks did. Detailed evidence and limits are in DEVICE_TESTS.
 
 The corrected manual SwiftKey flow now PASSED on secure980E4299...: Andrew
 edited the English sample, confirmed, tapped the destination and then the
@@ -127,9 +150,12 @@ Candidate/default OFF builds, 37 JVM tests (zero failures/errors/skips), lints
 Cancel scrolling fix was rebuilt/linted, independently reviewed, and passed.
 Its assertions require a cleared draft, unchanged capture/commit counts, and
 absence of own review controls even when they are offscreen.
-Current secure diagnostic/default builds passed 37 unit tests and lint, with
+Previous secure diagnostic/default builds passed 37 unit tests and lint, with
 25 app warnings and2 smoke warnings, zero errors; signatures verified. Default
-and release remain OFF/visual false. The earlier compact failure remains open.
+and release remained OFF/visual false. The newer approved confirmation candidate
+passed40 units (zero failures/errors/skips), lint (zero errors; app25/smoke3
+warnings), signatures, and all seven scoped phone gates. Default/release are
+restored to OFF/visual false; the installed candidate remains secure REVIEW.
 
 A phone call interrupted one recording before insertion; the unchanged retry
 passed after Andrew was finished. Other startup runs lost fixture focus to
@@ -149,28 +175,29 @@ settings changed. Prompt cessation has not been established.
 
 Galaxy A35 SM-A356E, Android 16/API 36, One UI 8.5; user 0 only. SwiftKey remains
 selected; Wispr remains enabled. Default SMS app is Google Messages. Phone is
-connected/unlocked at the latest check. Both synthetic manual variants finished
-successfully. Andrew is now performing the authorized non-inserting Kakao check;
-do not infer current draft/microphone state from its baseline.
+connected at the latest check. The new candidate's seven synthetic checks finished
+with draftNONE and microphone stopped; no test is running. Do not assume a synthetic screen
+remains foreground after instrumentation cleanup.
 Verify live readiness next session. Fixture cleanup may return
 to a real app; never assume the foreground is still synthetic.
 
-Installed product: `app/build/composition-probe/REVIEW-secure.apk`,
-SHA-256 `980E4299E1B73160E82D874139A7CE04FBA46603DC32A184E0FBF50D5D627D0D`.
+Installed product: `app/build/composed-confirmation/REVIEW-secure.apk`,
+SHA-256 `3AA18446275E46E3712D5232EC8D02DC4AEF0D3C1D88D7CE7CAECE6080DF99DD`.
 Earlier seven-pass product remains saved at app/build/confirmation-refresh/REVIEW.apk
 with SHA-256 `2B00BE44077579BBD92D3D6A8D7FCED7E7391E17B05F56B5D1652444F4AD4D9E`.
-Installed smoke: `app/build/composition-probe/smoke.apk` (ignored).
-SHA-256: `9D3F9563C8A3A21998EC1DD6A067921FD65868CE9F140C26F1BC2CC9CF8F361D`.
-This includes the single-field manual mode and extended diagnostic parser.
+Installed smoke: `app/build/composed-confirmation/smoke.apk` (ignored).
+SHA-256: `168091D7000C2CB26FD94461A52BFAA316218B3B5B4ACDD2F5728433DAF2139D`.
+This adds opt-in composed exact/mismatch fixtures, preserving single-field manual mode.
 Older smoke/product artifacts remain under their recorded ignored build folders.
 Ordinary `app/build/outputs/apk/debug/app-debug.apk` has been rebuilt as OFF with
 VISUAL_TEST=false. Do not substitute it for the secure REVIEW artifact.
 Prior diagnostic, refresh-only, and earlier smoke APKs are retained in ignored
 build folders. Detailed source review hashes are in DEVICE_TESTS.
 
-Latest checkpoint after the no-extra-tap pass: REVIEW_COMPLETED, proof count6,
-draftNONE, destination captures4, commits4, confirmationCONFIRMED,
-cleanupfalse. Exact-app AppOps confirmed mic ended after3.415s. All insertions
+Latest checkpoint after unchanged-commit negative cleanup: REVIEW_CANCELLED, proof7,
+draftNONE, destination captures6, commits5, confirmationUNCERTAIN,
+cleanupfalse. Exact-app AppOps confirmed mic ended after576ms. Counts restarted
+when the new APK was installed. All insertions
 used only the synthetic fixture; earlier Copy replaced the clipboard with the
 disclosed fixed sample.
 No Send/Enter, real conversation access, screenshots, retained audio, credentials,
@@ -182,12 +209,13 @@ paid calls, permission changes, or keyboard changes occurred in this diagnostic 
    intended field/caret already being restored. Current-build preservation,
    selection/refusal, uncertainty and geometry coverage remains bounded by the
    recorded tests; do not generalize this empty-field pass to those cases.
-   The two automated composition diagnostic attempts are complete; intermittent
-   composition failure remains unresolved. Do not retry uncertain commits.
-2. Await the current manual Kakao recording/Stop/Cancel report, then verify own
-   cleanup and zero capture/commit delta against6/4/4 above. Any actual
-   external insertion trial needs separate specific authorization; the earlier
-   one-sample Kakao trial is closed. Do not run old confirmation tests or suites.
+   The old composition diagnostic round is complete. The approved fix passed its
+   scoped checks; do not retry uncertain commits or reopen that probe round.
+2. Ask for one new manual unsent Korean self-chat insertion trial after saving
+   this checkpoint. Expected sample: "안녕하세요. 10분 후에 도착할게요." No
+   Send, Copy/Paste, or retry if refusal/uncertainty occurs. The earlier one-sample
+   Kakao trial is closed; the confirmation-change approval grants no real-app
+   insertion. Do not run old confirmation tests or suites.
 3. Before claiming general feasibility, cover selected/caret changes, app/field
    navigation and composition, small-height/large-font/rotation/split-screen,
    lock/service recovery, and KakaoTalk/Instagram/Google Messages acceptance.
@@ -220,7 +248,8 @@ they are not full current-build real-app acceptance. See DEVICE_TESTS for histor
 ## Repository and tools
 
 Private repository: https://github.com/drew345/KoScribe . main tracks origin/main.
-Latest published source checkpoint: 8de23d6 (manual fixture/composition diagnostic).
+Prior published checkpoint: e9feb80. This session's reviewed confirmation change
+and seven-pass evidence are recorded in the next commit; use git log for its ID.
 Inspect staged files and scan for secrets before publishing.
 
 ADB/SDK: C:\AI\Codex\Tools\android-sdk (API 36/build tools 36.0.0).

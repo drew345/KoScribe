@@ -1106,3 +1106,123 @@ phone mutation occurred after the report.
 Conditional instruction: check the intended field/caret, tap the field only to
 select it or reposition the cursor, then tap floating Insert. All current focus,
 identity, context, caret, composition and one-attempt checks remain in force.
+
+### Current REVIEW Kakao Stop/Cancel PASS (2026-10-24)
+
+Same secure980E4299... / smoke9D3F9563... . Andrew opened the prepared self-chat,
+selected EN, stopped, saw the fixed sample and cancelled in review. He reported
+return to the Kakao composer cursor with SwiftKey visible, explicitly no Confirm,
+Insert, Copy or other result action. Agent did not read field/chat contents or
+take screenshots. This is user-observed app return, not an independent text read.
+
+Own proof count6 -> 7; captures/commits stayed4/4; REVIEW_CANCELLED, draftNONE,
+cleanupfalse. New events: modeEN, positive unsilenced mic read, Stop, mic proved
+stopped, REVIEW_ENDED_USER_CANCELLED. AppOps microphone duration5.265s ended;
+SwiftKey remains selected. Retained CONFIRMED belongs to the preceding synthetic
+insertion, not this cancellation. This accepts current recording/review/Cancel
+ergonomics only. Audio was read/discarded; no transcription/API request occurred.
+
+### Middle insertion reproduces persistent postcommit composition (2026-10-24)
+
+Root next ran exactly
+ReviewFlowSmokeTest#longEnglishInsertsAtMiddlePreservingKoreanAndEmoji with sole
+reviewInsertMiddleReady on the same installed builds. FAILED12.853s at
+SUCCESS_NOT_CONFIRMED after the exact expected fixture-text assertion passed.
+The installed code-only diagnostic fired naturally; no rerun of the closed two-
+attempt empty-field diagnostic round. No retry or success reclassification.
+
+| Observation | Measured result |
+| --- | --- |
+| ORIG29ms, before unchanged composing refusal | I1/CX1/CK1/NK1/NA1: complete same-target/host identity and exact expected context/caret/node agreement. One span115..121; not zero-length; no truncation/error. |
+| T0 57-67ms | Same root/node/generation/editor. Offset0, selection121/121, context length125, exact expected context/caret. Initially stale node4/4/length8; refreshing gave121/121/length125 and exact text. Span115..121 remained. |
+| T1 207-217ms | Same checked identities, exact context/caret/node values; span115..121 remained. |
+| T2 557-572ms | Same checked identities and exact values; span115..121 remained, then POST_COMPOSE_DONE. |
+
+Later samples are postterminal and do not prove uninterrupted original transaction
+continuity. ORIG supplies the previously missing conjunction before refusal.
+The producer of the composing marker is still not identified; do not assert a
+specific SwiftKey call or future text stability from these observations.
+Mapping against the fixed synthetic string: prefix4 + result117 + suffix4 =125
+UTF-16 units, insertion interval[4,121). The composing interval[115,121) is the
+new result's final word plus punctuation and does not include the old suffix.
+
+After test Cancel: proof8, captures5/commits5 (one new capture/commit), UNCERTAIN,
+draftNONE, cleanupfalse; mic ended624ms. No real-app insertion or conversation
+reads. Root stopped the remaining four planned synthetic methods and held the
+Kakao insertion proposal. Prospective confirmation-policy discussion is required
+before any behavior change; precommit guards and terminal no-retry stay intact.
+
+### Approved composed-result confirmation PASS (2026-10-24)
+
+After the evidence above, Andrew explicitly approved prospective exact-result
+confirmation despite postcommit composing metadata. Sol6/xhigh implemented the
+product/unit change and deterministic synthetic fixtures; Astra/xhigh independently
+cleared both at these frozen source hashes (SHA-256):
+
+| Source | Hash |
+| --- | --- |
+| KoScribeService.kt | `7875453B744A821C0D02FCC37B9423D5B3757ED4DA860D17323998F03F91653F` |
+| CommitConfirmation.kt | `CFD0EAEF81126FDE9C501338EBAD101D0093621ABFA9FF16A7A13C6E3F31C7B0` |
+| SessionGuard.kt | `7115659A114119B05702662379293704591F6D0D7810B8BAFC3577FBC22F3A12` |
+| CommitConfirmationTest.kt | `56F5635D5D9A5C949C39AC90470F1CCF14672465B2329E3A49C67D0CE1E0442D` |
+| SessionGuardTest.kt | `2DF46FEF83543D81870D3C88D51544101F05901AFA743CF0406BD40CC61D0C98` |
+| SmokeEditorActivity.kt | `0819C300249A46EA33CE9ABFE94082A53C09C09C9A3441AAAD590A04CCE37B67` |
+| ReviewFlowSmokeTest.kt | `974117590F1D7C3E0CF6A0A475B6BEED74FD92FF03A6944193BF4059E8C63D3C` |
+| smoke ids.xml | `71303AE3BA182E6832E01F36B031815207910065C50EE18942ADC3129A40FD58` |
+
+The original destination/host/session, exact expanded surrounding context,
+preserved prefix/suffix, refreshed focused node and collapsed expected caret
+remain mandatory. Precommit composition is still refused. Styled reads and the
+actual composing flag remain intact. A composed nonmatch immediately ends as
+uncertain; ordinary noncomposing unchanged-text polling is unchanged. Ended
+transactions cannot be upgraded or retried. Confirmation establishes an observed
+insertion, not immunity to subsequent keyboard/user editing.
+
+Built and signature-verified secure REVIEW/visualfalse candidate and smoke, saved
+under ignored `app/build/composed-confirmation/`, then installed on unlocked A35:
+
+- `REVIEW-secure.apk`: `3AA18446275E46E3712D5232EC8D02DC4AEF0D3C1D88D7CE7CAECE6080DF99DD`.
+- `smoke.apk`: `168091D7000C2CB26FD94461A52BFAA316218B3B5B4ACDD2F5728433DAF2139D`.
+- All40 JVM tests passed, zero failures/errors/skips. Lints: zero errors,
+  app25/smoke3 warnings. Ordinary default build and release configuration were
+  restored and verified OFF/visualfalse after saving the candidate. Installed
+  APK remains secure REVIEW; no visual mode was used.
+
+Root ran each exact opt-in method separately, inspecting its result and own
+service/AppOps state before continuing. Counts restarted at installation.
+
+| Method | Result/time | Proof/captures/commits after | Confirmation / mic ended |
+| --- | --- | --- | --- |
+| `exactComposedCommitConfirmsAndDismissesOnce` | PASS6.060s | 1/1/1 | CONFIRMED /576ms |
+| `wrongComposedCommitStaysTerminallyUncertain` | PASS5.332s | 2/2/2 | UNCERTAIN then Cancel /592ms |
+| `longEnglishInsertsAtMiddlePreservingKoreanAndEmoji` | PASS5.105s | 3/3/3 | CONFIRMED /649ms |
+| `fixedKoreanSampleInsertsIntoEmptyFixture` | PASS4.795s | 4/4/4 | CONFIRMED /558ms |
+| `selectedRangeRefusesAndPreservesResult` | PASS4.666s | 5/5/4 | REFUSED then Cancel /490ms |
+| `koreanEditRejectsThenCancelPreservesFixture` | PASS3.469s | 6/5/4 | No new capture/commit; Cancel /475ms |
+| `acknowledgedButUnchangedCommitIsTerminallyUncertain` | PASS5.069s | 7/6/5 | UNCERTAIN then Cancel /576ms |
+
+Both deterministic composing cases required POSTCOMMIT_COMPOSING_OBSERVED
+after their current commit plus one product and one fixture commit. Exact
+confirmed and dismissed with stable expected text; wrong reached
+FRESH_COMMIT_UNCERTAIN_COMPOSED_POSTCONTEXT_UNCONFIRMED with no Insert/edit
+recovery, retained explicit Copy/Cancel, then cleaned up by Cancel. No retry.
+
+Middle preservation passed without a composing marker on that current commit;
+it is not a reproduced composed-middle success. The Korean insertion did observe
+composition naturally before confirmation. Selection refused specifically at
+SELECTION_NOT_COLLAPSED without a commit. The edited-Korean Cancel case retained
+the previous REFUSED status; it did not itself attempt destination capture.
+The unchanged-commit negative observed unchanged context five times before
+FRESH_COMMIT_UNCERTAIN_POSTCONTEXT_UNCONFIRMED, proving the timeout branch that
+earlier WINDOW_OR_FOCUS_CHANGED runs did not exercise.
+
+Every method ended draftNONE/cleanupfalse. Final REVIEW_CANCELLED, proof7,
+captures6/commits5, UNCERTAIN from the deliberate negative, mic ended576ms;
+SwiftKey remained selected. No real-app field/history reads, screenshot,
+Send/Enter, clipboard action, credentials or API use in this round.
+
+Astra/xhigh reviewed the measured evidence and cleared proposing one new manual
+unsent Korean self-chat trial. That specific authorization is still required:
+the old trial is closed, and the confirmation approval grants no real-app
+insertion. The old980E failure remains failed. These bounded passes establish
+the tested branches, not general app/composition compatibility or Phase1 completion.

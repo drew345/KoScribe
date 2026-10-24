@@ -1525,7 +1525,8 @@ class KoScribeService : AccessibilityService() {
             transaction.expected.afterCount, postCommit = true)
         if (observed == null || !sameFreshTarget(transaction, observed))
             return finishUncertain(transaction, "TARGET_CHANGED")
-        if (CommitConfirmation.matches(transaction.expected, observed.snapshot)) {
+        val verdict = CommitConfirmation.verdict(transaction.expected, observed.snapshot)
+        if (verdict == CommitConfirmation.PostCommitVerdict.CONFIRMED) {
             guard.end(transaction.id)
             freshDestination = null
             resetFreshComposition()
@@ -1533,6 +1534,8 @@ class KoScribeService : AccessibilityService() {
             endDraft(transaction.draftId, "INSERT_CONFIRMED", completed = true)
             return
         }
+        if (verdict == CommitConfirmation.PostCommitVerdict.COMPOSED_UNCONFIRMED)
+            return finishUncertain(transaction, "COMPOSED_POSTCONTEXT_UNCONFIRMED")
         val original = guard.session(transaction.id)?.target
             ?: return finishUncertain(transaction, "ORIGINAL_CONTEXT_LOST")
         val now = observed.snapshot
@@ -2165,29 +2168,8 @@ class KoScribeService : AccessibilityService() {
         }
         if (nodeUnknownPair) note("OBS_VERIFIED_EMPTY_CARET")
         val composition = if (postCommit) CompositionState.UNKNOWN else method.compositionAt(caret)
-        if (composition == CompositionState.COMPOSING || composing) {
-            val transaction = freshDestination
-            if (postCommit && composing && BuildConfig.DEBUG &&
-                startupExperiment == StartupExperiment.REVIEW &&
-                info.packageName == "com.koscribe.smoke" &&
-                transaction?.phase == DestinationPhase.OBSERVING &&
-                guard.session(transaction.id)?.target?.packageName == "com.koscribe.smoke") {
-                val expected = transaction.expected
-                val expectedAbsoluteCaret = expected.oldOffset.toLong() + expected.caret
-                val elapsed = (SystemClock.uptimeMillis() - transaction.commitRequestedUptimeMs)
-                    .coerceAtLeast(0L)
-                val identity = diagnosticFreshIdentity(transaction, focus, root, method, info, unique)
-                val context = surrounding.offset == expected.oldOffset &&
-                    text.toString() == expected.text
-                val connectionCaret = surrounding.offset == expected.oldOffset &&
-                    surrounding.selectionStart == expected.caret &&
-                    surrounding.selectionEnd == expected.caret
-                val nodeCaret = focus.textSelectionStart.toLong() == expectedAbsoluteCaret &&
-                    focus.textSelectionEnd.toLong() == expectedAbsoluteCaret
-                note("POST_COMPOSE_ORIG_MS_${elapsed}_I${identity.b()}_CX${context.b()}" +
-                    "_CK${connectionCaret.b()}_NK${nodeCaret.b()}_NA${nodeCaretAgrees.b()}" +
-                    composingSpanMetrics(text).code())
-            }
+        if ((composition == CompositionState.COMPOSING || composing) &&
+            !(postCommit && startupExperiment == StartupExperiment.REVIEW)) {
             return refuse(ObservationCode.ACTIVE_COMPOSITION)
         }
         if (composition == CompositionState.SELECTION_MISMATCH) {
@@ -2200,7 +2182,12 @@ class KoScribeService : AccessibilityService() {
             text.toString(), surrounding.offset, surrounding.selectionStart,
             surrounding.selectionEnd, composing
         )
-        if (!snapshot.isSafe()) return refuse(ObservationCode.SNAPSHOT_INVALID)
+        val valid = if (postCommit && startupExperiment == StartupExperiment.REVIEW)
+            snapshot.isStructurallyValid() else snapshot.isSafe()
+        if (!valid) return refuse(ObservationCode.SNAPSHOT_INVALID)
+        if (postCommit && composing && BuildConfig.DEBUG &&
+            startupExperiment == StartupExperiment.REVIEW && info.packageName == "com.koscribe.smoke")
+            note("POSTCOMMIT_COMPOSING_OBSERVED")
         observationCode = ObservationCode.READY
         note("OBS_READY_${composition.name}")
         return Observation(snapshot, focus, root, connection, method.generation, composition,

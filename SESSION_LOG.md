@@ -457,3 +457,36 @@
   empty self-chat field, Ko -> EN -> Stop after3s -> Cancel in review and report
   empty-field/keyboard return. Awaiting report; no screenshot/chat read, code,
   build, extra permission or API work. Astra/xhigh reviews bounded next gates.
+
+## 2026-10-24 — Kakao cancellation passed; composition evidence captured
+
+- User reported fixed review -> Cancel -> Kakao cursor/SwiftKey return. Own
+  proof7, unchanged captures/commits4/4, REVIEW_CANCELLED, draftNONE, cleanupfalse;
+  mic ended5.265s. Clarified microphone capture/discard versus unimplemented ASR.
+- First remaining current-build regression (middle preservation) failed12.853s
+  at confirmation after exact text passed. Existing diagnostic measured complete
+  identity/context/caret agreement at29ms with span115..121, persisting through
+  557-572ms. No retry; terminal uncertainty then Cancel. Final proof8/captures5/
+  commits5, draftNONE, cleanupfalse; mic ended624ms. No real-app insertion.
+- Stopped remaining four methods and held Kakao insertion. Astra Ultra is
+  assessing the newly measured evidence for a concrete prospective confirmation
+  policy versus Copy fallback decision. No guard/code/build change yet.
+- Astra Ultra recommended exact-result postcommit confirmation while keeping
+  precommit composition refusal. Andrew explicitly approved. Sol6/xhigh product/
+  unit and deterministic smoke work is underway, with Astra/xhigh independent
+  review. No future Kakao insertion authorized by this approval; tests are pending.
+
+## 2026-10-24 — Approved confirmation change passed scoped gates
+
+- Sol6/xhigh implemented the approved distinction; Astra/xhigh cleared source
+  and deterministic fixtures. All precommit and one-attempt guards remain.
+  Exact composed postcontext may confirm; composed mismatch ends immediately.
+- Secure3AA18446/smoke168091D7 installed. All40 unit tests and seven separate
+  device checks passed: composed exact/mismatch, middle preservation, Korean,
+  selection refusal, Korean-edit Cancel, unchanged-commit uncertainty. The final
+  negative reached POSTCONTEXT_UNCONFIRMED; no retry. See DEVICE_TESTS for timings.
+- Final proof7/captures6/commits5, draftNONE, UNCERTAIN from the negative,
+  cleanupfalse; mic ended576ms, SwiftKey selected. No real-app insertion or read,
+  screenshot, credentials or API work. Default/release OFF and secure REVIEW kept.
+- Astra cleared proposing one newly authorized unsent Korean self-chat trial.
+  Ask for that specific scope next; the prior trial is closed. Phase1 remains open.

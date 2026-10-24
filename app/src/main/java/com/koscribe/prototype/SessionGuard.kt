@@ -25,10 +25,12 @@ data class EditorSnapshot(
     val selectionEnd: Int,
     val composing: Boolean
 ) {
-    fun isSafe(): Boolean = packageName.isNotBlank() && windowId >= 0 &&
+    fun isStructurallyValid(): Boolean = packageName.isNotBlank() && windowId >= 0 &&
         uniqueNodeId.isNotBlank() && className.isNotBlank() && offset >= 0 &&
         selectionStart >= 0 && selectionStart == selectionEnd &&
-        selectionEnd <= surroundingText.length && !composing
+        selectionEnd <= surroundingText.length
+
+    fun isSafe(): Boolean = isStructurallyValid() && !composing
 }
 
 enum class GuardFailure {

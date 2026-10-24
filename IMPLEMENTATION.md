@@ -51,6 +51,18 @@ candidate replaced the large result preview with compact mode-labelled draggable
 controls: Insert, Copy & close, and Cancel. Moving/reflow is prohibited while a
 destination transaction exists. A later explicit Insert retains all checks.
 
+Approved Oct24 after measured evidence: separate precommit eligibility from
+postcommit observation validity. Before commit, reject active composition as
+before. After one attempt, an exact result in the continuously verified original
+destination/session may confirm even with composing metadata. Preserve the actual
+composing flag and styled reads; never force it false or issue a composition/
+keyboard command. A composed nonmatch is immediately terminally uncertain;
+noncomposing observations retain their existing bounded unchanged-text behavior.
+All focus/navigation/input/host/device/refresh invalidations and no-retry rules
+remain. Confirmed means the expected insertion was observed, not that later
+keyboard edits are impossible. Implement/review and prove deterministic composed
+success and mismatch cases before considering another real-app insertion trial.
+
 Andrew subsequently authorized and passed a separate manual synthetic test
 skipping the extra destination tap when that intended cursor was already
 restored. Independent review confirmed no recent-field-tap token is required:
@@ -194,7 +206,7 @@ security design to carry into implementation review.
 3. Abort automatic insertion for selected text, unknown selection, changed
    editor/text, or incomplete observations. Keep the generated message.
 4. Permit at most one commit per session, through the accessibility input
-   connection at a verified collapsed caret. Refuse reported active composing
+   connection at a verified collapsed caret. Before commit, refuse active composing
    ranges; do not treat missing styled-text spans or an absent selection
    callback as proof that composition is clear. For the Phase 1 probe, unknown
    composition alone is not a rejection: Android's accessibility commit path
@@ -206,6 +218,10 @@ security design to carry into implementation review.
 5. Observe success where supported. An uncertain outcome must not trigger a
    retry that might duplicate text. Cross-app checks and insertion are not an
    atomic transaction; document remaining compatibility limits honestly.
+   The approved postcommit rule accepts composing metadata only with exact
+   expected context/offset/caret and all original-destination continuity checks.
+   A composed nonmatch terminates immediately; no ended uncertain transaction
+   may be upgraded by later diagnostic observations.
 6. Offer deliberate Copy/manual paste for unsupported fields. Copy replaces
    the system clipboard; do not promise transparent restoration. Mark the
    copied message sensitive where supported.

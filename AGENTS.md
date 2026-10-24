@@ -65,6 +65,12 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   composing. Keep every precommit guard, styled reads, and one-attempt rule.
   Composed nonmatches remain immediately uncertain; ended uncertain transactions
   never become confirmed later. This grants no real-app insertion trial.
+- After the seven scoped checks passed, Andrew separately approved one new
+  manual unsent insertion of "안녕하세요. 10분 후에 도착할게요." into an empty
+  Kakao self-chat composer on the secure REVIEW build. One floating Insert only;
+  stop on refusal/uncertainty/interruption, no retry or Copy/Paste substitute.
+  Verify user report and own diagnostic counters; no conversation inspection.
+  This one trial is pending as recorded in PROGRESS, not recurring authorization.
 - Andrew authorized dismissing the visible save-password prompt with its
   "No, thanks" action during testing. This permits a narrowly targeted
   Android system negative-button helper, not credential reads, saving entries,

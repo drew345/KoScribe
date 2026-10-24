@@ -12,10 +12,13 @@ edited-Korean cancellation, and unchanged-commit uncertainty all passed. Forty
 unit tests passed; lints have zero errors. Phase 1 remains open: no real-app
 insertion acceptance, speech recognition, translation, or API integration yet.
 
-Next: propose one new manual unsent fixed Korean insertion in Kakao self-chat.
-Astra/xhigh cleared the evidence for that narrow proposal. The earlier trial is
-closed, so obtain explicit new scope before asking Andrew to perform it. No more
-synthetic diagnosis is needed for this approved change unless new evidence fails.
+Andrew approved one new manual unsent fixed Korean insertion in empty Kakao
+self-chat. Instructions sent: Ko -> 요 -> Stop -> unchanged English -> Confirm
+English -> check composer/caret, tap if needed -> floating Insert once. Await his
+report before further phone actions. Baseline proof7/captures6/commits5,
+draftNONE/cleanupfalse; UNCERTAIN is retained from the deliberate synthetic
+negative. Phone connected/unlocked, SwiftKey selected, mic stopped. No more
+synthetic diagnosis is needed for the approved change unless new evidence fails.
 
 Previous secure980E build Kakao self-chat microphone -> Stop -> English review -> Cancel
 PASSED. Andrew reported the sample review closed and the composer cursor/SwiftKey
@@ -211,11 +214,12 @@ paid calls, permission changes, or keyboard changes occurred in this diagnostic 
    recorded tests; do not generalize this empty-field pass to those cases.
    The old composition diagnostic round is complete. The approved fix passed its
    scoped checks; do not retry uncertain commits or reopen that probe round.
-2. Ask for one new manual unsent Korean self-chat insertion trial after saving
-   this checkpoint. Expected sample: "안녕하세요. 10분 후에 도착할게요." No
-   Send, Copy/Paste, or retry if refusal/uncertainty occurs. The earlier one-sample
-   Kakao trial is closed; the confirmation-change approval grants no real-app
-   insertion. Do not run old confirmation tests or suites.
+2. Await the newly approved manual self-chat trial report. Expected sample:
+   "안녕하세요. 10분 후에 도착할게요." No Send, Copy/Paste, or retry. Verify own
+   counters against7/6/5, confirmation/cleanup and mic state afterward, plus user
+   report of exact unsent text and dismissal. Do not infer success from older
+   status. The earlier trial remains closed; this approval covers one new attempt.
+   Do not run old confirmation tests or suites.
 3. Before claiming general feasibility, cover selected/caret changes, app/field
    navigation and composition, small-height/large-font/rotation/split-screen,
    lock/service recovery, and KakaoTalk/Instagram/Google Messages acceptance.
@@ -248,8 +252,8 @@ they are not full current-build real-app acceptance. See DEVICE_TESTS for histor
 ## Repository and tools
 
 Private repository: https://github.com/drew345/KoScribe . main tracks origin/main.
-Prior published checkpoint: e9feb80. This session's reviewed confirmation change
-and seven-pass evidence are recorded in the next commit; use git log for its ID.
+Reviewed confirmation change and seven-pass evidence: 56a3d39. The pending
+approved manual-trial handoff is recorded afterward; use git log for its ID.
 Inspect staged files and scan for secrets before publishing.
 
 ADB/SDK: C:\AI\Codex\Tools\android-sdk (API 36/build tools 36.0.0).

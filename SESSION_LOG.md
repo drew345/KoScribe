@@ -490,3 +490,12 @@
   screenshot, credentials or API work. Default/release OFF and secure REVIEW kept.
 - Astra cleared proposing one newly authorized unsent Korean self-chat trial.
   Ask for that specific scope next; the prior trial is closed. Phase1 remains open.
+
+## 2026-10-24 — New unsent Kakao trial approved and prepared
+
+- Andrew approved exactly one new manual fixed Korean insertion into empty
+  self-chat. Verified connected/unlocked, secure REVIEW unchanged, SwiftKey
+  selected, baseline proof7/captures6/commits5, draftNONE/cleanupfalse, mic stopped.
+- Sent 요 -> Stop -> unchanged English confirmation -> check intended caret ->
+  floating Insert once. Await user report; no retries, Send, Copy/Paste, or
+  conversation inspection. No code/build change or phone mutation this turn.

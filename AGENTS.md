@@ -31,6 +31,10 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   review and destination insertion as separate transactions. Do not capture
   a destination during recording; only a later explicit insertion action
   creates a fresh guarded capture. Current real-app tests remain non-inserting.
+- On 2026-10-24 Andrew explicitly authorized a synthetic test omitting the extra
+  destination tap when its intended cursor is already restored. Floating Insert
+  must still create a fresh capture with all checks. Do not infer general
+  restored-focus acceptance before the separate device result.
 - Once implementation is authorized, use subagents for coding with
   `gpt-6-sol` / `xhigh` (Extra High), and independent checking with
   `gpt-6-astra` / `xhigh`. Explicit model overrides require fresh-context

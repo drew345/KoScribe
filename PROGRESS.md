@@ -20,6 +20,13 @@ acceptance. Andrew suggested omitting the destination tap when the intended
 field is already focused. Independent review confirms no tap token is required
 by the implementation: Insert starts a fresh capture. That restored-focus
 variant is not yet device-tested; no code change is needed to evaluate it.
+Andrew has now authorized that test. The connected, unlocked A35 retains SwiftKey
+and secure980E4299... . Root confirmed no active draft, reset only the synthetic
+fixture, and reopened its one empty field. Andrew is performing the same manual
+edit flow but must not retap the field after Confirm English; he should Insert
+once only if its intended cursor is already restored. Await his report without
+phone actions. Baseline proof5, captures3/commits3, CONFIRMED, draftNONE,
+cleanupfalse. No source/build/guard change.
 
 Andrew asked to continue. A debug-only "KoScribe test editor" launcher was added
 to the smoke app, independently reviewed, built/linted, installed, and opened.
@@ -134,8 +141,9 @@ settings changed. Prompt cessation has not been established.
 
 Galaxy A35 SM-A356E, Android 16/API 36, One UI 8.5; user 0 only. SwiftKey remains
 selected; Wispr remains enabled. Default SMS app is Google Messages. Phone is
-connected at the latest check. The manual test finished with confirmed insertion,
-draftNONE and ended microphone use; no further user action is pending.
+connected and unlocked at the latest check. The prior manual test finished with
+confirmed insertion; the fresh no-extra-tap manual test is now awaiting Andrew's
+report. Do not infer active draft/microphone state from the earlier baseline.
 Verify live readiness next session. Fixture cleanup may return
 to a real app; never assume the foreground is still synthetic.
 
@@ -162,9 +170,10 @@ paid calls, permission changes, or keyboard changes occurred in this diagnostic 
 
 ## Next work and gates
 
-1. Preserve the completed manual pass. Evaluate Andrew's optional shorter flow:
-   if the intended field is already focused, can he tap floating Insert without
-   another field tap? Test separately; no cached destination or guard exemption.
+1. Await Andrew's authorized no-extra-tap test report, then check own counters
+   against proof5/captures3/commits3. Stop if restored cursor is absent or Insert
+   refuses; no recapture/retry, cached destination or guard exemption. Preserve
+   the prior completed tapped-field manual pass regardless of this result.
    The two automated composition diagnostic attempts are complete; intermittent
    composition failure remains unresolved. Do not retry uncertain commits.
 2. Check current-build contextual bubble and review ergonomics in real apps

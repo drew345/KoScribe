@@ -341,6 +341,17 @@ accepted only when those observations agree. They agreed on Oct24, as recorded
 in DEVICE_TESTS. This does not establish all composition or prediction cases.
 Only fixed synthetic content is used.
 
+### Restored-focus variant (authorized 2026-10-24; result pending)
+
+Start a fresh empty manual fixture after confirming the previous draft ended.
+Andrew taps it before opening Ko, records/stops, edits the fixed English with
+SwiftKey and confirms. After returning, he must not tap the destination field.
+If the cursor is visibly restored in the intended field, he taps floating Insert
+once. Otherwise stop and record absent restored focus. No Paste/Copy, retap to
+force focus, or retry. Confirm his report against one capture/commit delta,
+CONFIRMED, draftNONE, dismissal and ended microphone use. Keep all product checks;
+the implementation already captures afresh on Insert without a recent-tap token.
+
 For subsequent authorized Kakao diagnostics on REVIEW, use the manual recording
 -> Stop -> Cancel-in-review flow and require zero capture/commit delta. Do not
 run KakaoReselectRecordingSmokeTest on REVIEW: it requires the RESELECT build.

@@ -425,3 +425,13 @@
 - Andrew proposed omitting the field tap when the intended cursor is already
   there. Record it as a separate untested variant with fresh capture at Insert
   and unchanged guards, not a claimed capability from this successful run.
+
+## 2026-10-24 — Restored-focus manual test prepared
+
+- Andrew authorized testing without the extra field tap. Verified connected,
+  unlocked A35, SwiftKey selected, no active draft; baseline proof5/captures3/
+  commits3, CONFIRMED, cleanupfalse. Reset only the synthetic fixture and opened
+  its empty manual field. Product/smoke remain unchanged and secure.
+- Asked him to edit/confirm as before, check the restored intended cursor without
+  touching the field, and tap floating Insert once. Stop if cursor absent or
+  insertion refuses; no retry. Await his report before further phone actions.

@@ -1226,3 +1226,33 @@ unsent Korean self-chat trial. That specific authorization is still required:
 the old trial is closed, and the confirmation approval grants no real-app
 insertion. The old980E failure remains failed. These bounded passes establish
 the tested branches, not general app/composition compatibility or Phase1 completion.
+
+### Current secure REVIEW manual Kakao insertion PASS (2026-10-24)
+
+Andrew separately approved one new unsent insertion of the fixed polite Korean
+sample into an initially empty Kakao self-chat field. Same secure3AA18446 and
+smoke168091D7; no rebuild. Before instructions: connected/unlocked, SwiftKey
+selected, proof7/captures6/commits5, draftNONE/cleanupfalse, mic stopped. The
+retained UNCERTAIN at baseline belonged to the preceding deliberate negative.
+
+Procedure: Ko -> 요 -> brief recording -> Stop -> unchanged English sample ->
+Confirm English -> check intended field/caret, tap if needed -> floating Insert
+once. No Copy/Paste, Send, or retry. User reported that it worked exactly as
+instructed, the expected "안녕하세요. 10분 후에 도착할게요." appeared correctly,
+and it remained unsent. His response answered the combined exact-text/dismissal
+question; root did not independently view the field or conversation.
+
+Own verification: proof8/captures7/commits6, REVIEW_COMPLETED, CONFIRMED,
+draftNONE/cleanupfalse. Current trace: POLITE, positive unsilenced mic read,
+Stop/MIC_PROVED_STOPPED, two VERIFIED_EMPTY_CARET observations, one
+FRESH_COMMIT_REQUESTED_ONCE, POSTCOMMIT_FOCUS_REFRESHED, OBS_READY_UNKNOWN,
+REVIEW_ENDED_INSERT_CONFIRMED. AppOps microphone duration5.450s ended; SwiftKey
+unchanged. The composing diagnostic marker is synthetic-only, so its absence
+does not establish absence of composition in Kakao.
+
+Accept one guarded empty-field Korean insertion and dismissal in Kakao with
+user-confirmed unsent text. Extra field-tap use was not separately reported.
+No agent screenshot, chat/field-content inspection, UI mutation, API, or secret
+use. The one-attempt scope is now consumed, not permission for repetition.
+The fixed draft is left for Andrew to remove manually. Other apps and broader
+editor states remain pending; this alone does not complete Phase1.

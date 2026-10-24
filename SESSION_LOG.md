@@ -499,3 +499,13 @@
 - Sent 요 -> Stop -> unchanged English confirmation -> check intended caret ->
   floating Insert once. Await user report; no retries, Send, Copy/Paste, or
   conversation inspection. No code/build change or phone mutation this turn.
+
+## 2026-10-24 — Current secure REVIEW Kakao insertion passed
+
+- Andrew reported the approved Korean sample appeared exactly, the flow worked
+  as instructed, and it remains unsent. Own proof7 ->8, captures6 ->7, commits5 ->6;
+  current CONFIRMED/REVIEW_COMPLETED, draftNONE/cleanupfalse. Mic ended5.450s,
+  SwiftKey selected. No screenshot, conversation read, or agent phone mutation.
+- This accepts one empty Kakao self-chat insertion on3AA18446 and consumes the
+  one-trial scope. User can remove only that unsent sample manually. Other app
+  coverage and Phase2 remain pending; no code/build changes this turn.

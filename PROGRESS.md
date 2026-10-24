@@ -9,16 +9,20 @@ reviewed, and passed seven separate synthetic phone checks on secure3AA18446.
 Exact composed results confirm and dismiss; wrong composed results remain
 terminally uncertain. Middle preservation, Korean insertion, selection refusal,
 edited-Korean cancellation, and unchanged-commit uncertainty all passed. Forty
-unit tests passed; lints have zero errors. Phase 1 remains open: no real-app
-insertion acceptance, speech recognition, translation, or API integration yet.
+unit tests passed; lints have zero errors. One manual empty-field Korean
+insertion in Kakao self-chat now also passed. Phase 1 remains open for the other
+target apps and remaining safety coverage; no speech/translation/API integration.
 
-Andrew approved one new manual unsent fixed Korean insertion in empty Kakao
-self-chat. Instructions sent: Ko -> 요 -> Stop -> unchanged English -> Confirm
-English -> check composer/caret, tap if needed -> floating Insert once. Await his
-report before further phone actions. Baseline proof7/captures6/commits5,
-draftNONE/cleanupfalse; UNCERTAIN is retained from the deliberate synthetic
-negative. Phone connected/unlocked, SwiftKey selected, mic stopped. No more
-synthetic diagnosis is needed for the approved change unless new evidence fails.
+Andrew's newly approved one-attempt Kakao trial PASSED and is now complete.
+He reported the exact expected Korean sample appeared and remained unsent,
+replying that the flow worked exactly as instructed (including dismissal).
+Own baseline proof7/captures6/commits5 -> proof8/captures7/commits6, CONFIRMED,
+REVIEW_COMPLETED, draftNONE/cleanupfalse, microphone ended5.450s. SwiftKey remains
+selected. This verifies one empty self-chat flow, not other apps or every editor
+state. No agent conversation read or phone mutation occurred after his report.
+The sample remains unsent for Andrew to remove manually. No more synthetic
+composition diagnosis is needed unless new evidence fails. Next app gates are
+Google Messages and Instagram; their insertion scope has not been authorized.
 
 Previous secure980E build Kakao self-chat microphone -> Stop -> English review -> Cancel
 PASSED. Andrew reported the sample review closed and the composer cursor/SwiftKey
@@ -197,14 +201,13 @@ VISUAL_TEST=false. Do not substitute it for the secure REVIEW artifact.
 Prior diagnostic, refresh-only, and earlier smoke APKs are retained in ignored
 build folders. Detailed source review hashes are in DEVICE_TESTS.
 
-Latest checkpoint after unchanged-commit negative cleanup: REVIEW_CANCELLED, proof7,
-draftNONE, destination captures6, commits5, confirmationUNCERTAIN,
-cleanupfalse. Exact-app AppOps confirmed mic ended after576ms. Counts restarted
-when the new APK was installed. All insertions
-used only the synthetic fixture; earlier Copy replaced the clipboard with the
-disclosed fixed sample.
-No Send/Enter, real conversation access, screenshots, retained audio, credentials,
-paid calls, permission changes, or keyboard changes occurred in this diagnostic round.
+Latest checkpoint after successful manual Kakao trial: REVIEW_COMPLETED, proof8,
+draftNONE, destination captures7, commits6, confirmationCONFIRMED,
+cleanupfalse. Exact-app AppOps confirmed mic ended after5.450s. Counts restarted
+when the new APK was installed. One explicitly approved fixed Korean sample is
+now an unsent Kakao self-chat draft; other current-round insertions were synthetic.
+No Send/Enter, agent conversation inspection, screenshots, retained audio,
+credentials, paid calls, permission changes, or keyboard changes occurred.
 
 ## Next work and gates
 
@@ -214,12 +217,11 @@ paid calls, permission changes, or keyboard changes occurred in this diagnostic 
    recorded tests; do not generalize this empty-field pass to those cases.
    The old composition diagnostic round is complete. The approved fix passed its
    scoped checks; do not retry uncertain commits or reopen that probe round.
-2. Await the newly approved manual self-chat trial report. Expected sample:
-   "안녕하세요. 10분 후에 도착할게요." No Send, Copy/Paste, or retry. Verify own
-   counters against7/6/5, confirmation/cleanup and mic state afterward, plus user
-   report of exact unsent text and dismissal. Do not infer success from older
-   status. The earlier trial remains closed; this approval covers one new attempt.
-   Do not run old confirmation tests or suites.
+2. Preserve the passed Kakao trial; its single-attempt scope is consumed. The
+   remaining named app checks before Phase2 are Google Messages and Instagram.
+   Propose a bounded manual unsent sample trial for each, with fresh scope and
+   user-prepared empty fields. No Send, Copy/Paste substitute, or retry after
+   uncertainty. Do not run old confirmation tests or suites.
 3. Before claiming general feasibility, cover selected/caret changes, app/field
    navigation and composition, small-height/large-font/rotation/split-screen,
    lock/service recovery, and KakaoTalk/Instagram/Google Messages acceptance.

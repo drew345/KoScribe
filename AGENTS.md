@@ -70,7 +70,7 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   Kakao self-chat composer on the secure REVIEW build. One floating Insert only;
   stop on refusal/uncertainty/interruption, no retry or Copy/Paste substitute.
   Verify user report and own diagnostic counters; no conversation inspection.
-  This one trial is pending as recorded in PROGRESS, not recurring authorization.
+  That trial passed and is complete (see PROGRESS); it is not recurring authorization.
 - Andrew authorized dismissing the visible save-password prompt with its
   "No, thanks" action during testing. This permits a narrowly targeted
   Android system negative-button helper, not credential reads, saving entries,

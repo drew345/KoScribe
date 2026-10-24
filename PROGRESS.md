@@ -48,9 +48,17 @@ secure980E4299... returned NATURAL_CONFIRMED (5.370s/4.638s): exact text/caret,
 one commit each, dismissal, stable result. The failure did not reproduce, so no
 composition probe ran and no root-cause fix is claimed. The two-run round is
 closed. Copy dismissal/new-keyboard-cycle reappearance also passed in5.853s.
-Next is Andrew's manual SwiftKey edit/Insert report on the simplified fixture;
-do not act on the phone while awaiting him. Any completion-policy change still
-needs a concrete measured proposal first.
+The first simplified-screen manual flow reached READY. Andrew moved the control
+but looked for Insert in Android's cursor menu, then pasted the earlier synthetic
+Copy sample. Own proof count rose to4; captures/commits stayed2/2, so no KoScribe
+Insert or Copy occurred in this flow. The retained COPIED status was from the
+earlier automated test. Mic ended after4.639s; the draft subsequently expired.
+He clarified that he had not expected the Ko bubble to become a different-looking
+result box and requested another try. Root reset only the synthetic fixture and
+explained its two rows: EN/Move + Cancel, then Insert + Copy & close. Await his
+new manual edit/Insert report; no phone actions while he performs it. Whether
+the earlier Insert row was obscured is unmeasured. Any completion-policy change
+still needs a concrete measured proposal first.
 
 Earlier stale-node diagnosis: after a commit, the input connection already showed the exact
 expected text/caret while the same focused accessibility node retained an old
@@ -134,9 +142,9 @@ VISUAL_TEST=false. Do not substitute it for the secure REVIEW artifact.
 Prior diagnostic, refresh-only, and earlier smoke APKs are retained in ignored
 build folders. Detailed source review hashes are in DEVICE_TESTS.
 
-Baseline before the current manual gate: REVIEW_COMPLETED, proof count3, draftNONE,
-destination captures2, commits2, confirmationCOPIED, cleanupfalse. Exact-app
-AppOps confirmed mic ended after542ms. Both diagnostic insertions used only the
+Baseline before the current restarted manual gate: REVIEW_CANCELLED, proof count4,
+draftNONE, destination captures2, commits2, retained confirmationCOPIED,
+cleanupfalse. Exact-app AppOps confirmed mic ended after4.639s. Both diagnostic insertions used only the
 synthetic fixture; Copy replaced the clipboard with the disclosed fixed sample.
 No Send/Enter, real conversation access, screenshots, retained audio, credentials,
 paid calls, permission changes, or keyboard changes occurred in this diagnostic round.
@@ -183,7 +191,7 @@ they are not full current-build real-app acceptance. See DEVICE_TESTS for histor
 ## Repository and tools
 
 Private repository: https://github.com/drew345/KoScribe . main tracks origin/main.
-Latest published checkpoint before this work: 659cd98 (compact/visual controls).
+Latest published source checkpoint: 8de23d6 (manual fixture/composition diagnostic).
 Inspect staged files and scan for secrets before publishing.
 
 ADB/SDK: C:\AI\Codex\Tools\android-sdk (API 36/build tools 36.0.0).

@@ -325,6 +325,13 @@ if its Confirm control is below the viewport. Leaving review before confirming
 cancels it. Recording has a 15-second deadline; review/result has three minutes
 from review creation, not renewed by edits. No automatic retries on uncertainty.
 
+Make the location explicit: after confirmation the small Ko bubble becomes the
+result box. Its top row is EN/Move and Cancel; the bottom row is Insert and Copy
+& close. Insert is in that floating box, not Android's cursor Paste/Autofill menu.
+If the row is missing, pause for a report rather than substituting Paste. Manual
+Paste can use a sample left by a prior Copy test; it does not use KoScribe's
+current result unless Copy was explicitly pressed.
+
 Record his exact behavioral report separately from code evidence. Success needs
 the expected edited sentence and bubble dismissal plus own state CONFIRMED,
 draft NONE, captures/commits each +1, and ended microphone use. This gate is

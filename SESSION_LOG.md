@@ -402,3 +402,14 @@
   cleanupfalse; mic ended542ms. New single-field manual screen opened. Awaiting
   Andrew's actual SwiftKey edit/Insert report; do not act while he performs it.
   Ordinary output/release OFF/visual false; installed REVIEW remains secure.
+
+## 2026-10-24 — Clarifying the manual Insert control
+
+- First one-field manual flow reached READY, but Andrew selected Android Paste
+  and got the prior synthetic Copy sample. Own proof4/captures2/commits2 showed
+  no new KoScribe Insert or Copy. Microphone ended4.639s; draft later expired.
+- Andrew requested another try after clarifying he had not looked for Insert
+  inside the changed floating box. Explained its two rows, reset only the
+  synthetic fixture after expiry, and reopened the empty field. Awaiting the
+  fresh manual result. Actual control visibility in the prior flow is unmeasured;
+  no insertion pass/failure or UI clipping diagnosis is claimed. No source change.

@@ -1024,3 +1024,27 @@ The manual launcher opened the new one-field fixture successfully. Andrew was
 asked to edit the fixed sample with actual SwiftKey keys, Confirm, briefly select
 the single destination and Insert once. Await his report before phone actions;
 no manual pass or expiry-collapse device pass is claimed yet.
+
+### First single-field manual report (2026-10-24)
+
+Andrew reported reaching the result box, moving it by the handle, then seeing
+Paste/ellipsis/Autofill beside the destination cursor. He selected Paste and
+recognized the earlier synthetic Copy sample rather than his current result.
+No field or clipboard contents were read by the agent. Own state immediately
+after his reply: REVIEW_READY/draftREADY, proof4, captures2/commits2 unchanged,
+cleanupfalse, mic ended4.639s. COPIED was retained from the previous test; no
+new Copy event or destination capture/commit occurred. This is not an insertion
+failure or success: the KoScribe Insert action was not reached.
+
+The user then clarified he may have looked for Insert in the wrong place and
+requested a retry. Source review confirms READY always creates the separate
+Insert button, but no current bounds/screenshot evidence proves it was visible
+at that instant. Height-capped fixed rows can clip if available space is below
+112dp (156dp with notice); that condition was not measured here. Automated
+isVisibleToUser checks do not prove complete visual exposure or lack of occlusion.
+
+Root confirmed draftNONE/REVIEW_ENDED_DEADLINE with unchanged counters before
+resetting only com.koscribe.smoke's transient fixture. The single-field launcher
+reopened successfully. New instructions explicitly identify the floating box's
+two rows and distinguish Insert from Android Paste/Autofill. Await new report;
+no code/build change, guard relaxation, real-app access, or screenshot occurred.

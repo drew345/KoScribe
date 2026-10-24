@@ -619,3 +619,26 @@
   visibility/Cancel gates or resume automated Close cleanup diagnostics.
 - General recording-status prominence/menu polish and broad geometry remain
   deferred. No overnight automation or further phone actions were started.
+
+## 2026-10-25 — Morning resume; service restart requested
+
+- Andrew resumed from night checkpoint0b0889a. USB debugging required a fresh
+  approval; Andrew approved and ADB connected. Phone unlocked, SwiftKey selected,
+  mic stopped. Own service dump twice timed out, so session/draft state is not
+  yet verified. Asked Andrew to toggle only KoScribe accessibility off/on.
+- No code/build, key read/change, recording, connectivity change, insertion or
+  real-app inspection. Timeout cause remains unknown; avoid guessing an ANR or
+  overnight cause. Preserve live credential and all prior measured passes.
+- Astra/xhigh independently reviews the controlled offline/fresh-online protocol.
+  Pending: restart confirmation, own idle verification, then user-driven network
+  failure and fresh speech recovery before Phase 2 acceptance review.
+- User's first service toggle left the same process/instance and a third dump
+  timeout. Exact own UID/PID verified; one targeted SIGTERM ended that process,
+  preserving app data and avoiding force-stop. Own main Activity reopened, but
+  service remained not running. Requested one fresh toggle after process exit;
+  no recording until responsive idle state. No ANR/main-thread diagnosis inferred.
+- The second user toggle reconnected a fresh process with responsive diagnostics:
+  NOT_CAPTURED, proof/captures/commits0, draftNONE/cleanupfalse, microphone stopped,
+  SwiftKey selected. Opened owned Test message. Sent the reviewed offline sample
+  procedure; await terminal error report while the phone remains offline. No
+  key manipulation, code/build change, new real-app scope or automated recording.

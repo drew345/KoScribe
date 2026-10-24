@@ -110,3 +110,28 @@ After no-key safeguards and credential cleanup pass, ask Andrew to enter a real
 key privately, then dictate a deliberate test sentence in the synthetic editor.
 The first real API call must follow his explicit recording/Stop. Do not upload
 ambient recordings, stale buffers or synthetic tests automatically.
+
+## Controlled network failure and recovery
+
+After responsive own idle state is verified, Andrew temporarily turns off both
+Wi-Fi and mobile data, returns to the synthetic editor, records a short deliberate
+sentence and taps Stop once. Keep connectivity off until terminal failure is
+verified. No Insert, Copy, Send, repeated Stop or EN retry. The expected menu text
+is `Transcription failed (NETWORK). Try a new recording.` or
+`Transcription timed out. Try a new recording.` Reopen only Ko if the idle menu
+hides; selecting EN would start a new recording. After about60s without a result,
+use explicit Cancel and report it; that is not a network-error pass.
+
+Root checks only own codes/counters: proof+1, RESELECT_CANCELLED,
+RESELECT_ENDED_SPEECH_NETWORK or SPEECH_TIMEOUT, draftNONE/cleanupfalse, unchanged
+destination/commit counts and ended microphone use. Credential/microphone/host
+failure or unexpected review is not this gate. Never inspect the saved key.
+
+Only after that terminal evidence, Andrew restores his normal connectivity and
+makes a fresh deliberate recording, verifies English review, then taps review
+Cancel. Require another proof+1, Stop and review USER_CANCELLED, REVIEW_CANCELLED,
+draftNONE/cleanupfalse, unchanged captures/commits and ended microphone use.
+The user reports transcript correctness and unchanged test field. No old buffer
+or request is reused. Astra/xhigh's October25 source review supports this pair
+plus the recorded passes as the bounded Phase2 gate; broad lifecycle/geometry,
+processing Cancel, quality, cost and latency remain separately unmeasured.

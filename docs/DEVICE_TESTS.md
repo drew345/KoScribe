@@ -1480,3 +1480,23 @@ Processing cancellation, broader geometry and network recovery are not inferred
 from this pass. Andrew requested stopping for the night; no further tests or UI
 actions. Tomorrow's remaining scoped Phase 2 gate is deliberate network failure
 and recovery with Andrew controlling connectivity, then phase acceptance review.
+
+### October 25 service readiness recovery; offline test prepared
+
+Resume from clean0b0889a with unchanged installed controls v4 52413362. Initial
+USB authorization required Andrew's approval. Three own service dumps timed out,
+including one after his first accessibility toggle; same old process remained.
+Mic AppOps showed ended use, SwiftKey selected. Exact own PID/UID verified; one
+SIGTERM under app UID ended only that process, without force-stop/uninstall/data
+clear/key access. MainActivity cold-opened, but service still was not running.
+After a second user off/on toggle it reconnected in a fresh process and returned
+responsive diagnostics. Sleeping process status does not diagnose the timeout;
+cause remains unknown. No broad logs, stack/heap dumps, or conversation reads.
+
+Fresh baseline NOT_CAPTURED, proof/captures/commits0, draftNONE, confirmationNONE,
+cleanupfalse; mic inactive, SwiftKey selected. Own test fixture opened. Astra/xhigh
+reviewed offline failure/fresh-online recovery protocol (docs/PHASE2.md). User
+instructed to disable Wi-Fi/mobile data, deliberately record a short test sentence,
+Stop once, remain offline and report the error. No automated recording, changed
+network settings, insertion, retry or sending. Outcome pending. Retain the service
+readiness incident as a lifecycle limitation; recovery is not a root-cause fix.

@@ -1,15 +1,25 @@
 # Current progress
 
-Updated: 2026-10-24 (Asia/Seoul).
+Updated: 2026-10-25 (Asia/Seoul).
 
 ## Current state
 
-Stopped for the night at Andrew's request. No test, recording, transcription
-request or insertion transaction is running. Resume only when he returns.
-Tomorrow: reconnect/unlock the phone if needed, verify own idle state, then plan
-one deliberate offline-error/recovery check with Andrew changing connectivity
-himself. Preserve the saved key. If recovery passes, review the Phase 2 gate
-before starting Korean translation; do not restart earlier successful tests.
+Andrew resumed work on October 25 from the clean night checkpoint0b0889a.
+USB debugging was initially unauthorized; Andrew approved it and the
+connection now works. Three own service dumps timed out, including after a user
+accessibility toggle. Root verified exact own PID/UID and sent one SIGTERM,
+without force-stop, uninstall, data clearing or key access. Own MainActivity
+reopened; after a second user off/on toggle, a fresh process responded normally.
+Idle baseline: NOT_CAPTURED, proof/captures/commits0, draftNONE/cleanupfalse,
+mic stopped, SwiftKey selected. Timeout cause is unknown; retain this lifecycle
+incident as a limitation, not a diagnosed/fixed code bug. No code/build changes.
+
+Owned Test message screen opened. Await Andrew's deliberate offline sample:
+he disables Wi-Fi and mobile data, records briefly, taps Stop once and reports
+the error while staying offline. No retry, insertion, Copy or Send. Verify a
+terminal SPEECH_NETWORK/TIMEOUT and cleanup before asking him to restore network
+and make a fresh sample. Keep the saved key intact. Astra/xhigh cleared this
+pair as the remaining bounded Phase 2 gate; do not repeat earlier successful tests.
 
 The approved postcommit confirmation change is implemented, independently
 reviewed, and passed seven separate synthetic phone checks on secure3AA18446.
@@ -125,7 +135,7 @@ as requested, without review or text changes. Own proof0->1, RESELECT_CANCELLED,
 draftNONE/captures0/commits0/cleanupfalse, no Stop event; microphone ended8.803s.
 SwiftKey stays selected. This accepts current-phone control visibility and active
 Cancel; it does not accept every font/window geometry or cancellation in processing.
-Andrew requested tonight's stopping point. Save checkpoint; no more device work.
+The October 24 night checkpoint was saved. October 25 recovery test is pending above.
 
 Previous secure980E build Kakao self-chat microphone -> Stop -> English review -> Cancel
 PASSED. Andrew reported the sample review closed and the composer cursor/SwiftKey

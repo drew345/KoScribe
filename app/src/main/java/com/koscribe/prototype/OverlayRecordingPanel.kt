@@ -29,9 +29,11 @@ internal class OverlayRecordingPanel(
     private val onStopEntry: () -> Unit,
     private val onReview: () -> Unit,
     private val onCancel: () -> Unit,
-    private val sessionTimeoutMs: Long = 8_000L
+    private val sessionTimeoutMs: Long = 8_000L,
+    private val speechMode: Boolean = false,
+    private val onSpeechAudio: ((ByteArray) -> Unit)? = null
 ) {
-    private enum class Stage { PREPARING, RECORDING, REVIEW, CLOSED }
+    private enum class Stage { PREPARING, RECORDING, PROCESSING, REVIEW, CLOSED }
 
     private val main = Handler(Looper.getMainLooper())
     private var stage = Stage.PREPARING
@@ -39,6 +41,8 @@ internal class OverlayRecordingPanel(
     private var callback: AudioManager.AudioRecordingCallback? = null
     @Volatile private var reading = false
     private var readThread: Thread? = null
+    private val speechBuffer = if (speechMode) SpeechAudioBuffer() else null
+    @Volatile private var speechReadFailed = false
     private var positiveRead = false
     private var unsilenced = false
     private var ready = false
@@ -75,8 +79,9 @@ internal class OverlayRecordingPanel(
             }
             isClickable = true
         }
-        card.addView(label("KoScribe · sample only", true))
+        card.addView(label(if (speechMode) "KoScribe · speech input" else "KoScribe · sample only", true))
         card.addView(label("Selected mode: ${mode.label}", true))
+        if (speechMode) card.addView(label("Audio is sent to OpenAI after Stop; KoScribe does not save recordings or transcripts.", false))
         status = label("Preparing microphone…", false)
         card.addView(status)
         card.addView(button("Cancel") { cancel() })
@@ -173,15 +178,23 @@ internal class OverlayRecordingPanel(
                 var emptyReads = 0
                 while (reading) {
                     val count = created.read(frame, 0, frame.size)
+                    if (count > 0 && reading && speechBuffer?.append(frame, count) == false) {
+                        speechReadFailed = true
+                        Arrays.fill(frame, 0)
+                        main.post { if (recorder === created) fail("SPEECH_AUDIO_LIMIT") }
+                        break
+                    }
                     Arrays.fill(frame, 0)
                     if (!reading) break
                     if (count < 0) {
+                        if (speechMode) speechReadFailed = true
                         main.post { if (recorder === created) fail("OVERLAY_MIC_READ_FAILED") }
                         break
                     }
                     if (count == 0) {
                         emptyReads++
                         if (emptyReads > 100) {
+                            if (speechMode) speechReadFailed = true
                             main.post { if (recorder === created) fail("OVERLAY_MIC_EMPTY_READS") }
                             break
                         }
@@ -197,6 +210,7 @@ internal class OverlayRecordingPanel(
                     }
                 }
             } catch (_: Exception) {
+                if (reading && speechMode) speechReadFailed = true
                 if (reading) main.post { if (recorder === created) fail("OVERLAY_MIC_READ_EXCEPTION") }
             } finally {
                 Arrays.fill(frame, 0)
@@ -226,13 +240,14 @@ internal class OverlayRecordingPanel(
         ready = true
         stage = Stage.RECORDING
         main.removeCallbacks(proofDeadline)
-        status.text = "Recording ${mode.label}. Audio is discarded; Stop shows a fixed sample."
+        status.text = if (speechMode) "Recording ${mode.label}. Tap Stop to transcribe; Cancel discards audio."
+            else "Recording ${mode.label}. Audio is discarded; Stop shows a fixed sample."
         card.addView(button("Stop") { stopAndReview() })
         onReady()
     }
 
     fun pollMic() {
-        if (stage == Stage.CLOSED || stage == Stage.REVIEW) return
+        if (stage == Stage.CLOSED || stage == Stage.REVIEW || stage == Stage.PROCESSING) return
         val own = recorder ?: return fail("OVERLAY_MIC_LOST")
         if (own.recordingState != AudioRecord.RECORDSTATE_RECORDING)
             return fail("OVERLAY_MIC_NOT_RECORDING")
@@ -249,11 +264,34 @@ internal class OverlayRecordingPanel(
             fail("OVERLAY_MIC_STOP_PROOF_FAILED")
             return
         }
+        val reader = readThread
+        stage = if (speechMode) Stage.PROCESSING else Stage.REVIEW
         if (!releaseMic()) {
             fail("OVERLAY_MIC_RELEASE_FAILED")
             return
         }
-        stage = Stage.REVIEW
+        if (speechMode) {
+            main.removeCallbacks(sessionDeadline)
+            status.text = "Stopping microphone…"
+            Thread({
+                try { reader?.join(1_500) } catch (_: InterruptedException) { }
+                if (reader == null || reader.isAlive) {
+                    main.post { fail("SPEECH_READER_NOT_STOPPED") }
+                    return@Thread
+                }
+                val wav = if (!speechReadFailed) speechBuffer?.finishWav() else null
+                main.post {
+                    if (stage != Stage.PROCESSING || wav == null) {
+                        wav?.fill(0)
+                        if (stage == Stage.PROCESSING) fail("SPEECH_AUDIO_EMPTY")
+                    } else {
+                        status.text = "Transcribing English… Cancel to discard."
+                        onSpeechAudio?.invoke(wav) ?: run { wav.fill(0); fail("SPEECH_HANDLER_MISSING") }
+                    }
+                }
+            }, "KoScribeSpeechReaderJoin").start()
+            return
+        }
         card.removeAllViews()
         card.addView(label("Selected mode: ${mode.label}", true))
         card.addView(label("Fixed English sample · no recognition or insertion", true))
@@ -275,16 +313,17 @@ internal class OverlayRecordingPanel(
     }
 
     fun close() {
-        if (stage == Stage.CLOSED && recorder == null) return
+        if (stage == Stage.CLOSED && recorder == null && readThread?.isAlive != true) return
         stage = Stage.CLOSED
         main.removeCallbacks(proofDeadline)
         main.removeCallbacks(sessionDeadline)
         releaseMic() // Host stays attached until the service ends this captured session.
+        speechBuffer?.clear()
         host.removeOnAttachStateChangeListener(attachedListener)
         host.removeOnLayoutChangeListener(layoutListener)
     }
 
-    fun hasPendingCleanup(): Boolean = recorder != null
+    fun hasPendingCleanup(): Boolean = recorder != null || (speechMode && readThread?.isAlive == true)
 
 
     /** A thrown stop/release is an uncertain outcome, never a successful Stop proof. */
@@ -305,7 +344,7 @@ internal class OverlayRecordingPanel(
             else recorder = null
         }
         readThread?.interrupt()
-        readThread = null
+        if (!speechMode || readThread?.isAlive != true) readThread = null
         return clean
     }
 

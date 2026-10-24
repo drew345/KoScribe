@@ -546,3 +546,22 @@
   Sol6/xhigh credential and speech integration agents started, Astra/xhigh review;
   secure on-phone key entry remains agreed. Opt-in speech debug candidate,
   unchanged sample baseline, no actual key/audio upload/paid test yet.
+
+## 2026-10-24 — Speech candidate ready for private key setup
+
+- Sol6/xhigh implemented EN transcription and Keystore-backed private key entry;
+  Astra/xhigh reviewed security, cancellation and cleanup. Explicit debug-only
+  speech flag; ordinary/release remain OFF. Korean translation is still Phase 3.
+- Product v3 F2079E8A built/signed, all 53 units passed, lint zero errors (37 app,
+  3 smoke warnings). Fake key save/reopen/delete passed on v2 in1.123s, with empty
+  store verified. No actual key or paid request was used.
+- Missing-key warning initially lost its host/token to a precheck redraw. The
+  reviewed minimal fix removed that redraw and retained every guard. Three v3
+  runs passed notice/no-microphone/no-destination assertions, but the full methods
+  failed later on automated Close cleanup. Final v4 smoke2782686D failed bounded
+  own-overlay scrolling; actual Close remains unverified. Stop cleanup retries.
+- Final own proof/captures/commits0, draftNONE/cleanupfalse; mic still stopped
+  since Instagram. Reviewed evidence supports private key setup, not Phase 2
+  acceptance. Next ask Andrew to enter a dedicated key privately on the phone,
+  back it up in Cryptomator DeveloperStuff, then run deliberate synthetic speech.
+  No screenshots/key reads, unattended recording/upload, or new real-app trial.

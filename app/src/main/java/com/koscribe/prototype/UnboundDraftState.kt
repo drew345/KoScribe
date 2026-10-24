@@ -22,6 +22,13 @@ internal class UnboundDraftState(private val newId: () -> String = { UUID.random
             .also { draft = it }
     }
 
+    /** Actual transcription enters review as English, never as a fixed Korean sample. */
+    fun beginSpeech(english: String): Draft? {
+        if (draft != null || english.isBlank() || english.length > 512) return null
+        return Draft(newId(), OutputMode.ENGLISH, english, null, Phase.REVIEW)
+            .also { draft = it }
+    }
+
     fun current(): Draft? = draft
 
     fun edit(id: String, english: String): Boolean {

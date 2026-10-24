@@ -3,33 +3,21 @@
 Personal Android dictation app: speak English and insert natural Korean into
 the focused text field, while continuing to use Microsoft SwiftKey.
 
-**Status: Phase 1 feasibility passed on A35; Phase 2 speech implementation underway.**
-The prototype tests the bubble, microphone lifecycle, English review, and safe
-insertion with fixed example messages. It does not transcribe or translate yet
-and needs no API key. See [build and device test instructions](docs/PHASE1.md).
-The earlier prototype passed eight synthetic cross-app checks on the A35, including middle insertion,
-edited review, Korean/emoji preservation, and cancellation/refusal. Real
-messaging-app coverage is still incomplete. A later compact REVIEW build passed
-two manual variants with actual SwiftKey editing, confirmed insertion and
-dismissal: tapping the destination first, and using its restored cursor directly.
+**Status: Phase 1 feasibility passed on A35; Phase 2 speech candidate under test.**
+Fixed Korean insertion passed in empty KakaoTalk, Google Messages and Instagram
+fields. Synthetic checks cover preservation of surrounding text, selected-text
+refusal, uncertain commits without retries, editable review, and dismissal after
+Copy or confirmed insertion. Manual SwiftKey editing and insertion also passed
+with the destination cursor already restored. Broader daily-use reliability
+remains untested; these results apply to the builds recorded in
+[device acceptance](docs/DEVICE_TESTS.md).
 
-The Oct24 REVIEW flow adds editable English review and Copy & close
-to the contextual, draggable bubble. Its earlier candidate passed seven synthetic gates:
-Copy, confirmed empty/middle/Korean insertion, selection refusal, cancellation,
-and terminal uncertainty without retry. Refreshing a stale focused-node snapshot
-resolved insertion confirmation while retaining the safety checks. Copy and
-confirmed insertion dismiss the bubble. Earlier visibility, dragging, and saved
-position gates passed on the RESELECT build. The compact build now passed both
-manual SwiftKey edit/Insert variants in the synthetic editor. Broader real-app and
-broader composition acceptance remain pending; the ordinary default build is OFF.
-The subsequent approved confirmation change passed seven scoped synthetic checks,
-including exact composed results, composed mismatches, and preservation. It keeps
-all pre-insertion guards; see PROGRESS for the installed candidate and next gate.
-Manual fixed Korean insertion into empty Kakao self-chat and Google Messages
-fields also passed on that candidate, followed by Instagram DMs. These are
-bounded empty-field checks; broader daily-use reliability remains untested.
-A newer compact movable result control is being tested after manual use exposed
-an obstructed destination field. See PROGRESS for the current build and open checks.
+The separate [Phase 2 candidate](docs/PHASE2.md) adds private on-phone API key
+entry and real English transcription after Stop. Source review, unit tests and
+setup checks precede any real-key or paid transcription test. Korean translation
+is the next phase. The [Phase 1 sample build](docs/PHASE1.md) remains available
+without an API key; ordinary and release builds default to OFF. See
+[PROGRESS](PROGRESS.md) for the current installed build and next action.
 
 ## Agreed interaction
 
@@ -61,9 +49,8 @@ need detailed design. Contextual visibility, dragging, and remembered position
 are the current priority before further capabilities.
 
 The separate destination-selection step was chosen after the A35 startup
-diagnostics on 2026-10-23. Recording/review will no longer depend on an earlier
-editor binding. This revised workflow is being implemented; real-app tests
-remain non-inserting until their separate scope is agreed.
+diagnostics on 2026-10-23. Recording/review does not depend on an earlier editor
+binding. Explicit Insert creates a fresh guarded destination transaction.
 
 The extra field tap was successfully omitted in one manual synthetic test when
 the intended cursor was already restored after English review. Keep that check
@@ -123,5 +110,5 @@ as described in [Phase 1](docs/PHASE1.md):
 ```
 
 The debug APK is `app/build/outputs/apk/debug/app-debug.apk`. Build output,
-credentials, recordings, and transcripts are excluded from Git. Real-device
-acceptance is required before starting the speech/API phase.
+credentials, recordings, and transcripts are excluded from Git. This command
+builds the default OFF variant; see Phase 2 for the explicit speech candidate.

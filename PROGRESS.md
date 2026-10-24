@@ -12,7 +12,7 @@ edited-Korean cancellation, and unchanged-commit uncertainty all passed. Forty
 unit tests passed; lints have zero errors. Manual empty-field Korean insertion
 now passed in Kakao self-chat, Google Messages and Instagram. The bounded Phase1
 feasibility gate is met from combined device/unit/source evidence. Phase2 speech
-and credentials implementation is underway; no real transcription/translation
+and credentials are implemented and under device setup testing; no real transcription/translation
 or paid API call has yet run.
 
 Andrew's newly approved one-attempt Kakao trial PASSED and is now complete.
@@ -41,25 +41,44 @@ three app checks now passed, satisfying the bounded Phase1 decision. Actual same
 conversation switch-back, broad geometry/lifecycle, and daily-use reliability
 remain limitations/future tests, not silently claimed passes or new ASR blockers.
 
-## Active Phase2 work
+## Active Phase 2 work
 
-Two Sol6/xhigh subagents implement credential UI/storage and speech integration;
-Astra/xhigh independently reviews security/lifecycle and final source. Root alone
-builds/tests/operates the phone and updates documentation. Speech candidate is
-opt-in debug `koscribeSpeech=true`, requiring REVIEW and visualfalse; release
-and ordinary defaults remain disabled. Existing sample baseline is preserved.
-User enters a dedicated key privately on phone after review; no key search/reuse,
-embedding, chat entry, build constant, logging or paid tests during implementation.
+Sol6/xhigh implemented credential UI/storage and EN speech integration;
+Astra/xhigh independently reviewed security, cleanup and final source. Root alone
+builds/tests/operates the phone. Speech is opt-in debug `koscribeSpeech=true`,
+requiring REVIEW and visualfalse; release and ordinary defaults remain OFF.
+The saved sample baseline is preserved. No real key or paid call has been used.
 
-First speech flow: EN recording -> explicit Stop -> OpenAI gpt-transcribe ->
-editable English -> Confirm -> existing guarded Insert/Copy. Korean translation
-remains Phase3; actual speech must never receive a fixed Korean sample. Bounded
-in-memory mono16kHz/16-bit PCM/WAV, maximum60s; upload only after successful Stop/
-release. Cancel/lock/service loss/limit must discard audio and cancel/ignore late
-requests. Fixed HTTPS endpoint, no redirects or automatic retries, bounded
-response/timeouts, sanitized errors. Keystore AES-GCM storage in noBackupFilesDir,
-secure masked UI without key readback/saved state/autofill, explicit full backup
-and device-transfer exclusions. No device result claimed until reviewed tests.
+EN recording -> explicit Stop -> OpenAI gpt-transcribe -> editable English ->
+Confirm -> unchanged guarded Insert/Copy. Korean modes are disabled in this
+candidate until Phase 3. Audio is bounded in memory to 60 seconds; upload requires
+successful microphone release and reader completion. Cancellation, capture limits
+and stale results cannot hand off a transcript. The fixed HTTPS request uses
+OkHttp 4.12, one-shot multipart, no redirects/replay, bounded response parsing and
+call/connect/read/write timeouts. See docs/PHASE2.md for exact behavior.
+
+The private masked key screen uses Keystore AES-GCM and ciphertext in
+noBackupFilesDir, verified save/readback, explicit deletion, no key display,
+autofill/saved-state opt-outs, and backup/transfer exclusions. Actual OEM transfer
+behavior is not tested. Fifty-three unit tests passed, and app/smoke lint had zero
+errors (37/3 warnings). Fake save/reopen/delete passed on the phone in 1.123s with
+the final smoke helper, and the store was verified empty. Early fixture failures
+and exact artifacts are recorded in DEVICE_TESTS.
+
+Missing-key warning test failed at MISSING_KEY_NOTICE_NOT_VISIBLE. Own microphone
+proof/capture/commit counts remained zero, draftNONE/cleanupfalse; AppOps showed
+no new recording. Source diagnosis: redrawing the bubble before asynchronous
+key lookup replaced the clicked host/token. Sol removed only that precheck redraw;
+Astra cleared the fix with all continuity/lock/cancellation checks and idle refresh
+retained. Rebuild passed all 53 units and lint. Three v3 device runs observed the
+warning and passed every no-recording/no-insertion assertion. All three full
+methods FAILED later on automated Close cleanup (including the final bounded
+own-overlay scroll, OWN_OVERLAY_SCROLL_REFUSED). Stop incidental cleanup retries;
+actual menu Close behavior remains unverified. No recording is active and no
+draft exists. This is setup readiness evidence, not a full smoke-method pass or
+Phase 2 acceptance. Next: private key entry through the separate launcher settings,
+then an explicitly dictated sample in our synthetic editor. Remind Cryptomator
+DeveloperStuff backup; never inspect the key screen/value during entry.
 
 Previous secure980E build Kakao self-chat microphone -> Stop -> English review -> Cancel
 PASSED. Andrew reported the sample review closed and the composer cursor/SwiftKey
@@ -219,33 +238,35 @@ settings changed. Prompt cessation has not been established.
 
 Galaxy A35 SM-A356E, Android 16/API 36, One UI 8.5; user 0 only. SwiftKey remains
 selected; Wispr remains enabled. Default SMS app is Google Messages. Phone is
-connected at the latest check. The new candidate's seven synthetic checks finished
+connected at the latest check. The current speech setup checks finished
 with draftNONE and microphone stopped; no test is running. Do not assume a synthetic screen
 remains foreground after instrumentation cleanup.
 Verify live readiness next session. Fixture cleanup may return
 to a real app; never assume the foreground is still synthetic.
 
-Installed product: `app/build/composed-confirmation/REVIEW-secure.apk`,
+Installed product: `app/build/speech-input/SPEECH-secure-v3.apk`,
+SHA-256 `F2079E8AE1181930911E7820AD4A735A56911F1C122FE06CA76DC594E0F811F9`.
+Phase 1 rollback: `app/build/composed-confirmation/REVIEW-secure.apk`,
 SHA-256 `3AA18446275E46E3712D5232EC8D02DC4AEF0D3C1D88D7CE7CAECE6080DF99DD`.
 Earlier seven-pass product remains saved at app/build/confirmation-refresh/REVIEW.apk
 with SHA-256 `2B00BE44077579BBD92D3D6A8D7FCED7E7391E17B05F56B5D1652444F4AD4D9E`.
-Installed smoke: `app/build/composed-confirmation/smoke.apk` (ignored).
-SHA-256: `168091D7000C2CB26FD94461A52BFAA316218B3B5B4ACDD2F5728433DAF2139D`.
-This adds opt-in composed exact/mismatch fixtures, preserving single-field manual mode.
+Installed smoke: `app/build/speech-input/smoke-setup-v4.apk` (ignored).
+SHA-256: `2782686D4D4BAA5E878CDF1B22950F5EBFA0D3C6098AF4E239A892791B505B0C`.
+This adds opt-in credential/missing-key tests, preserving prior scoped methods.
 Older smoke/product artifacts remain under their recorded ignored build folders.
 Ordinary `app/build/outputs/apk/debug/app-debug.apk` has been rebuilt as OFF with
-VISUAL_TEST=false. Do not substitute it for the secure REVIEW artifact.
+VISUAL_TEST=false and SPEECH_INPUT=false. Release flags are also disabled.
+Do not substitute ordinary output for the saved secure speech artifact.
 Prior diagnostic, refresh-only, and earlier smoke APKs are retained in ignored
 build folders. Detailed source review hashes are in DEVICE_TESTS.
 
-Latest checkpoint after successful Instagram trial: REVIEW_COMPLETED, proof10,
-draftNONE, destination captures9, commits8, confirmationCONFIRMED,
-cleanupfalse. Exact-app AppOps confirmed mic ended after3.087s. Counts restarted
-when the new APK was installed. Explicitly approved fixed samples were inserted
-into Kakao, Messages and Instagram. User can manually delete the fixed unsent
-samples. No new phone action is pending while Phase2 is implemented/reviewed.
-No Send/Enter, agent conversation inspection, screenshots, retained audio,
-credentials, paid calls, permission changes, or keyboard changes occurred.
+Latest v3 checkpoint: NOT_CAPTURED, proof/captures/commits0, draftNONE,
+confirmationNONE, cleanupfalse, SPEECH_KEY_MISSING. AppOps still shows the prior
+Instagram recording ended after3.087s; no new microphone use. Counts restarted
+on APK install. SwiftKey remains selected. All three app scopes are consumed;
+fixed unsent drafts are for Andrew to remove manually. Only the static fake
+credential marker was saved/deleted in owned settings; no actual key, API call,
+Send/Enter, conversation inspection, screenshot, or keyboard change occurred.
 
 ## Next work and gates
 
@@ -255,10 +276,11 @@ credentials, paid calls, permission changes, or keyboard changes occurred.
    recorded tests; do not generalize this empty-field pass to those cases.
    The old composition diagnostic round is complete. The approved fix passed its
    scoped checks; do not retry uncertain commits or reopen that probe round.
-2. Preserve all three app passes; their scopes are consumed. Complete/review
-   Phase2 code with fake/synthetic inputs and no credential. Build/unit/lint,
-   then reviewed synthetic device checks before asking Andrew to enter a key
-   privately and dictate a deliberate sample. No API keys in chat or shell.
+2. Preserve all three app passes; their scopes are consumed. Phase 2 code is
+   reviewed, built and unit/lint checked. Credential fake test passed; missing-key
+   safety assertions passed, with full-method Close cleanup failures recorded.
+   Ask for private key entry in launcher settings and a deliberate synthetic
+   speech test afterward. No API keys in chat or shell; no unattended audio upload.
 3. For broader daily-use reliability, extend selected/caret/navigation and
    composition coverage, small-height/large-font/rotation/split-screen, and
    lock/service recovery. These remain limits; do not silently turn the full

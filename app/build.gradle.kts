@@ -14,6 +14,13 @@ require(visualTest == "true" || visualTest == "false") {
 require(visualTest != "true" || startupExperimentArm == "REVIEW") {
     "koscribeVisualTest requires koscribeStartupArm=REVIEW"
 }
+val speechInput = providers.gradleProperty("koscribeSpeech").orElse("false").get()
+require(speechInput == "true" || speechInput == "false") {
+    "koscribeSpeech must be true or false"
+}
+require(speechInput != "true" || (startupExperimentArm == "REVIEW" && visualTest == "false")) {
+    "koscribeSpeech requires secure REVIEW and koscribeVisualTest=false"
+}
 
 android {
     namespace = "com.koscribe.prototype"
@@ -33,10 +40,12 @@ android {
         getByName("debug") {
             buildConfigField("String", "STARTUP_EXPERIMENT_ARM", "\"$startupExperimentArm\"")
             buildConfigField("boolean", "VISUAL_TEST", visualTest)
+            buildConfigField("boolean", "SPEECH_INPUT", speechInput)
         }
         getByName("release") {
             buildConfigField("String", "STARTUP_EXPERIMENT_ARM", "\"OFF\"")
             buildConfigField("boolean", "VISUAL_TEST", "false")
+            buildConfigField("boolean", "SPEECH_INPUT", "false")
         }
     }
 
@@ -48,5 +57,8 @@ android {
 }
 
 dependencies {
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation("org.json:json:20240303")
 }

@@ -14,7 +14,7 @@ import android.text.TextWatcher
 import android.text.Editable
 import java.lang.ref.WeakReference
 
-/** Own editor for one unbound sample draft. Only its opaque ID crosses the Intent. */
+/** Own editor for one unbound draft. Only its opaque ID crosses the Intent. */
 class ReviewActivity : Activity() {
     companion object {
         const val EXTRA_DRAFT_ID = "draft_id"
@@ -52,7 +52,9 @@ class ReviewActivity : Activity() {
         content.addView(caption(if (VisualTestMode.enabled)
             "VISUAL TEST · KoScribe English review" else "KoScribe · English review", true))
         content.addView(caption("Selected mode: ${draft.mode.label}"))
-        content.addView(caption("Fixed sample; no speech recognition ran. Edit English, then confirm."))
+        content.addView(caption(if (BuildConfig.SPEECH_INPUT)
+            "Edit the English transcript, then confirm. Korean translation arrives in the next phase."
+            else "Fixed sample; no speech recognition ran. Edit English, then confirm."))
         val editor = EditText(this).apply {
             id = R.id.review_english
             setText(draft.english)

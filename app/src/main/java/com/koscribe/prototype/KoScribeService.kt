@@ -81,6 +81,10 @@ class KoScribeService : AccessibilityService() {
     private var overlayInputGeneration: Int? = null
     private val unboundRecording = UnboundRecordingState()
     private val unboundDraft = UnboundDraftState()
+    private val speechGate = SpeechTransferGate()
+    private var speechJob: SpeechTranscriber.Job? = null
+    private var speechKeyCheckGeneration = 0
+    private var speechKeyCheckPending = false
     private var draftReviewOwner: Any? = null
     private var draftScreenReceiver: BroadcastReceiver? = null
     private var draftDeadline: Runnable? = null
@@ -940,6 +944,8 @@ class KoScribeService : AccessibilityService() {
     }.getOrDefault("LOCAL_CONTENT_UNKNOWN")
 
     override fun onInterrupt() {
+        speechKeyCheckGeneration++
+        speechKeyCheckPending = false
         unboundRecording.current()?.id?.let { cancelUnboundRecording(it, "SERVICE_INTERRUPTED") }
         unboundDraft.current()?.id?.let { endDraft(it, "SERVICE_INTERRUPTED") }
         pendingId?.let { invalidate(it, "SERVICE_INTERRUPTED") }
@@ -947,6 +953,11 @@ class KoScribeService : AccessibilityService() {
 
     override fun onDestroy() {
         serviceConnected = false
+        speechKeyCheckGeneration++
+        speechKeyCheckPending = false
+        speechJob?.cancel()
+        speechJob = null
+        speechGate.clear()
         clearPostCommitProbe()
         unboundRecording.endActive()
         unboundDraft.current()?.id?.let(ReviewActivity::closeDraft)
@@ -1184,6 +1195,43 @@ class KoScribeService : AccessibilityService() {
 
     /** Debug-only destination-free session. No target APIs are called until a later explicit action. */
     private fun startUnboundRecording(mode: OutputMode) {
+        if (BuildConfig.SPEECH_INPUT) {
+            if (mode != OutputMode.ENGLISH) {
+                status = "Korean translation arrives in the next phase. Choose EN for speech input."
+                renderBubble()
+                return
+            }
+            if (speechKeyCheckPending) return
+            val generation = ++speechKeyCheckGeneration
+            speechKeyCheckPending = true
+            status = "Checking API key…"
+            // Keep the clicked, already attached host until the async check returns.
+            // Replacing it here can change its token before the continuity check.
+            val originalHost = bubble
+            val originalToken = originalHost?.windowToken
+            Thread({
+                val available = runCatching { ApiKeyStore(this).hasKey() }.getOrDefault(false)
+                main.post {
+                    if (generation != speechKeyCheckGeneration || !serviceConnected) return@post
+                    speechKeyCheckPending = false
+                    if (!expanded || bubble !== originalHost || originalHost == null ||
+                        !originalHost.isAttachedToWindow || originalHost.windowToken != originalToken) {
+                        note("SPEECH_KEY_PRECHECK_HOST_STALE")
+                        return@post
+                    }
+                    if (!available) {
+                        note("SPEECH_KEY_MISSING")
+                        status = "API key missing. Open KoScribe > API key settings."
+                        renderBubble()
+                    } else startUnboundRecordingReady(mode)
+                }
+            }, "KoScribeSpeechKeyCheck").start()
+            return
+        }
+        startUnboundRecordingReady(mode)
+    }
+
+    private fun startUnboundRecordingReady(mode: OutputMode) {
         if (pendingId != null || unboundRecording.current() != null ||
             unboundDraft.current() != null || SessionActivity.isVisible ||
             overlayCleanupPending != null) {
@@ -1207,6 +1255,12 @@ class KoScribeService : AccessibilityService() {
         }
         val draft = unboundRecording.begin(mode) ?: return
         val id = draft.id
+        if (BuildConfig.SPEECH_INPUT && !speechGate.arm(id)) {
+            unboundRecording.end(id)
+            status = "Speech session unavailable. Try again."
+            renderBubble()
+            return
+        }
         experimentPhase = "RESELECT_PREPARING"
         note("RESELECT_MODE_SELECTED_${mode.name}")
         lateinit var owner: OverlayRecordingPanel
@@ -1231,7 +1285,10 @@ class KoScribeService : AccessibilityService() {
                 }
             },
             onCancel = { cancelUnboundRecording(id, "USER_CANCELLED") },
-            sessionTimeoutMs = 15_000L
+            sessionTimeoutMs = if (BuildConfig.SPEECH_INPUT) 65_000L else 15_000L,
+            speechMode = BuildConfig.SPEECH_INPUT,
+            onSpeechAudio = if (BuildConfig.SPEECH_INPUT) { wav -> startSpeechTranscription(id, wav) }
+                else null
         )
         overlayPanel = owner
         if (!owner.showAndStart()) {
@@ -1268,15 +1325,77 @@ class KoScribeService : AccessibilityService() {
 
     private fun cancelUnboundRecording(id: String, reason: String) {
         if (!unboundRecording.end(id)) return
+        speechGate.cancel(id)
+        speechJob?.cancel()
+        speechJob = null
         stopOverlayOwnership()
         experimentPhase = "RESELECT_CANCELLED"
         note("RESELECT_ENDED_${reason}")
         status = if (overlayCleanupPending != null) "Microphone cleanup uncertain. Restart the service."
+            else if (reason.startsWith("SPEECH_")) speechErrorMessage(reason.removePrefix("SPEECH_"))
             else "Recording cancelled."
         refreshIdleBubble(forceRender = true)
     }
 
-    private fun beginDraftReview(recordingId: String, mode: OutputMode) {
+    /** Settings calls this before and after key mutation; it never reads the key. */
+    fun cancelSpeechForCredentialChange() {
+        if (!BuildConfig.SPEECH_INPUT) return
+        speechKeyCheckGeneration++
+        speechKeyCheckPending = false
+        unboundRecording.current()?.id?.let { cancelUnboundRecording(it, "SPEECH_KEY_CHANGED") }
+        speechJob?.cancel()
+        speechJob = null
+    }
+
+    private fun speechErrorMessage(code: String): String = when (code) {
+        "KEY_UNAVAILABLE", "KEY_CHANGED" -> "API key unavailable. Open KoScribe > API key settings."
+        "AUTH" -> "API key was rejected. Check it in KoScribe settings."
+        "RATE_LIMIT" -> "Transcription limit reached. Try a new recording later."
+        "AUDIO_TOO_LARGE" -> "Recording was too large. Try a shorter message."
+        "TRANSCRIPT_TOO_LONG" -> "English transcript exceeded 512 characters. Try a shorter message."
+        "EMPTY_TRANSCRIPT" -> "No English speech was recognized. Try a new recording."
+        "TIMEOUT" -> "Transcription timed out. Try a new recording."
+        else -> "Transcription failed ($code). Try a new recording."
+    }
+
+    private fun startSpeechTranscription(recordingId: String, wav: ByteArray) {
+        if (!BuildConfig.SPEECH_INPUT || startupExperiment != StartupExperiment.REVIEW ||
+            !unboundRecording.owns(recordingId) || overlayPanel?.hostStable() != true ||
+            speechJob != null || !speechGate.stoppedAndReleased(recordingId)) {
+            wav.fill(0)
+            if (unboundRecording.owns(recordingId))
+                cancelUnboundRecording(recordingId, "SPEECH_HANDOFF_REFUSED")
+            return
+        }
+        experimentPhase = "SPEECH_TRANSCRIBING"
+        val transcriber = SpeechTranscriber(this)
+        lateinit var job: SpeechTranscriber.Job
+        job = transcriber.newJob(wav) { result ->
+            main.post {
+                if (speechJob !== job || !unboundRecording.owns(recordingId) ||
+                    !speechGate.accept(recordingId)) return@post
+                speechJob = null
+                if ((getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked ||
+                    overlayPanel?.hostStable() != true) {
+                    cancelUnboundRecording(recordingId, "SPEECH_CONTEXT_CHANGED")
+                    return@post
+                }
+                when (result) {
+                    is SpeechTranscriber.Result.Text -> {
+                        if (unboundRecording.microphoneStoppedForReview(recordingId))
+                            beginDraftReview(recordingId, OutputMode.ENGLISH, result.value)
+                        else cancelUnboundRecording(recordingId, "SPEECH_STATE_CHANGED")
+                    }
+                    is SpeechTranscriber.Result.Error ->
+                        cancelUnboundRecording(recordingId, "SPEECH_${result.code.name}")
+                }
+            }
+        }
+        speechJob = job
+        job.start()
+    }
+
+    private fun beginDraftReview(recordingId: String, mode: OutputMode, transcript: String? = null) {
         if (!unboundRecording.end(recordingId)) return
         stopOverlayOwnership()
         if (overlayCleanupPending != null) {
@@ -1285,7 +1404,13 @@ class KoScribeService : AccessibilityService() {
             refreshIdleBubble(forceRender = true)
             return
         }
-        val draft = unboundDraft.begin(mode) ?: return
+        val draft = if (transcript != null && BuildConfig.SPEECH_INPUT && mode == OutputMode.ENGLISH)
+            unboundDraft.beginSpeech(transcript) else unboundDraft.begin(mode)
+        if (draft == null) {
+            status = "Could not open English review. Start a new recording."
+            refreshIdleBubble(forceRender = true)
+            return
+        }
         draftReviewOwner = null
         idleBubbleVisible = false
         expanded = false
@@ -2568,12 +2693,14 @@ class KoScribeService : AccessibilityService() {
             val controls = if (unboundArm())
                 LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
                 else holder
-            controls.addView(caption("KoScribe · sample only", true))
+            controls.addView(caption(if (BuildConfig.SPEECH_INPUT) "KoScribe · speech input" else "KoScribe · sample only", true))
             controls.addView(caption(status))
+            if (BuildConfig.SPEECH_INPUT)
+                controls.addView(caption("EN speech now. Korean translation arrives in the next phase."))
             val modeRow = if (unboundArm())
                 LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
                 else null
-            for (mode in OutputMode.entries) {
+            for (mode in if (BuildConfig.SPEECH_INPUT) listOf(OutputMode.ENGLISH) else OutputMode.entries) {
                 val button = action(mode.label) { startMode(mode) }
                 if (modeRow != null)
                     modeRow.addView(button, LinearLayout.LayoutParams(0, -2, 1f))
@@ -2587,12 +2714,19 @@ class KoScribeService : AccessibilityService() {
             else null
             if (footerRow != null)
                 footerRow.addView(action("Hide") {
+                    speechKeyCheckGeneration++
+                    speechKeyCheckPending = false
                     idleBubblePolicy.hideUntilNextImeCycle()
                     idleBubbleVisible = false
                     expanded = false
                     renderBubble()
                 }, LinearLayout.LayoutParams(0, -2, 1f))
-            val close = action("Close") { expanded = false; renderBubble() }
+            val close = action("Close") {
+                speechKeyCheckGeneration++
+                speechKeyCheckPending = false
+                expanded = false
+                renderBubble()
+            }
             if (footerRow != null) {
                 footerRow.addView(close, LinearLayout.LayoutParams(0, -2, 1f))
                 controls.addView(footerRow, LinearLayout.LayoutParams(-1, -2))

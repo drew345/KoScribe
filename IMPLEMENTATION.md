@@ -241,6 +241,14 @@ in memory, upload only after explicit successful Stop, cancel stale requests,
 and review the real transcript before existing guarded insertion. Credential
 architecture remains the previously selected personal on-phone Keystore approach.
 
+Phase 2 implementation checkpoint: the EN speech and credential candidate is
+implemented under the explicit debug flag and independently reviewed. Tests cover
+bounded audio, request cancellation/stale outcomes, parsing, and no automatic
+network replay. Phone setup checks use only a fake credential and the owned
+synthetic editor. Real key entry and deliberate paid transcription follow these
+checks; accuracy, edit preservation through real ASR, and error recovery still
+gate Phase 3. See [Phase 2](docs/PHASE2.md) and PROGRESS for measured status.
+
 | Phase | Scope | Gate before advancing |
 | --- | --- | --- |
 | 0: Planning | Settle UX, credentials, models, speech provider, installation and latency goals. | Andrew approves implementation plan. |

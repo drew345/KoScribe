@@ -1313,3 +1313,86 @@ review. No additional fixture merely due to a new build. Broader lifecycle,
 geometry, same-view switch-back and daily-use compatibility remain explicit
 limits. Proceed to separately reviewed Phase2 speech/credential implementation;
 this is not transcription, translation, or secret-storage device acceptance.
+
+### Phase 2 speech setup candidate (2026-10-24)
+
+Sol6/xhigh implemented private key storage and EN speech; Astra/xhigh reviewed
+the final source and subsequent narrow fixes. The candidate is explicit debug
+REVIEW/SPEECH true, visualfalse. Ordinary/release outputs are restored to OFF,
+SPEECH false, visualfalse. No actual API credential or paid request has been used.
+
+Build, 53 unit tests (zero failures/errors/skips), and lint passed. App lint has
+37 warnings, smoke 3, neither has errors. New units cover WAV limits/poisoning,
+real EN draft handling, cancelled/stale transfer, terminal-result races, strict
+bounded response parsing, multipart contents, and local 302/503 no-replay tests.
+Network tests used a local mock server, never OpenAI. Review corrected backup
+path syntax to `.` and hardened persisted-key verification, reader cleanup,
+whole-call/upload timeouts and outer multipart one-shot behavior before device use.
+
+Saved ignored products:
+
+- SPEECH-secure.apk: `90E5C6731C3F28F92F133C985BA8992E7574D6991C6E9077138445C343D069FA`.
+- SPEECH-secure-v2.apk: `3A69C23004D41983325C0610E5DAB6ED3090ABFFF1E6A6550F860CB80D8F3B3D`.
+- SPEECH-secure-v3.apk: `F2079E8AE1181930911E7820AD4A735A56911F1C122FE06CA76DC594E0F811F9`.
+
+All are under `app/build/speech-input/`; v3 is installed. v2 moved API key settings
+above the main diagnostic editor; v3 retains the clicked bubble host during the
+asynchronous key precheck, without suppressing idle refresh or weakening host/
+token/generation/lock checks. Its code-only notices distinguish missing key from
+stale precheck host. Final KoScribeService source SHA256:
+`A6270638B0820EC18CDC5AA7DED6BCCEE6CF2C4A138D2821C4DC9420B34D77E4`.
+
+The fake-key test refuses any preexisting entry, saves a fixed noncredential
+marker, verifies no readback after reopening, deletes it and verifies empty state.
+No microphone action occurs while the marker exists. Initial v1 run failed before
+key entry at the inaccessible settings button (10.152s). After the v2 layout fix,
+a run passed in3.843s, but harness install timing made that run's exact harness
+provenance ambiguous. A deliberate repeat failed before mutation because Android
+returned to the existing key Activity instead of the expected main Activity
+(10.133s). The test now accepts either own landing screen and closes its final
+empty settings screen; it still requires an empty credential store.
+
+Final credential check PASS1.123s on product v2 and smoke-setup-v2.apk,
+SHA256 `DCFBC1566AE075CD4342D06CB79634DBCB99D0D31EA17A6F7089B4B80BAA9EB9`.
+CredentialFlowSmokeTest source SHA256:
+`33A83428417AA9DEA55FA61A1B19F8AA17B242BFDEE7ED5B9B03B18DBE43BEEE`.
+
+The first missing-key check failed after Ko -> EN at the missing notice (12.807s).
+Own proof/capture/commit remained0, draftNONE/cleanupfalse, with no new AppOps
+recording. Source review found the precheck redraw could replace its original
+host/token before callback. v3 removed that redraw only. Its retry observed
+SPEECH_KEY_MISSING and passed all no-recording/no-insertion assertions, then failed
+the offscreen Close cleanup (14.025s). Thus the product assertions passed, but the
+whole test did not. The test-only correction reveals the unique own Close control
+with ACTION_SHOW_ON_SCREEN, rechecks visibility/enabled/clickable, then clicks;
+ambiguity refuses. No global Back, coordinates, or conversation UI are used.
+
+Corrected smoke-setup-v3.apk SHA256:
+`CC88532D49E43634BB5E585AD9F21E0EE50ABD5616C81852D63950E7514EB948`.
+SpeechSetupSmokeTest source SHA256:
+`C4B8BE1DE46FE23DC6EEB433E5B06961E1B14E64E5351520A275FEDF8F72F0C7`.
+Both the product fix and test-only cleanup correction passed independent source
+review. That retry again passed the notice and all state assertions, but failed
+OWN_CLOSE_NOT_FOUND (13.885s): the offscreen node was not exposed at all.
+
+A final test-only bounded fallback selects the unique visible/enabled own
+ACCESSIBILITY_OVERLAY ScrollView, retains its window ID, attempts at most three
+forward scrolls and clicks only the fresh exact visible Close. Source review and
+build/lint/signature checks passed. Final smoke-setup-v4.apk SHA256:
+`2782686D4D4BAA5E878CDF1B22950F5EBFA0D3C6098AF4E239A892791B505B0C`.
+SpeechSetupSmokeTest source SHA256:
+`E9D1009367C0C8F34EA3719380EB93CC597A9D66608E1516DB5D2693862ADC90`.
+
+Final method FAILED11.103s at OWN_OVERLAY_SCROLL_REFUSED, again after emitting
+MISSING_KEY_REFUSED_BEFORE_RECORDING and passing all core assertions. Do not
+describe any of these three full methods as passing. Stop cleanup retries;
+actual user Close behavior remains unverified. Own final state NOT_CAPTURED,
+proof/captures/commits0, draftNONE, confirmationNONE, cleanupfalse and three fixed
+SPEECH_KEY_MISSING notes. AppOps still shows the old Instagram3.087s recording,
+no new microphone use. No actual key/API/network/insertion or conversation read.
+
+Independent reviewer considers the fake-key pass, repeated missing-key safety
+assertions, 53 units and source review sufficient for private key-entry setup,
+with cleanup failure explicit. This does not accept ASR accuracy, paid behavior,
+real-audio edit/insert, or Phase 2 overall. First speech test is user-triggered in
+our synthetic editor; prior real-app insertion scopes do not carry over.

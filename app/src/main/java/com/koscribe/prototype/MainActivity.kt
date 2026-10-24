@@ -20,6 +20,9 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        if (BuildConfig.SPEECH_INPUT) root.addView(action("API key settings") {
+            startActivity(Intent(this, ApiKeyActivity::class.java))
+        }.apply { id = R.id.open_api_key_settings })
         val editorPanel = column()
         editorPanel.addView(caption("KoScribe · local test editor", true))
         editorPanel.addView(caption("Focus this ordinary text field, then choose a mode from the bubble. SwiftKey stays selected."))
@@ -35,7 +38,9 @@ class MainActivity : Activity() {
         // Keep the fixture outside the long settings scroll and its changing
         // viewport when the keyboard opens or a recording dialog returns.
         val content = column()
-        content.addView(caption("Phase 1 uses fixed samples. Audio is discarded; no recognition or translation runs."))
+        content.addView(caption(if (BuildConfig.SPEECH_INPUT)
+            "Speech input: choose EN from the bubble, record, Stop, and edit the English transcript. Audio is sent to OpenAI after Stop; KoScribe does not save recordings or transcripts. Korean translation arrives in the next phase."
+            else "Phase 1 uses fixed samples. Audio is discarded; no recognition or translation runs."))
         status = caption("")
         content.addView(status)
         content.addView(action("Open Accessibility settings") {

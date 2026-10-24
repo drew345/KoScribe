@@ -41,7 +41,7 @@ class ReviewActivity : Activity() {
         if (draft == null) { finish(); return }
         active = WeakReference(this)
 
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        if (!VisualTestMode.enabled) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
             WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
         val content = column().apply {
@@ -49,7 +49,8 @@ class ReviewActivity : Activity() {
             importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
             importantForContentCapture = View.IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS
         }
-        content.addView(caption("KoScribe · English review", true))
+        content.addView(caption(if (VisualTestMode.enabled)
+            "VISUAL TEST · KoScribe English review" else "KoScribe · English review", true))
         content.addView(caption("Selected mode: ${draft.mode.label}"))
         content.addView(caption("Fixed sample; no speech recognition ran. Edit English, then confirm."))
         val editor = EditText(this).apply {

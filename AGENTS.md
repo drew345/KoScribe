@@ -102,6 +102,12 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
 - Inspect only the local editor context needed for safe insertion. Do not
   upload chat history, existing field contents, screenshots, or contacts.
   Send dictated content only; do not retain audio/transcripts by default.
+- Andrew requested visual observation of the synthetic experiment on Oct24.
+  Temporary screenshots of the owned fixture/KoScribe UI with fixed test content
+  are in scope; real-app conversation screenshots are not. Explicit debug REVIEW
+  visual builds are for that session only. Restore the saved secure APK afterward
+  and before real-app work. Capture after a readiness reply; stop on interruptions,
+  remove temporary images, and never commit them or record caller details.
 - Gitignore is a precaution, not proof: inspect staged files and scan for
   secrets before every publish. Never commit personal recordings or chats.
 

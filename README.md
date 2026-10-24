@@ -11,14 +11,16 @@ The earlier prototype passed eight synthetic cross-app checks on the A35, includ
 edited review, Korean/emoji preservation, and cancellation/refusal. Real
 messaging-app acceptance and actual SwiftKey typing remain pending.
 
-The installed Oct24 REVIEW build adds editable English review and Copy & close
-to the contextual, draggable bubble. All seven synthetic REVIEW gates now pass:
+The Oct24 REVIEW flow adds editable English review and Copy & close
+to the contextual, draggable bubble. Its earlier candidate passed seven synthetic gates:
 Copy, confirmed empty/middle/Korean insertion, selection refusal, cancellation,
 and terminal uncertainty without retry. Refreshing a stale focused-node snapshot
 resolved insertion confirmation while retaining the safety checks. Copy and
 confirmed insertion dismiss the bubble. Earlier visibility, dragging, and saved
 position gates passed on the RESELECT build. Actual SwiftKey typing and current
 real-app acceptance remain pending; the ordinary default build is still OFF.
+A newer compact movable result control is being tested after manual use exposed
+an obstructed destination field. See PROGRESS for the current build and open checks.
 
 ## Agreed interaction
 

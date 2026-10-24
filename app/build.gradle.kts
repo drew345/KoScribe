@@ -7,6 +7,13 @@ val startupExperimentArm = providers.gradleProperty("koscribeStartupArm").orElse
 require(startupExperimentArm in setOf("OFF", "HOLD", "COLLAPSE", "PANEL", "OVERLAY", "RESELECT", "REVIEW")) {
     "koscribeStartupArm must be OFF, HOLD, COLLAPSE, PANEL, OVERLAY, RESELECT, or REVIEW"
 }
+val visualTest = providers.gradleProperty("koscribeVisualTest").orElse("false").get()
+require(visualTest == "true" || visualTest == "false") {
+    "koscribeVisualTest must be true or false"
+}
+require(visualTest != "true" || startupExperimentArm == "REVIEW") {
+    "koscribeVisualTest requires koscribeStartupArm=REVIEW"
+}
 
 android {
     namespace = "com.koscribe.prototype"
@@ -25,9 +32,11 @@ android {
     buildTypes {
         getByName("debug") {
             buildConfigField("String", "STARTUP_EXPERIMENT_ARM", "\"$startupExperimentArm\"")
+            buildConfigField("boolean", "VISUAL_TEST", visualTest)
         }
         getByName("release") {
             buildConfigField("String", "STARTUP_EXPERIMENT_ARM", "\"OFF\"")
+            buildConfigField("boolean", "VISUAL_TEST", "false")
         }
     }
 

@@ -290,6 +290,9 @@ transaction or prove uninterrupted insertion continuity.
 
 ## Manual SwiftKey review gate (2026-10-24)
 
+This Insert procedure describes the earlier manual gate. The current visual
+checkpoint below stops after dragging and selecting a field, WITHOUT Insert.
+
 The debug smoke APK has a launcher named **KoScribe test editor**. Its exported
 DebugFixtureLauncherActivity ignores caller data/extras/actions and constructs
 only a fixed intent to the existing nonexported SmokeEditorActivity, omitting
@@ -376,3 +379,31 @@ the suppression behavior; it does not establish Copy or insertion dismissal.
 Run while Andrew is not using the phone; app switches can correctly invalidate a session. Instrumentation completion can remove the fixture and return to a previous real app. Do not take post-test full-screen screenshots on the assumption that the synthetic editor is still visible. Prefer exact fixture assertions and code-only traces; capture pixels only after independently verifying the current foreground is an owned synthetic screen.
 
 References: [AOSP instrumentation target restart](https://source.android.com/docs/core/tests/development/instrumentation), [UiAutomation flag](https://developer.android.com/reference/android/app/UiAutomation#FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES), [flagged acquisition](https://developer.android.com/reference/android/app/Instrumentation#getUiAutomation(int)).
+
+## Synthetic visual checkpoints (2026-10-24)
+
+Andrew requested a way for the agent to see the same screen during the manual
+experiment. Use discrete USB screenshots after he confirms a test step, not a
+claim of continuous video observation. No scrcpy/mirror installation is required.
+The current screenshot path uses binary-safe adb exec-out screencap transfer.
+Verify the owned synthetic fixture is focused before AND after capture; discard
+on mismatch. Review Activity snapshots also require the known synthetic origin.
+Keep temporary images only in ignored app/build/visual-checks, remove after use,
+and never commit screenshots or caller/notification details.
+
+Ordinary REVIEW windows deliberately use FLAG_SECURE. Only an explicit local
+`-PkoscribeStartupArm=REVIEW -PkoscribeVisualTest=true` debug build makes its own
+review/overlay visible to screenshots; the review title and result handle say
+VISUAL TEST. The property defaults false, rejects other startup arms when true,
+and release hard-codes OFF/false. It does not alter insertion or microphone guards.
+Synthetic-only usage is an operational boundary, not enforced by the build flag:
+restore the separately saved secure REVIEW APK after the visual session and
+before using any real app. Never change device-wide capture/privacy controls.
+
+Save and identify separate secure and visual APKs before rebuilding ordinary
+output as OFF/false. Check generated BuildConfig for each and the release variant.
+During a visual session, ask Andrew to pause after one short sequence, inspect,
+then continue. The draft's existing three-minute deadline still applies; no
+ended draft is reused. Do not auto-poll screenshots while awaiting a reply:
+foreground metadata alone does not exclude an incoming-call/notification overlay.
+Stop visual work on an interruption and resume only when Andrew says ready.

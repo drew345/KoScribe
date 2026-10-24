@@ -44,7 +44,10 @@ confirmation is terminal for insertion of that draft; only deliberate recovery
 or cancellation remains. Copy or confirmed insertion clears transient content
 and suppresses idle redisplay until a verified new keyboard cycle. Seven synthetic
 REVIEW device gates passed on Oct24; actual SwiftKey typing and real-app acceptance
-are still pending. The ready controls stay outside the scrolling result body.
+are still pending. After manual use exposed destination obstruction, the next
+candidate replaces the large result preview with compact mode-labelled draggable
+controls: Insert, Copy & close, and Cancel. Moving/reflow is prohibited while a
+destination transaction exists. A later explicit Insert retains all checks.
 
 The accepted fallback is a launcher Activity with mic -> editable English ->
 요/반말 translation -> Copy & close, followed by manual paste. Design content

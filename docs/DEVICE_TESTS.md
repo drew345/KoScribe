@@ -883,3 +883,78 @@ with the disclosed synthetic sample. Automated review edits used the own
 EditText action with SwiftKey visible, not actual keyboard keypresses. Real-app
 insertion, manual typing/composition, navigation/recovery and general geometry
 remain open Phase 1 gates. Do not advance to speech/API work on these results alone.
+
+## Manual SwiftKey result and obstruction (2026-10-24)
+
+User-reported behavior on product 2B00BE44... / manual-launcher smoke 5D9D7CC7...:
+Andrew reached review, edited the fixed English with actual SwiftKey keys, and
+confirmed. The large ready panel obscured the intended upper fixture field and
+its controls. He tapped a separate Paste action and then KoScribe Insert, which
+reported that it could not verify a safe destination. The pasted contents/outcome
+were not inspected. Do not claim end-to-end manual acceptance or blame user error.
+
+Own-state evidence after the report: proof count 9 (baseline 8), destination
+captures 6 (baseline 5), commit requests unchanged at 4, confirmation REFUSED,
+OBS_ACTIVE_COMPOSITION -> FRESH_INSERT_REFUSED_ACTIVE_COMPOSITION ->
+REVIEW_ENDED_DEADLINE. Draft NONE; cleanup pending false; AppOps mic ended after
+5.218s. No product commit occurred in this manual flow. The separate Paste action
+was manual; its effect and relation to the composing span are not established.
+
+Source review: REVIEW ignores selection callbacks outside freshDestination;
+insertDraft resets callback composition before its first observeEditor, and own
+product editors are rejected. This trace has no preceding ready observation or
+second-check refusal marker, so the first observation saw SPAN_COMPOSING in the
+current input connection. It is not stale own-review callback state. Keep the
+composition guard. Next fix targets ready-panel obstruction and feedback only.
+
+## Compact result candidate and visual checkpoint (2026-10-24)
+
+Sol 6 Extra High implemented, Astra Extra High independently reviewed: normal
+READY controls are 280x112dp, a mode-labelled 48dp Move handle and Cancel row,
+then a 48dp Insert / Copy & close row. Refused/UNCERTAIN uses an extra 44dp bounded
+notice, total 156dp; UNCERTAIN has no Insert. The title/result preview is omitted;
+initial toolbar placement can still overlap the destination. Dragging uses the
+saved clamped anchor and never clicks an action.
+Window/IME reflow is metadata-only outside drag/recording/destination capture.
+All original insertion handlers, guard, confirmation, and no-retry rules remain.
+Small-height/large-font/landscape behavior is not generally accepted yet.
+
+Reviewed final source hashes:
+
+- Service: F3242BA505D0891F0E79D2EE9E792002582D3169E178B21248079537E741979A.
+- Gradle: A91985E1FB31F68CDDF10480A788C3DB7AF6878E1D42832235774C51065BC060.
+- VisualTestMode: 51ACB9A99F38DF23A4EDEC13B113CA55B61BB07498EF8A2C3308C899B7341A92.
+- ReviewActivity: 2399DAAC3F3114F09E2A22EBA29E8516EFAF236D6A76FA191BB2B398D1DB3ED0.
+
+Saved ignored artifacts under app/build/compact-result:
+
+- REVIEW-secure.apk: 723D5D207AAF00F5F291033D0A28FA79C92D859C0BA9B7411B218A1EB0CD1287.
+- REVIEW-visual-test.apk: C3A713C02EB97BEDA47182D267226EFD08F2CB37D99C72F90B33B63F01FFFDBA.
+Smoke unchanged from the manual launcher APK 5D9D7CC7... . Secure/visual/default
+builds and lint passed, 37 JVM tests passed, signatures verified. Current app lint
+has zero errors and 25 warnings; smoke retains 3. Generated secure config is
+REVIEW/false; visual is REVIEW/true; release and ordinary output are OFF/false.
+
+First secure-candidate regression, editedEnglishInsertsIntoEmptyFixtureOnce,
+FAILED in 13.149s at SUCCESS_NOT_CONFIRMED. Its preceding exact-text assertion
+passed. Trace: two VERIFIED_EMPTY/READY_UNKNOWN observations, one commit request,
+POSTCOMMIT_FOCUS_REFRESHED, ACTIVE_COMPOSITION, terminal UNCERTAIN_TARGET_CHANGED,
+then testCancel. Capture1/commit1; draftNONE; cleanupfalse; mic ended after 617ms.
+This is distinct from Andrew's earlier precommit refusal. Postcommit deliberately
+ignores callback composition, so the refusal came from SPAN_COMPOSING in current
+surrounding text. Identity/focus and caret checks passed before the refusal.
+Layout timing may differ, but causation is unproven. No guard change or retry.
+Remaining compact-candidate insertion/Copy/uncertainty regression gates are open.
+
+Andrew then requested seeing the actual screen while he tested. Explicit debug
+visual mode was built/installed for owned synthetic screenshots only. Default and
+release capture protection remain; secure APK must be restored after the session.
+A ready screenshot showed all four controls fully visible at the measured phone
+font_scale 1.15, but the toolbar initially overlapped the upper field, while the
+lower fixture field had focus. DraftREADY, proof1, captures0, commits0, cleanupfalse.
+A later screenshot caught an incoming-call overlay. Visual/phone work stopped;
+the local image was removed and no caller details retained. Andrew confirmed the
+call ended and requested restart. The old draft had ended by DEADLINE, still with
+zero captures/commits. A fresh manual drag-and-select check is pending; no dragging
+or manual insertion pass is yet claimed. No conversation screenshots or real-app
+insertion; the incidental incoming-call image was removed as described above.

@@ -358,3 +358,26 @@
 - Andrew was asked to edit the fixed review sample with actual SwiftKey keys,
   then explicitly Insert once into the top synthetic field. Awaiting his report
   and post-action own-state check; no manual typing pass is claimed yet.
+
+## 2026-10-24 — Compact result controls and visual testing
+
+- Manual SwiftKey edit/confirmation reached the ready result, but the large panel
+  obscured the destination. Andrew tapped Paste separately, then Insert refused
+  ACTIVE_COMPOSITION before a product commit. Draft expired; no manual pass.
+- Sol 6 Extra High implemented compact draggable result controls and concise
+  refusal feedback; Astra Extra High reviewed without weakening insertion checks.
+  Secure candidate 723D5D20... built/linted; 37 unit tests passed. Its first empty
+  insertion check placed exact text but ended UNCERTAIN on postcommit composing
+  spans (13.149s). No retry; remaining candidate regression gates stay open.
+- Andrew requested seeing the screen during experiments. Added explicit default-off
+  debug REVIEW visual mode; normal/release remain protected. Visual candidate
+  C3A713C0... installed only for synthetic USB checkpoint screenshots. No mirror
+  software, continuous recording, or device privacy-setting change was needed.
+- Ready screenshot confirmed all controls visible at font scale 1.15, but initial
+  placement still overlapped the upper field. Zero captures/commits. Incoming call
+  interrupted before drag proof; screenshots stopped and the temporary image was
+  deleted. Old draft ended by deadline. Andrew then requested a fresh attempt.
+- Pending: his restarted drag-and-select report, screenshot verification, cleanup,
+  and restoration of the saved secure REVIEW APK. Do not take further screenshots
+  until he replies. No real-app screenshots/insertion. Ordinary build output has
+  been restored to OFF/visual false; product test limitations are in DEVICE_TESTS.

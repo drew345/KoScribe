@@ -31,7 +31,7 @@ He described addressing himself; whether he personally sent it is unspecified.
 No automated Send occurred. Instagram also PASSED: user reported expected Korean
 in the proper DM field and the flow worked perfectly; own proof10/captures9/
 commits8, CONFIRMED, draftNONE/cleanupfalse, mic ended3.087s, SwiftKey selected.
-Both one-attempt scopes are consumed. No more user phone work pending now.
+Both one-attempt scopes are consumed. The first real speech test is now pending.
 
 Astra/xhigh reassessed the remaining gate and withdrew an unnecessary proposal
 for another target-change fixture. Earlier REVIEW device tests exercised window/
@@ -47,7 +47,9 @@ Sol6/xhigh implemented credential UI/storage and EN speech integration;
 Astra/xhigh independently reviewed security, cleanup and final source. Root alone
 builds/tests/operates the phone. Speech is opt-in debug `koscribeSpeech=true`,
 requiring REVIEW and visualfalse; release and ordinary defaults remain OFF.
-The saved sample baseline is preserved. No real key or paid call has been used.
+The saved sample baseline is preserved. Andrew confirmed private on-phone key
+entry and DeveloperStuff backup on October 24. No key value was inspected;
+account/model access and the first actual API result remain unverified.
 
 EN recording -> explicit Stop -> OpenAI gpt-transcribe -> editable English ->
 Confirm -> unchanged guarded Insert/Copy. Korean modes are disabled in this
@@ -76,9 +78,14 @@ methods FAILED later on automated Close cleanup (including the final bounded
 own-overlay scroll, OWN_OVERLAY_SCROLL_REFUSED). Stop incidental cleanup retries;
 actual menu Close behavior remains unverified. No recording is active and no
 draft exists. This is setup readiness evidence, not a full smoke-method pass or
-Phase 2 acceptance. Next: private key entry through the separate launcher settings,
-then an explicitly dictated sample in our synthetic editor. Remind Cryptomator
-DeveloperStuff backup; never inspect the key screen/value during entry.
+Phase 2 acceptance. Andrew now confirmed key saved and backup done. The non-secret
+MindHub checklist records that confirmation. Never rerun fake-key/deletion or
+missing-key tests against his live credential. Root verified unlocked/idle,
+microphone stopped and SwiftKey selected, then opened the owned single-field
+Test message screen. Await his first EN dictation -> Stop -> review -> Cancel
+report. No Confirm/Insert/Copy/Send, retry or conversation test is requested.
+The deliberate sample differs from the old canned sentence. No agent-initiated
+recording or upload; the user's explicit recording/Stop begins the cloud request.
 
 Previous secure980E build Kakao self-chat microphone -> Stop -> English review -> Cancel
 PASSED. Andrew reported the sample review closed and the composer cursor/SwiftKey
@@ -265,8 +272,10 @@ confirmationNONE, cleanupfalse, SPEECH_KEY_MISSING. AppOps still shows the prior
 Instagram recording ended after3.087s; no new microphone use. Counts restarted
 on APK install. SwiftKey remains selected. All three app scopes are consumed;
 fixed unsent drafts are for Andrew to remove manually. Only the static fake
-credential marker was saved/deleted in owned settings; no actual key, API call,
-Send/Enter, conversation inspection, screenshot, or keyboard change occurred.
+credential marker was saved/deleted during setup. Andrew subsequently saved his
+real key privately and confirmed backup; it was not inspected. No API outcome
+is established yet. No Send/Enter, conversation inspection, screenshot, or
+keyboard change occurred. Fixture is now open for his first speech test.
 
 ## Next work and gates
 
@@ -279,8 +288,9 @@ Send/Enter, conversation inspection, screenshot, or keyboard change occurred.
 2. Preserve all three app passes; their scopes are consumed. Phase 2 code is
    reviewed, built and unit/lint checked. Credential fake test passed; missing-key
    safety assertions passed, with full-method Close cleanup failures recorded.
-   Ask for private key entry in launcher settings and a deliberate synthetic
-   speech test afterward. No API keys in chat or shell; no unattended audio upload.
+   Key entry and backup are user-confirmed. Await first synthetic speech/review/
+   Cancel result before asking for edits or insertion. No API keys in chat or
+   shell; no unattended audio upload, fake-key/deletion or missing-key reruns.
 3. For broader daily-use reliability, extend selected/caret/navigation and
    composition coverage, small-height/large-font/rotation/split-screen, and
    lock/service recovery. These remain limits; do not silently turn the full
@@ -288,9 +298,8 @@ Send/Enter, conversation inspection, screenshot, or keyboard change occurred.
 4. Assess direct insertion's benefit against the accepted launcher -> mic ->
    editable English -> 요/반말 -> Copy & close -> manual paste fallback. Do not
    spend indefinitely on integration without measured user benefit.
-5. Phase2 paid/account/device speech acceptance remains pending. No API key is
-   needed for implementation or fake tests. Request private on-phone entry only
-   when the reviewed credential screen is ready; remind DeveloperStuff backup.
+5. Phase 2 paid/account/device speech acceptance remains pending. Private key
+   entry and DeveloperStuff backup are user-confirmed; preserve that credential.
 
 Earlier RESELECT synthetic gates proved keyboard-based visibility, dragging,
 Hide suppression, and saved position after service restart. Earlier Stage 1

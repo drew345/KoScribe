@@ -39,8 +39,9 @@ Hardware backing is used where supported and must not be promised universally.
 
 When a real key is created/changed or its backup is unconfirmed, remind Andrew to
 back it up in Cryptomator DeveloperStuff. Only non-secret purpose/confirmed backup
-status belongs in MindHub's portable-secrets checklist. No actual key has been
-created or stored during implementation. Budget alerts are not a hard spending cap.
+status belongs in MindHub's portable-secrets checklist. Andrew confirmed private
+key entry and backup on 2026-10-24, after implementation/setup checks. No agent
+inspected the credential. Budget alerts are not a hard spending cap.
 
 ## Audio and requests
 
@@ -92,6 +93,9 @@ This opens the owned synthetic editor with SwiftKey, selects EN, and requires
 the missing-key notice with unchanged microphone-proof/destination/commit
 counters, no review draft, and no pending microphone cleanup. It never supplies
 a key, records a deliberate sample, or writes to a destination.
+
+The live personal key is now saved. Do not run either credential setup smoke
+method against it; retain those methods only for an explicitly empty test store.
 
 After no-key safeguards and credential cleanup pass, ask Andrew to enter a real
 key privately, then dictate a deliberate test sentence in the synthetic editor.

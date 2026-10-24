@@ -565,3 +565,14 @@
   acceptance. Next ask Andrew to enter a dedicated key privately on the phone,
   back it up in Cryptomator DeveloperStuff, then run deliberate synthetic speech.
   No screenshots/key reads, unattended recording/upload, or new real-app trial.
+
+## 2026-10-24 — Private key and backup confirmed; first speech test prepared
+
+- Andrew reported "Key saved; backup done." Recorded only purpose and confirmed
+  status in shared MindHub; no credential or vault contents inspected. Preserve
+  the live key and do not rerun fake-key/deletion or missing-key setup methods.
+- Phone unlocked; own baseline proof/captures/commits0, draftNONE/cleanupfalse,
+  mic stopped, SwiftKey selected. Launched owned single-field Test message.
+- Asked Andrew for a short deliberate EN recording -> Stop -> compare actual
+  English -> review Cancel. No Confirm/Insert/Copy/Send or retry; await report.
+  Actual account access/transcription result is still unverified.

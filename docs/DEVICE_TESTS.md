@@ -1048,3 +1048,34 @@ resetting only com.koscribe.smoke's transient fixture. The single-field launcher
 reopened successfully. New instructions explicitly identify the floating box's
 two rows and distinguish Insert from Android Paste/Autofill. Await new report;
 no code/build change, guard relaxation, real-app access, or screenshot occurred.
+
+### Manual SwiftKey edit and confirmed insertion PASS (2026-10-24)
+
+Same secure product980E4299... and smoke9D3F9563...; no source/APK changes. Andrew
+reported using actual SwiftKey to edit the fixed English review, confirming it,
+briefly tapping the destination, then finding and pressing Insert in the result
+box. The edited sentence appeared and the box disappeared. He noted the cursor
+was already in that field but did perform the instructed field tap.
+
+Own-state verification after the reply: REVIEW_COMPLETED; proof5 vs baseline4;
+captures3/commits3 vs baseline2/2; CONFIRMED; draftNONE; cleanupfalse. New trace:
+two VERIFIED_EMPTY_CARET/READY_UNKNOWN observations, FRESH_COMMIT_REQUESTED_ONCE,
+POSTCOMMIT_FOCUS_REFRESHED, OBS_READY_UNKNOWN, REVIEW_ENDED_INSERT_CONFIRMED.
+Exact-app AppOps confirmed microphone use ended after5.318s. No extra insertion,
+Copy, Send/Enter, screenshot or field-content read was performed by the agent.
+
+This accepts the specific manual EN edit/Insert/dismissal flow in the synthetic
+field. It does not resolve the earlier intermittent composing-span failure or
+establish real-app, middle-text, navigation, arbitrary geometry, or all SwiftKey
+prediction behavior. The two prior automatic diagnostic attempts remain closed.
+
+User proposal: skip the extra field tap if the intended cursor is already there.
+This run did not exercise that variant. Keep fresh destination capture at Insert
+and every existing guard; record a separate result before accepting it.
+
+Astra/xhigh source review: insertDraft requires no recent destination-tap event
+or token. Insert itself creates the fresh capture, with repeated current-editor
+observations and one reserved attempt. Thus restored focus may be sufficient;
+the user still needs to verify the intended field and caret. Proposed test:
+confirm English, check restored intended cursor, then tap floating Insert once
+without retapping the field. Stop on refusal/uncertainty; no retry or guard change.

@@ -10,6 +10,17 @@ now under evaluation and has a separate postcommit-composition failure described
 below. No real-app insertion acceptance, speech recognition, translation, or API
 integration is claimed. Phase 1 remains open.
 
+The corrected manual SwiftKey flow now PASSED on secure980E4299...: Andrew
+edited the English sample, confirmed, tapped the destination and then the
+floating Insert button. He saw the edited sentence and dismissal. Own state
+confirmed one new capture/commit (2/2 -> 3/3), CONFIRMED, draftNONE, cleanupfalse;
+recording proof count4 -> 5 and microphone use ended after5.318s. This is the
+first accepted end-to-end manual edit/Insert flow, not general app/composition
+acceptance. Andrew suggested omitting the destination tap when the intended
+field is already focused. Independent review confirms no tap token is required
+by the implementation: Insert starts a fresh capture. That restored-focus
+variant is not yet device-tested; no code change is needed to evaluate it.
+
 Andrew asked to continue. A debug-only "KoScribe test editor" launcher was added
 to the smoke app, independently reviewed, built/linted, installed, and opened.
 It launches only the internal synthetic fixture with the protected field omitted;
@@ -35,8 +46,8 @@ Temporary images were removed. No conversation screenshots or real-app insertion
 the earlier incidental incoming-call frame was deleted.
 Sol simplified the manual fixture to one clearly labelled field and made
 expired/cancelled reviews collapse to the contextual bubble. Independent source
-review passed. The simplified launcher was installed/opened; manual report and
-expiry-collapse device acceptance remain pending.
+review passed. The simplified launcher and manual Insert flow are now accepted
+for this synthetic case; expiry-collapse visual acceptance remains pending.
 
 Astra Ultra's read-only analysis separated precommit safety from postcommit
 observation: Android can mark existing text composing without changing text or
@@ -55,10 +66,10 @@ Insert or Copy occurred in this flow. The retained COPIED status was from the
 earlier automated test. Mic ended after4.639s; the draft subsequently expired.
 He clarified that he had not expected the Ko bubble to become a different-looking
 result box and requested another try. Root reset only the synthetic fixture and
-explained its two rows: EN/Move + Cancel, then Insert + Copy & close. Await his
-new manual edit/Insert report; no phone actions while he performs it. Whether
-the earlier Insert row was obscured is unmeasured. Any completion-policy change
-still needs a concrete measured proposal first.
+explained its two rows: EN/Move + Cancel, then Insert + Copy & close. The fresh
+attempt passed as recorded above. Whether the earlier Insert row was obscured
+remains unmeasured. Any completion-policy change still needs a concrete measured
+proposal first.
 
 Earlier stale-node diagnosis: after a commit, the input connection already showed the exact
 expected text/caret while the same focused accessibility node retained an old
@@ -93,8 +104,8 @@ The unchanged-commit test terminated on WINDOW_OR_FOCUS_CHANGED. It proves
 no-retry/uncertainty behavior on that trigger, not the settled-context timeout
 branch. Unit tests separately cover unchanged-context rejection. Automated
 review edits there used our own EditText accessibility action with SwiftKey visible.
-Actual SwiftKey editing/confirmation is now user-reported, but end-to-end manual
-insertion and general composition/prediction acceptance remain unproven.
+Actual SwiftKey editing and confirmed insertion now passed the separate manual
+gate on980E4299... . General composition/prediction acceptance remains unproven.
 
 Candidate/default OFF builds, 37 JVM tests (zero failures/errors/skips), lints
 (zero errors; app 23/smoke 3 warnings), and APK signatures passed. Final test-only
@@ -123,9 +134,8 @@ settings changed. Prompt cessation has not been established.
 
 Galaxy A35 SM-A356E, Android 16/API 36, One UI 8.5; user 0 only. SwiftKey remains
 selected; Wispr remains enabled. Default SMS app is Google Messages. Phone is
-connected and unlocked at the latest metadata check. The single-field manual
-fixture is open and Andrew has been asked to edit/review/Insert once. Do not
-infer current draft/microphone state from the earlier automated cleanup baseline.
+connected at the latest check. The manual test finished with confirmed insertion,
+draftNONE and ended microphone use; no further user action is pending.
 Verify live readiness next session. Fixture cleanup may return
 to a real app; never assume the foreground is still synthetic.
 
@@ -142,20 +152,21 @@ VISUAL_TEST=false. Do not substitute it for the secure REVIEW artifact.
 Prior diagnostic, refresh-only, and earlier smoke APKs are retained in ignored
 build folders. Detailed source review hashes are in DEVICE_TESTS.
 
-Baseline before the current restarted manual gate: REVIEW_CANCELLED, proof count4,
-draftNONE, destination captures2, commits2, retained confirmationCOPIED,
-cleanupfalse. Exact-app AppOps confirmed mic ended after4.639s. Both diagnostic insertions used only the
-synthetic fixture; Copy replaced the clipboard with the disclosed fixed sample.
+Latest checkpoint after the manual pass: REVIEW_COMPLETED, proof count5,
+draftNONE, destination captures3, commits3, confirmationCONFIRMED,
+cleanupfalse. Exact-app AppOps confirmed mic ended after5.318s. All insertions
+used only the synthetic fixture; earlier Copy replaced the clipboard with the
+disclosed fixed sample.
 No Send/Enter, real conversation access, screenshots, retained audio, credentials,
 paid calls, permission changes, or keyboard changes occurred in this diagnostic round.
 
 ## Next work and gates
 
-1. Await Andrew's single-field manual SwiftKey edit/Insert report, then inspect
-   own counters/cleanup against the baseline above. No screen polling. The two
-   automated diagnostic attempts are complete; composition failure remains
-   intermittent/unresolved. Do not change confirmation policy or retry an
-   uncertain commit. End-to-end manual insertion remains unaccepted.
+1. Preserve the completed manual pass. Evaluate Andrew's optional shorter flow:
+   if the intended field is already focused, can he tap floating Insert without
+   another field tap? Test separately; no cached destination or guard exemption.
+   The two automated composition diagnostic attempts are complete; intermittent
+   composition failure remains unresolved. Do not retry uncertain commits.
 2. Check current-build contextual bubble and review ergonomics in real apps
    without insertion under the established scoped diagnostics. Any actual
    external insertion trial needs separate specific authorization; the earlier

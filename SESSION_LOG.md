@@ -413,3 +413,15 @@
   synthetic fixture after expiry, and reopened the empty field. Awaiting the
   fresh manual result. Actual control visibility in the prior flow is unmeasured;
   no insertion pass/failure or UI clipping diagnosis is claimed. No source change.
+
+## 2026-10-24 — Manual SwiftKey insertion passed
+
+- Andrew found the floating Insert button, reported his edited sentence appeared,
+  and saw the box disappear. Own state confirmed one new capture/commit (2/2 ->
+  3/3), CONFIRMED, draftNONE, cleanupfalse; proof5, mic ended5.318s. The manual
+  synthetic EN edit/Insert gate now passes on secure980E4299/smoke9D3F9563.
+- No source/build change or additional phone mutation. Earlier intermittent
+  composition failure and real-app acceptance remain open; Phase1 stays gated.
+- Andrew proposed omitting the field tap when the intended cursor is already
+  there. Record it as a separate untested variant with fresh capture at Insert
+  and unchanged guards, not a claimed capability from this successful run.

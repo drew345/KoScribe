@@ -301,8 +301,10 @@ the transaction or prove uninterrupted insertion continuity.
 
 ## Manual SwiftKey review gate (2026-10-24)
 
-This Insert procedure describes the manual gate; it has not passed. The Oct24
-visual checkpoint stopped after dragging/selecting, without Insert, and is over.
+This Insert procedure passed on secure980E4299... after clarified instructions.
+It covers one actual SwiftKey edit and guarded insertion in the synthetic field.
+The earlier Oct24 visual checkpoint stopped after dragging/selecting, without
+Insert, and is over.
 
 The debug smoke APK has a launcher named **KoScribe test editor**. Its exported
 DebugFixtureLauncherActivity ignores caller data/extras/actions and constructs
@@ -335,8 +337,9 @@ current result unless Copy was explicitly pressed.
 Record his exact behavioral report separately from code evidence. Success needs
 the expected edited sentence and bubble dismissal plus own state CONFIRMED,
 draft NONE, captures/commits each +1, and ended microphone use. This gate is
-pending until those observations agree. It does not establish all composition
-or prediction cases. Only fixed synthetic content is used.
+accepted only when those observations agree. They agreed on Oct24, as recorded
+in DEVICE_TESTS. This does not establish all composition or prediction cases.
+Only fixed synthetic content is used.
 
 For subsequent authorized Kakao diagnostics on REVIEW, use the manual recording
 -> Stop -> Cancel-in-review flow and require zero capture/commit delta. Do not

@@ -43,11 +43,19 @@ cannot appear successful from a truncated fragment. Unsupported or ambiguous
 confirmation is terminal for insertion of that draft; only deliberate recovery
 or cancellation remains. Copy or confirmed insertion clears transient content
 and suppresses idle redisplay until a verified new keyboard cycle. Seven synthetic
-REVIEW device gates passed on Oct24; actual SwiftKey typing and real-app acceptance
-are still pending. After manual use exposed destination obstruction, the next
-candidate replaces the large result preview with compact mode-labelled draggable
+REVIEW device gates passed on Oct24; a later compact build also passed one manual
+SwiftKey edit/Insert flow in the synthetic editor. Real-app and broader composition
+acceptance remain pending. After manual use exposed destination obstruction, the
+candidate replaced the large result preview with compact mode-labelled draggable
 controls: Insert, Copy & close, and Cancel. Moving/reflow is prohibited while a
 destination transaction exists. A later explicit Insert retains all checks.
+
+Andrew subsequently proposed skipping the extra destination tap when that
+intended field is already focused. This is a separate test candidate, not an
+accepted shortcut yet. Independent source review confirmed no recent-field-tap
+token is required: Insert already captures and checks the current focused
+destination afresh. Device-test the restored-focus case before changing the
+normal instructions; no destination may be inherited from recording/review.
 
 The accepted fallback is a launcher Activity with mic -> editable English ->
 요/반말 translation -> Copy & close, followed by manual paste. Design content

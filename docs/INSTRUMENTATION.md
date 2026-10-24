@@ -288,6 +288,37 @@ package, and starts after a NODE_CARET_MISMATCH has already ended eligibility.
 Its same-field before/after-refresh observations cannot rehabilitate that
 transaction or prove uninterrupted insertion continuity.
 
+## Manual SwiftKey review gate (2026-10-24)
+
+The debug smoke APK has a launcher named **KoScribe test editor**. Its exported
+DebugFixtureLauncherActivity ignores caller data/extras/actions and constructs
+only a fixed intent to the existing nonexported SmokeEditorActivity, omitting
+the unused protected field. It never types, focuses, records, copies, or inserts.
+Root can open it without changing the product APK:
+
+```powershell
+adb -d shell am start --user 0 -W -n com.koscribe.smoke/.DebugFixtureLauncherActivity
+```
+
+Andrew verifies the TOP normal fixture field is empty, taps it, then Ko -> EN ->
+Stop after about two seconds. In the review he taps the END of the fixed sample,
+types ` Please wait.` using actual SwiftKey keys, taps Confirm English, returns
+to the top destination field, and taps Insert once. Scroll inside the own review
+if its Confirm control is below the viewport. Leaving review before confirming
+cancels it. Recording has a 15-second deadline; review/result has three minutes
+from review creation, not renewed by edits. No automatic retries on uncertainty.
+
+Record his exact behavioral report separately from code evidence. Success needs
+the expected edited sentence and bubble dismissal plus own state CONFIRMED,
+draft NONE, captures/commits each +1, and ended microphone use. This gate is
+pending until those observations agree. It does not establish all composition
+or prediction cases. Only fixed synthetic content is used.
+
+For subsequent authorized Kakao diagnostics on REVIEW, use the manual recording
+-> Stop -> Cancel-in-review flow and require zero capture/commit delta. Do not
+run KakaoReselectRecordingSmokeTest on REVIEW: it requires the RESELECT build.
+Keep focused-field privacy limits and the closed real-app insertion scope.
+
 ## Authorized save-prompt dismissal (2026-10-24)
 
 Andrew explicitly authorized clicking the visible save prompt's negative action.

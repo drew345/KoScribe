@@ -10,6 +10,13 @@ same final product APK across separately reviewed smoke builds. No real-app
 insertion acceptance, speech recognition, translation, or API integration is
 claimed. Phase 1 remains open.
 
+Andrew asked to continue. A debug-only "KoScribe test editor" launcher was added
+to the smoke app, independently reviewed, built/linted, installed, and opened.
+It launches only the internal synthetic fixture with the protected field omitted;
+it forwards no caller data and automates no product action. Manual SwiftKey
+review/edit -> confirmed insertion is now awaiting Andrew's result. Do not count
+this as a pass until his report and the own-service state agree. Product unchanged.
+
 Measured cause: after a commit, the input connection already showed the exact
 expected text/caret while the same focused accessibility node retained an old
 hint/unknown caret. Refreshing that node made the observations agree. Cache
@@ -67,20 +74,23 @@ settings changed. Prompt cessation has not been established.
 ## Phone and installed artifacts
 
 Galaxy A35 SM-A356E, Android 16/API 36, One UI 8.5; user 0 only. SwiftKey remains
-selected; Wispr remains enabled. Default SMS app is Google Messages. Phone was
-connected/unlocked for the final gate; no more device work is running and Andrew
-may disconnect it. Verify live readiness next session. Fixture cleanup may return
+selected; Wispr remains enabled. Default SMS app is Google Messages. Phone is
+connected/unlocked for the pending manual gate. The synthetic fixture was
+confirmed foreground after launch; do not move it while Andrew tests.
+Verify live readiness next session. Fixture cleanup may return
 to a real app; never assume the foreground is still synthetic.
 
 Installed product: `app/build/confirmation-refresh/REVIEW.apk` (ignored).
 SHA-256: `2B00BE44077579BBD92D3D6A8D7FCED7E7391E17B05F56B5D1652444F4AD4D9E`.
-Installed smoke: `app/build/confirmation-refresh/smoke.apk` (ignored).
-SHA-256: `FC0A13E58BF297AC49DD7E102384647D330644E6A43DD43FB0EC9F0D8AAD79AD`.
+Installed smoke: `app/build/manual-swiftkey/smoke.apk` (ignored).
+SHA-256: `5D9D7CC793408B8C4C28159918E32810D8512F785425D4339128A36A57F1B648`.
+This adds only the debug launcher; the previously tested smoke FC0A13E5... remains
+saved at app/build/confirmation-refresh/smoke.apk.
 Ordinary `app/build/outputs/apk/debug/app-debug.apk` is OFF; do not substitute it.
 Prior diagnostic, refresh-only, and earlier smoke APKs are retained in ignored
 build folders. Detailed source review hashes are in DEVICE_TESTS.
 
-Final own service state: REVIEW_CANCELLED, proof count 8, draft NONE, destination
+Baseline before the manual gate: REVIEW_CANCELLED, proof count 8, draft NONE, destination
 captures 5, commit requests 4, cleanup pending false. Last confirmation UNCERTAIN
 is retained from the preceding ignored-commit test; the final Cancel gate added
 zero captures/commits. Exact-app AppOps confirmed mic use ended after 516ms.
@@ -128,7 +138,7 @@ they are not full current-build real-app acceptance. See DEVICE_TESTS for histor
 ## Repository and tools
 
 Private repository: https://github.com/drew345/KoScribe . main tracks origin/main.
-This checkpoint follows 92527f1; use git log for the final checkpoint hash.
+Confirmation checkpoint: 70e7b1e. Manual-test launcher work follows that checkpoint.
 Inspect staged files and scan for secrets before publishing.
 
 ADB/SDK: C:\AI\Codex\Tools\android-sdk (API 36/build tools 36.0.0).

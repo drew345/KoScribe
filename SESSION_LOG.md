@@ -344,3 +344,17 @@
   running; Andrew may disconnect. Checkpoint preserves pending manual SwiftKey
   keystrokes, current real-app acceptance, and broader lifecycle/geometry gates.
   Phase 1 remains open; next actions are in PROGRESS.
+
+## 2026-10-24 — Manual SwiftKey gate prepared
+
+- Andrew requested continued Phase 1 work. Added only a debug smoke launcher,
+  "KoScribe test editor," to open the internal synthetic fixture with no password
+  field. It ignores incoming data and performs no recording/text/product action.
+  Sol 6 Extra High implemented; Astra Extra High independently cleared both files.
+- Smoke build/lint/signature passed (zero lint errors, three existing warnings).
+  APK 5D9D7CC7... saved under ignored app/build/manual-swiftkey and installed.
+  Product remains 2B00BE44... . Launcher opened successfully and own synthetic
+  foreground was confirmed by metadata. No automated recording/insertion ran.
+- Andrew was asked to edit the fixed review sample with actual SwiftKey keys,
+  then explicitly Insert once into the top synthetic field. Awaiting his report
+  and post-action own-state check; no manual typing pass is claimed yet.

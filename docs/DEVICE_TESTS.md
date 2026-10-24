@@ -1396,3 +1396,24 @@ assertions, 53 units and source review sufficient for private key-entry setup,
 with cleanup failure explicit. This does not accept ASR accuracy, paid behavior,
 real-audio edit/insert, or Phase 2 overall. First speech test is user-triggered in
 our synthetic editor; prior real-app insertion scopes do not carry over.
+
+### First actual English transcription and review Cancel PASS (2026-10-24)
+
+Same secure speech v3 F2079E8A and smoke v4 2782686D; no code/build change.
+After private key/backup confirmation, Andrew deliberately recorded the short
+test sentence and tapped Stop. He reported the actual transcript was correct
+and the requested test passed. It differed from the old fixed arrival sample.
+No Confirm, insertion, Copy or Send was requested in this case.
+
+Own baseline proof0/captures0/commits0 -> proof1/captures0/commits0;
+REVIEW_CANCELLED, draftNONE/cleanupfalse, confirmationNONE. Trace includes EN,
+positive unsilenced microphone, Stop, and REVIEW_ENDED_USER_CANCELLED.
+AppOps confirms the recording ended after29.097s; this is microphone duration,
+not transcription latency. SwiftKey remained selected. Root inspected only own
+codes and device state, not transcript/audio/key or conversation content.
+
+User found the recording status hard to notice after tapping EN and spent time
+looking for it before realizing recording had started. He explicitly deferred
+clearer/prominent recording feedback and menu polish to later. Record that
+usability issue; do not reinterpret this one accuracy/Cancel pass as UI acceptance,
+general ASR accuracy, measured latency/cost, edit/insert acceptance or Phase 2 closure.

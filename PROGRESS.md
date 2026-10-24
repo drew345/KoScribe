@@ -11,9 +11,9 @@ terminally uncertain. Middle preservation, Korean insertion, selection refusal,
 edited-Korean cancellation, and unchanged-commit uncertainty all passed. Forty
 unit tests passed; lints have zero errors. Manual empty-field Korean insertion
 now passed in Kakao self-chat, Google Messages and Instagram. The bounded Phase1
-feasibility gate is met from combined device/unit/source evidence. Phase2 speech
-and credentials are implemented and under device setup testing; no real transcription/translation
-or paid API call has yet run.
+feasibility gate is met from combined device/unit/source evidence. Phase 2's
+first real EN transcription -> review -> Cancel test now passed. Editing and
+inserting a real transcript is next; Korean translation remains unimplemented.
 
 Andrew's newly approved one-attempt Kakao trial PASSED and is now complete.
 He reported the exact expected Korean sample appeared and remained unsent,
@@ -31,7 +31,7 @@ He described addressing himself; whether he personally sent it is unspecified.
 No automated Send occurred. Instagram also PASSED: user reported expected Korean
 in the proper DM field and the flow worked perfectly; own proof10/captures9/
 commits8, CONFIRMED, draftNONE/cleanupfalse, mic ended3.087s, SwiftKey selected.
-Both one-attempt scopes are consumed. The first real speech test is now pending.
+Both one-attempt scopes are consumed. Real speech testing uses our synthetic editor.
 
 Astra/xhigh reassessed the remaining gate and withdrew an unnecessary proposal
 for another target-change fixture. Earlier REVIEW device tests exercised window/
@@ -49,7 +49,8 @@ builds/tests/operates the phone. Speech is opt-in debug `koscribeSpeech=true`,
 requiring REVIEW and visualfalse; release and ordinary defaults remain OFF.
 The saved sample baseline is preserved. Andrew confirmed private on-phone key
 entry and DeveloperStuff backup on October 24. No key value was inspected;
-account/model access and the first actual API result remain unverified.
+the first user-triggered gpt-transcribe result succeeded. Translation model access,
+latency/cost measurements and broader speech quality remain unverified.
 
 EN recording -> explicit Stop -> OpenAI gpt-transcribe -> editable English ->
 Confirm -> unchanged guarded Insert/Copy. Korean modes are disabled in this
@@ -82,10 +83,20 @@ Phase 2 acceptance. Andrew now confirmed key saved and backup done. The non-secr
 MindHub checklist records that confirmation. Never rerun fake-key/deletion or
 missing-key tests against his live credential. Root verified unlocked/idle,
 microphone stopped and SwiftKey selected, then opened the owned single-field
-Test message screen. Await his first EN dictation -> Stop -> review -> Cancel
-report. No Confirm/Insert/Copy/Send, retry or conversation test is requested.
-The deliberate sample differs from the old canned sentence. No agent-initiated
-recording or upload; the user's explicit recording/Stop begins the cloud request.
+Test message screen. Andrew reported the first deliberate EN sentence was
+transcribed correctly and the requested review/Cancel flow passed. Own proof0->1,
+REVIEW_CANCELLED, draftNONE, captures/commits0, cleanupfalse; AppOps confirms the
+microphone ended after29.097s. That is recording duration, not API latency.
+SwiftKey remains selected; no transcript/key/conversation read or screenshot.
+No agent-initiated recording/upload, insertion, Copy or Send occurred.
+
+User feedback: tapping EN starts recording, but its status was hard to spot;
+he spent time locating the recording indication. He explicitly accepted the test
+and deferred more prominent recording feedback/menu improvements to later. Record
+that UX requirement without changing this tested candidate now. Next manual
+synthetic test: real speech -> SwiftKey transcript edit -> Confirm English ->
+one guarded floating Insert -> verify edited text and dismissal. Stop on uncertainty;
+no retry, Copy substitute or Send. Phase 2 acceptance is still open.
 
 Previous secure980E build Kakao self-chat microphone -> Stop -> English review -> Cancel
 PASSED. Andrew reported the sample review closed and the composer cursor/SwiftKey
@@ -267,15 +278,15 @@ Do not substitute ordinary output for the saved secure speech artifact.
 Prior diagnostic, refresh-only, and earlier smoke APKs are retained in ignored
 build folders. Detailed source review hashes are in DEVICE_TESTS.
 
-Latest v3 checkpoint: NOT_CAPTURED, proof/captures/commits0, draftNONE,
-confirmationNONE, cleanupfalse, SPEECH_KEY_MISSING. AppOps still shows the prior
-Instagram recording ended after3.087s; no new microphone use. Counts restarted
-on APK install. SwiftKey remains selected. All three app scopes are consumed;
+Latest v3 checkpoint: REVIEW_CANCELLED, proof1/captures0/commits0, draftNONE,
+confirmationNONE, cleanupfalse, latest note REVIEW_ENDED_USER_CANCELLED.
+AppOps confirms the real speech recording ended after29.097s. Counts restarted
+on APK install. SwiftKey remains selected. All three real-app scopes are consumed;
 fixed unsent drafts are for Andrew to remove manually. Only the static fake
 credential marker was saved/deleted during setup. Andrew subsequently saved his
-real key privately and confirmed backup; it was not inspected. No API outcome
-is established yet. No Send/Enter, conversation inspection, screenshot, or
-keyboard change occurred. Fixture is now open for his first speech test.
+real key privately and confirmed backup; it was not inspected. One real transcript
+is user-confirmed correct. No Send/Enter, conversation inspection, screenshot,
+or keyboard change occurred. Next use is the synthetic edit/insert test.
 
 ## Next work and gates
 
@@ -288,9 +299,14 @@ keyboard change occurred. Fixture is now open for his first speech test.
 2. Preserve all three app passes; their scopes are consumed. Phase 2 code is
    reviewed, built and unit/lint checked. Credential fake test passed; missing-key
    safety assertions passed, with full-method Close cleanup failures recorded.
-   Key entry and backup are user-confirmed. Await first synthetic speech/review/
-   Cancel result before asking for edits or insertion. No API keys in chat or
+   Key entry and backup are user-confirmed. First synthetic speech/review/Cancel
+   passed; proceed with actual transcript editing and one insertion. No API keys in chat or
    shell; no unattended audio upload, fake-key/deletion or missing-key reruns.
+   Await this manual result before further phone actions. After it passes,
+   Astra's minimum remaining Phase 2 checks are active-recording Cancel and one
+   controlled network failure followed by a fresh successful recording. Any
+   connectivity change should be deliberate and performed by Andrew; keep the
+   saved key intact. Broader reliability remains a later phase.
 3. For broader daily-use reliability, extend selected/caret/navigation and
    composition coverage, small-height/large-font/rotation/split-screen, and
    lock/service recovery. These remain limits; do not silently turn the full
@@ -298,8 +314,10 @@ keyboard change occurred. Fixture is now open for his first speech test.
 4. Assess direct insertion's benefit against the accepted launcher -> mic ->
    editable English -> 요/반말 -> Copy & close -> manual paste fallback. Do not
    spend indefinitely on integration without measured user benefit.
-5. Phase 2 paid/account/device speech acceptance remains pending. Private key
-   entry and DeveloperStuff backup are user-confirmed; preserve that credential.
+5. Phase 2 broader device speech/error/cancel acceptance remains pending. First
+   actual transcription succeeded. Private key entry and DeveloperStuff backup
+   are user-confirmed; preserve that credential. Improve recording-state prominence
+   in the later UI phase as Andrew requested.
 
 Earlier RESELECT synthetic gates proved keyboard-based visibility, dragging,
 Hide suppression, and saved position after service restart. Earlier Stage 1

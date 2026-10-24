@@ -576,3 +576,14 @@
 - Asked Andrew for a short deliberate EN recording -> Stop -> compare actual
   English -> review Cancel. No Confirm/Insert/Copy/Send or retry; await report.
   Actual account access/transcription result is still unverified.
+
+## 2026-10-24 — First real speech and review Cancel passed
+
+- Andrew confirmed correct transcription and the requested Cancel flow. Own
+  proof1, captures/commits0, REVIEW_CANCELLED, draftNONE/cleanupfalse; microphone
+  ended29.097s, SwiftKey selected. No key/transcript/chat reads or screenshots.
+- Recording status was hard to find after EN began capture. Andrew accepted the
+  test and explicitly deferred clearer recording feedback/menu polish to later.
+- Same installed secure candidate; no code/build changes. Next: manual synthetic
+  real speech -> SwiftKey edit -> Confirm English -> one guarded Insert, then
+  verify edited text/dismissal. No retry, Copy/Paste substitute or sending.

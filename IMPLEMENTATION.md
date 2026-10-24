@@ -8,7 +8,8 @@ Planning baseline: 2026-10-23. Andrew authorized Phase 1 implementation on
 Use the three-mode bubble flow in `README.md`. Every message initially gets an
 editable English transcript review after Stop. Translate only confirmed English;
 EN skips translation. Andrew subsequently selected a separate destination step:
-after review/result preparation, tap the intended message field and then Insert.
+after review/result preparation, check the intended message field/caret, tap it
+if necessary, and then tap Insert.
 That explicit action begins a fresh guarded insertion transaction. Recording
 and review do not bind a destination. A skip-English-review option
 is deferred until later. Keep SwiftKey and never send. Test on the A35 with
@@ -50,12 +51,12 @@ candidate replaced the large result preview with compact mode-labelled draggable
 controls: Insert, Copy & close, and Cancel. Moving/reflow is prohibited while a
 destination transaction exists. A later explicit Insert retains all checks.
 
-Andrew subsequently proposed skipping the extra destination tap when that
-intended field is already focused. This is a separate test candidate, not an
-accepted shortcut yet. Independent source review confirmed no recent-field-tap
-token is required: Insert already captures and checks the current focused
-destination afresh. Device-test the restored-focus case before changing the
-normal instructions; no destination may be inherited from recording/review.
+Andrew subsequently authorized and passed a separate manual synthetic test
+skipping the extra destination tap when that intended cursor was already
+restored. Independent review confirmed no recent-field-tap token is required:
+Insert captures and checks the current focused destination afresh. The shorter
+instruction is conditional on that intended field/caret, not a guarantee that
+every app restores focus. No destination is inherited from recording/review.
 
 The accepted fallback is a launcher Activity with mic -> editable English ->
 요/반말 translation -> Copy & close, followed by manual paste. Design content
@@ -136,8 +137,10 @@ is authorized by selecting this workflow alone.
 REVIEW implements a dedicated own Activity after microphone Stop, with an
 independent unbound draft owner. It finishes before destination selection.
 The bubble remains the recording/Insert entry. Automated editable-content/Copy
-handling passed with SwiftKey visible; actual SwiftKey keystroke editing remains
-untested. A failed postcommit observation stays terminally uncertain; diagnosing
+handling passed with SwiftKey visible. Two manual synthetic EN edit/Insert
+variants passed with actual SwiftKey keys: tapping the destination first and
+using its already restored focus. Broader composition remains unaccepted.
+A failed postcommit observation stays terminally uncertain; diagnosing
 node/InputConnection timing must not resurrect or retry that transaction.
 
 If an editable overlay is chosen, clear both NOT_FOCUSABLE and ALT_FOCUSABLE_IM,
@@ -147,7 +150,8 @@ relinquish that input before destination selection. Android documents these
 Never use delayed global IME toggles. For target API 36,
 [`hideSoftInputFromWindow`](https://developer.android.com/reference/android/view/inputmethod/InputMethodManager#hideSoftInputFromWindow(android.os.IBinder,%20int))
 returning true is not evidence that the keyboard hid; inspect own window insets
-if that state is required. Actual SwiftKey editing/return remains a device gate.
+if that state is required. Any editable-overlay alternative still needs its
+own SwiftKey editing/return device gate; current manual passes use an Activity.
 
 ## Credential approach selected by Andrew
 

@@ -1,8 +1,9 @@
 # Phase 1 device feasibility prototype
 
 The default OFF flow below is the original prototype. Andrew subsequently chose
-independent recording/review followed by tapping the intended field and Insert.
-The debug RESELECT candidate is being tested in stages; see PROGRESS.md and
+independent recording/review followed by checking the intended field/cursor,
+tapping it if needed, and tapping floating Insert. The debug RESELECT and REVIEW
+candidates are tested in stages; see PROGRESS.md and
 INSTRUMENTATION.md for its current build and exact opt-in tests. Current real-app
 authorization permits no insertion or sending. The general sequence below is
 not permission to rerun the completed external insertion trial or whole suites.

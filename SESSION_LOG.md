@@ -435,3 +435,14 @@
 - Asked him to edit/confirm as before, check the restored intended cursor without
   touching the field, and tap floating Insert once. Stop if cursor absent or
   insertion refuses; no retry. Await his report before further phone actions.
+
+## 2026-10-24 — Restored-focus manual insertion passed
+
+- Andrew reported edited text insertion and dismissal without retapping the
+  destination after Confirm. Own state confirmed proof6, one new capture/commit
+  (3/3 -> 4/4), CONFIRMED, draftNONE, cleanupfalse; mic ended3.415s. Same secure
+  product/smoke; no source/build change. Astra/xhigh verified the evidence scope.
+- Instructions now condition the field tap on needing to select/reposition the
+  intended cursor. Insert still captures afresh with every guard unchanged.
+  This accepts the empty synthetic case; other apps and the earlier intermittent
+  composition failure remain unaccepted/unresolved. No further user action pending.

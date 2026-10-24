@@ -10,7 +10,8 @@ and needs no API key. See [build and device test instructions](docs/PHASE1.md).
 The earlier prototype passed eight synthetic cross-app checks on the A35, including middle insertion,
 edited review, Korean/emoji preservation, and cancellation/refusal. Real
 messaging-app acceptance remains pending. A later compact REVIEW build passed
-one manual flow with actual SwiftKey editing, confirmed insertion and dismissal.
+two manual variants with actual SwiftKey editing, confirmed insertion and
+dismissal: tapping the destination first, and using its restored cursor directly.
 
 The Oct24 REVIEW flow adds editable English review and Copy & close
 to the contextual, draggable bubble. Its earlier candidate passed seven synthetic gates:
@@ -18,8 +19,8 @@ Copy, confirmed empty/middle/Korean insertion, selection refusal, cancellation,
 and terminal uncertainty without retry. Refreshing a stale focused-node snapshot
 resolved insertion confirmation while retaining the safety checks. Copy and
 confirmed insertion dismiss the bubble. Earlier visibility, dragging, and saved
-position gates passed on the RESELECT build. The compact build now passed a
-manual SwiftKey edit/Insert flow in the synthetic editor. Current real-app and
+position gates passed on the RESELECT build. The compact build now passed both
+manual SwiftKey edit/Insert variants in the synthetic editor. Current real-app and
 broader composition acceptance remain pending; the ordinary default build is OFF.
 A newer compact movable result control is being tested after manual use exposed
 an obstructed destination field. See PROGRESS for the current build and open checks.
@@ -38,9 +39,10 @@ an obstructed destination field. See PROGRESS for the current build and open che
    **Translate** (Korean modes) or **Use English** (EN). **Cancel**
    discards the session. Review appears for every message initially; a skip
    option can be added later.
-5. When the result is ready, tap the intended message field, then tap **Insert**
-   on the bubble. KoScribe captures and checks that destination afresh before
-   insertion. EN skips translation. If the check fails, keep the result for an
+5. When the result is ready, check the intended message field and cursor.
+   Tap the field if you need to select it or reposition the cursor, then tap
+   **Insert** in the floating box. KoScribe captures and checks that destination
+   afresh before insertion. EN skips translation. If the check fails, keep the result for an
    explicit new destination attempt; never silently retarget or retry a commit.
 6. After successful insertion or explicit Copy, dismiss the bubble for that
    interaction. Review/edit in the destination app and press Send yourself.
@@ -56,6 +58,10 @@ The separate destination-selection step was chosen after the A35 startup
 diagnostics on 2026-10-23. Recording/review will no longer depend on an earlier
 editor binding. This revised workflow is being implemented; real-app tests
 remain non-inserting until their separate scope is agreed.
+
+The extra field tap was successfully omitted in one manual synthetic test when
+the intended cursor was already restored after English review. Keep that check
+explicit; other apps may return focus differently.
 
 ## Minimum useful fallback
 

@@ -16,17 +16,15 @@ floating Insert button. He saw the edited sentence and dismissal. Own state
 confirmed one new capture/commit (2/2 -> 3/3), CONFIRMED, draftNONE, cleanupfalse;
 recording proof count4 -> 5 and microphone use ended after5.318s. This is the
 first accepted end-to-end manual edit/Insert flow, not general app/composition
-acceptance. Andrew suggested omitting the destination tap when the intended
-field is already focused. Independent review confirms no tap token is required
-by the implementation: Insert starts a fresh capture. That restored-focus
-variant is not yet device-tested; no code change is needed to evaluate it.
-Andrew has now authorized that test. The connected, unlocked A35 retains SwiftKey
-and secure980E4299... . Root confirmed no active draft, reset only the synthetic
-fixture, and reopened its one empty field. Andrew is performing the same manual
-edit flow but must not retap the field after Confirm English; he should Insert
-once only if its intended cursor is already restored. Await his report without
-phone actions. Baseline proof5, captures3/commits3, CONFIRMED, draftNONE,
-cleanupfalse. No source/build/guard change.
+acceptance. Andrew's separately authorized shorter flow also PASSED on the same
+build: actual SwiftKey edit/Confirm, then floating Insert without retapping the
+restored destination. User reported text insertion and dismissal; own proof5 -> 6,
+captures/commits3/3 -> 4/4, CONFIRMED, draftNONE, cleanupfalse, mic ended3.415s.
+Independent source/evidence review confirms Insert itself creates a fresh
+capture, with no recent-tap prerequisite. Conditional instruction: check the
+intended field and cursor, tap the field only if needed, then floating Insert.
+This proves the empty synthetic restored-focus case, not that every app returns
+focus correctly. No code/build/guard change; post-report verification was read-only.
 
 Andrew asked to continue. A debug-only "KoScribe test editor" launcher was added
 to the smoke app, independently reviewed, built/linted, installed, and opened.
@@ -141,9 +139,9 @@ settings changed. Prompt cessation has not been established.
 
 Galaxy A35 SM-A356E, Android 16/API 36, One UI 8.5; user 0 only. SwiftKey remains
 selected; Wispr remains enabled. Default SMS app is Google Messages. Phone is
-connected and unlocked at the latest check. The prior manual test finished with
-confirmed insertion; the fresh no-extra-tap manual test is now awaiting Andrew's
-report. Do not infer active draft/microphone state from the earlier baseline.
+connected at the latest check. Both manual variants have finished successfully;
+the latest own state has no draft or microphone cleanup pending. No user action
+is pending for these tests.
 Verify live readiness next session. Fixture cleanup may return
 to a real app; never assume the foreground is still synthetic.
 
@@ -160,9 +158,9 @@ VISUAL_TEST=false. Do not substitute it for the secure REVIEW artifact.
 Prior diagnostic, refresh-only, and earlier smoke APKs are retained in ignored
 build folders. Detailed source review hashes are in DEVICE_TESTS.
 
-Latest checkpoint after the manual pass: REVIEW_COMPLETED, proof count5,
-draftNONE, destination captures3, commits3, confirmationCONFIRMED,
-cleanupfalse. Exact-app AppOps confirmed mic ended after5.318s. All insertions
+Latest checkpoint after the no-extra-tap pass: REVIEW_COMPLETED, proof count6,
+draftNONE, destination captures4, commits4, confirmationCONFIRMED,
+cleanupfalse. Exact-app AppOps confirmed mic ended after3.415s. All insertions
 used only the synthetic fixture; earlier Copy replaced the clipboard with the
 disclosed fixed sample.
 No Send/Enter, real conversation access, screenshots, retained audio, credentials,
@@ -170,10 +168,10 @@ paid calls, permission changes, or keyboard changes occurred in this diagnostic 
 
 ## Next work and gates
 
-1. Await Andrew's authorized no-extra-tap test report, then check own counters
-   against proof5/captures3/commits3. Stop if restored cursor is absent or Insert
-   refuses; no recapture/retry, cached destination or guard exemption. Preserve
-   the prior completed tapped-field manual pass regardless of this result.
+1. Preserve both manual passes. The shorter instruction is conditional on the
+   intended field/caret already being restored. Current-build preservation,
+   selection/refusal, uncertainty and geometry coverage remains bounded by the
+   recorded tests; do not generalize this empty-field pass to those cases.
    The two automated composition diagnostic attempts are complete; intermittent
    composition failure remains unresolved. Do not retry uncertain commits.
 2. Check current-build contextual bubble and review ergonomics in real apps
@@ -198,8 +196,9 @@ they are not full current-build real-app acceptance. See DEVICE_TESTS for histor
 
 - Bubble is the main interface; three visible modes 요 / 반말 / EN.
 - Editable English review for every message initially; skip option later.
-- Record/review without a destination. Prepare result, then Andrew taps the
-  intended field and Insert; only that action starts a fresh guarded capture.
+- Record/review without a destination. Prepare result, then Andrew checks the
+  intended field/caret, taps it if needed, and taps Insert; only Insert starts
+  a fresh guarded capture.
 - Preserve existing text; one commit maximum; ambiguous attempt stays terminal.
   Keep SwiftKey; no replacement keyboard or automatic Send/Enter.
 - Dismiss bubble after Copy or confirmed insertion until a new keyboard cycle.

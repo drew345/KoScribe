@@ -1079,3 +1079,30 @@ observations and one reserved attempt. Thus restored focus may be sufficient;
 the user still needs to verify the intended field and caret. Proposed test:
 confirm English, check restored intended cursor, then tap floating Insert once
 without retapping the field. Stop on refusal/uncertainty; no retry or guard change.
+
+### Manual restored-focus insertion PASS (2026-10-24)
+
+Andrew explicitly authorized omitting the field tap after Confirm English.
+Root verified the previous draft had ended, SwiftKey remained selected and the
+phone was unlocked, then reset only the synthetic fixture to its empty field.
+No source/APK change: secure980E4299... / smoke9D3F9563... remained installed.
+
+User report: the instructed edit/Confirm flow went as expected, floating Insert
+entered the edited text and the box disappeared without another destination tap.
+This physical interaction is user-reported; the agent did not watch a screenshot
+or read the resulting field. Own-state evidence independently confirms proof6
+(baseline5), captures4/commits4 (baseline3/3), REVIEW_COMPLETED, CONFIRMED,
+draftNONE, cleanupfalse. New trace: two VERIFIED_EMPTY_CARET/READY_UNKNOWN
+observations, one FRESH_COMMIT_REQUESTED_ONCE, POSTCOMMIT_FOCUS_REFRESHED,
+OBS_READY_UNKNOWN, REVIEW_ENDED_INSERT_CONFIRMED. Microphone use ended3.415s.
+
+Astra/xhigh independently assessed the evidence as a pass for this manual empty
+synthetic restored-focus case. It does not establish focus restoration in other
+apps, nonempty/middle insertion, arbitrary cursor/selection changes, or a fix for
+the earlier intermittent composition failure. No cached destination, guard
+relaxation, retry, Copy, Send/Enter, screenshot, API call or additional agent
+phone mutation occurred after the report.
+
+Conditional instruction: check the intended field/caret, tap the field only to
+select it or reposition the cursor, then tap floating Insert. All current focus,
+identity, context, caret, composition and one-attempt checks remain in force.

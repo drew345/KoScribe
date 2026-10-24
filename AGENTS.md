@@ -33,8 +33,9 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   creates a fresh guarded capture. Current real-app tests remain non-inserting.
 - On 2026-10-24 Andrew explicitly authorized a synthetic test omitting the extra
   destination tap when its intended cursor is already restored. Floating Insert
-  must still create a fresh capture with all checks. Do not infer general
-  restored-focus acceptance before the separate device result.
+  must still create a fresh capture with all checks. That manual synthetic case
+  passed. Check the intended field/caret, tap it only when selection or cursor
+  placement is needed, then tap Insert. Do not assume every app restores focus.
 - Once implementation is authorized, use subagents for coding with
   `gpt-6-sol` / `xhigh` (Extra High), and independent checking with
   `gpt-6-astra` / `xhigh`. Explicit model overrides require fresh-context
@@ -78,8 +79,9 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   Add an option to skip review only in a later phase.
 - Korean modes are conversational 해요체 and casual 반말. Do not add a
   습니다 mode. English output is secondary, but approved in the selector.
-- After transcript confirmation/translation, Andrew taps the intended field
-  and then Insert. Capture/check that explicit destination afresh and insert
+- After transcript confirmation/translation, Andrew checks the intended field
+  and cursor, taps it if needed, then taps Insert. Capture/check that explicit
+  destination afresh and insert
   only when verified safe. Never inherit an invalidated transaction. Preserve
   existing text. Refuse uncertain selection, changed target, or ambiguous
   insertion; keep the result available for explicit recovery.

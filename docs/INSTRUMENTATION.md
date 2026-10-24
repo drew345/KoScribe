@@ -341,7 +341,7 @@ accepted only when those observations agree. They agreed on Oct24, as recorded
 in DEVICE_TESTS. This does not establish all composition or prediction cases.
 Only fixed synthetic content is used.
 
-### Restored-focus variant (authorized 2026-10-24; result pending)
+### Restored-focus variant (manual synthetic PASS 2026-10-24)
 
 Start a fresh empty manual fixture after confirming the previous draft ended.
 Andrew taps it before opening Ko, records/stops, edits the fixed English with
@@ -351,6 +351,9 @@ once. Otherwise stop and record absent restored focus. No Paste/Copy, retap to
 force focus, or retry. Confirm his report against one capture/commit delta,
 CONFIRMED, draftNONE, dismissal and ended microphone use. Keep all product checks;
 the implementation already captures afresh on Insert without a recent-tap token.
+Andrew's report and own state agreed on secure980E4299... / smoke9D3F9563...:
+one new capture/commit, CONFIRMED, draftNONE, dismissal, microphone ended3.415s.
+This accepts the tested empty fixture, not automatic focus restoration in all apps.
 
 For subsequent authorized Kakao diagnostics on REVIEW, use the manual recording
 -> Stop -> Cancel-in-review flow and require zero capture/commit delta. Do not

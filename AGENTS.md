@@ -71,6 +71,12 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   stop on refusal/uncertainty/interruption, no retry or Copy/Paste substitute.
   Verify user report and own diagnostic counters; no conversation inspection.
   That trial passed and is complete (see PROGRESS); it is not recurring authorization.
+- Andrew then approved one manual unsent fixed-sample insertion in each of
+  Google Messages and Instagram before speech implementation. Use the same
+  Korean sample and empty-field procedure; inspect each result before moving
+  on. No retry, Copy/Paste substitute, or Send; no conversation inspection.
+  PROGRESS tracks which one-attempt scopes remain. Do not request this same
+  approval again while those authorized trials are pending.
 - Andrew authorized dismissing the visible save-password prompt with its
   "No, thanks" action during testing. This permits a narrowly targeted
   Android system negative-button helper, not credential reads, saving entries,

@@ -509,3 +509,14 @@
 - This accepts one empty Kakao self-chat insertion on3AA18446 and consumes the
   one-trial scope. User can remove only that unsent sample manually. Other app
   coverage and Phase2 remain pending; no code/build changes this turn.
+
+## 2026-10-24 — Google Messages and Instagram trials approved
+
+- Andrew chose to finish the other app checks before speech implementation,
+  approving one unsent fixed-sample insertion per app, no retries or sending.
+- Read-only own baseline unchanged: proof8/captures7/commits6, CONFIRMED,
+  draftNONE/cleanupfalse, mic stopped, SwiftKey selected. Sent Google Messages
+  procedure first; await report before further phone actions. Instagram not
+  started. No app navigation, conversation read, code/build or phone mutation.
+- Astra/xhigh is checking prior focus-change evidence against the written gate
+  to avoid adding redundant tests before Phase2. No new testing requirement set.

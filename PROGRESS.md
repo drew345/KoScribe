@@ -10,6 +10,16 @@ now under evaluation and has a separate postcommit-composition failure described
 below. No real-app insertion acceptance, speech recognition, translation, or API
 integration is claimed. Phase 1 remains open.
 
+Andrew asked to proceed and choose between KakaoTalk and speech input. Next is
+current-build KakaoTalk self-chat recording -> Stop -> Cancel in the English
+review, under the existing non-inserting scope. Phone connected/unlocked,
+SwiftKey selected, secure REVIEW unchanged. Baseline proof6/captures4/commits4,
+CONFIRMED, draftNONE, cleanupfalse. Andrew has been asked to start with an empty
+self-chat composer and report recording/review, Cancel, empty-field preservation
+and keyboard return. Await his report; no screenshots or conversation reads,
+no Confirm/Insert/Copy/Paste/Send, and no old instrumentation suite. Speech/API
+work remains gated; a later real-app insertion needs separate specific scope.
+
 The corrected manual SwiftKey flow now PASSED on secure980E4299...: Andrew
 edited the English sample, confirmed, tapped the destination and then the
 floating Insert button. He saw the edited sentence and dismissal. Own state
@@ -139,9 +149,9 @@ settings changed. Prompt cessation has not been established.
 
 Galaxy A35 SM-A356E, Android 16/API 36, One UI 8.5; user 0 only. SwiftKey remains
 selected; Wispr remains enabled. Default SMS app is Google Messages. Phone is
-connected at the latest check. Both manual variants have finished successfully;
-the latest own state has no draft or microphone cleanup pending. No user action
-is pending for these tests.
+connected/unlocked at the latest check. Both synthetic manual variants finished
+successfully. Andrew is now performing the authorized non-inserting Kakao check;
+do not infer current draft/microphone state from its baseline.
 Verify live readiness next session. Fixture cleanup may return
 to a real app; never assume the foreground is still synthetic.
 
@@ -174,8 +184,8 @@ paid calls, permission changes, or keyboard changes occurred in this diagnostic 
    recorded tests; do not generalize this empty-field pass to those cases.
    The two automated composition diagnostic attempts are complete; intermittent
    composition failure remains unresolved. Do not retry uncertain commits.
-2. Check current-build contextual bubble and review ergonomics in real apps
-   without insertion under the established scoped diagnostics. Any actual
+2. Await the current manual Kakao recording/Stop/Cancel report, then verify own
+   cleanup and zero capture/commit delta against6/4/4 above. Any actual
    external insertion trial needs separate specific authorization; the earlier
    one-sample Kakao trial is closed. Do not run old confirmation tests or suites.
 3. Before claiming general feasibility, cover selected/caret changes, app/field

@@ -446,3 +446,14 @@
   intended cursor. Insert still captures afresh with every guard unchanged.
   This accepts the empty synthetic case; other apps and the earlier intermittent
   composition failure remain unaccepted/unresolved. No further user action pending.
+
+## 2026-10-24 — Current REVIEW Kakao check prepared
+
+- Andrew asked to proceed toward KakaoTalk or speech input. Selected current-build
+  Kakao self-chat recording/Stop/Cancel before Phase2. Existing non-inserting
+  authorization applies; later insertion scope is still separate.
+- Confirmed secure REVIEW connected/unlocked, SwiftKey selected, baseline proof6/
+  captures4/commits4, CONFIRMED, draftNONE, cleanupfalse. Asked Andrew to open an
+  empty self-chat field, Ko -> EN -> Stop after3s -> Cancel in review and report
+  empty-field/keyboard return. Awaiting report; no screenshot/chat read, code,
+  build, extra permission or API work. Astra/xhigh reviews bounded next gates.

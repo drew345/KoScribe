@@ -77,6 +77,7 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   on. No retry, Copy/Paste substitute, or Send; no conversation inspection.
   PROGRESS tracks which one-attempt scopes remain. Do not request this same
   approval again while those authorized trials are pending.
+  Google Messages passed and its scope is consumed; Instagram remains pending.
 - Andrew authorized dismissing the visible save-password prompt with its
   "No, thanks" action during testing. This permits a narrowly targeted
   Android system negative-button helper, not credential reads, saving entries,

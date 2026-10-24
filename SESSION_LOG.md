@@ -520,3 +520,16 @@
   started. No app navigation, conversation read, code/build or phone mutation.
 - Astra/xhigh is checking prior focus-change evidence against the written gate
   to avoid adding redundant tests before Phase2. No new testing requirement set.
+
+## 2026-10-24 — Google Messages passed; Instagram pending
+
+- User reported expected insertion/flow in Google Messages, addressed to himself.
+  Whether he personally sent it was unclear; no Send by agent/app. Own proof9/
+  captures8/commits7 (each +1), CONFIRMED, draftNONE/cleanupfalse, mic ended5.100s,
+  SwiftKey selected. Scope consumed. No conversation reads or phone mutation.
+- Sent already-approved Instagram procedure with baseline9/8/7; await report
+  before phone actions. Same installed secure product/smoke, no code/build change.
+- Astra's read-only audit found prior REVIEW window/focus termination evidence,
+  passing current guard units, and preserved original-target/event checks. No
+  extra mandatory target-change fixture; finish Instagram then decide Phase1.
+  Same-view switch-back and broader lifecycle cases remain untested limits.

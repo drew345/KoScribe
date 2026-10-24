@@ -25,8 +25,8 @@ broader composition acceptance remain pending; the ordinary default build is OFF
 The subsequent approved confirmation change passed seven scoped synthetic checks,
 including exact composed results, composed mismatches, and preservation. It keeps
 all pre-insertion guards; see PROGRESS for the installed candidate and next gate.
-One manual unsent fixed Korean insertion into empty Kakao self-chat also passed
-on that candidate. Instagram and Google Messages acceptance remains pending.
+Manual fixed Korean insertion into empty Kakao self-chat and Google Messages
+fields also passed on that candidate. Instagram acceptance remains pending.
 A newer compact movable result control is being tested after manual use exposed
 an obstructed destination field. See PROGRESS for the current build and open checks.
 

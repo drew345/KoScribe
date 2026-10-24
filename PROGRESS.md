@@ -9,9 +9,9 @@ reviewed, and passed seven separate synthetic phone checks on secure3AA18446.
 Exact composed results confirm and dismiss; wrong composed results remain
 terminally uncertain. Middle preservation, Korean insertion, selection refusal,
 edited-Korean cancellation, and unchanged-commit uncertainty all passed. Forty
-unit tests passed; lints have zero errors. One manual empty-field Korean
-insertion in Kakao self-chat now also passed. Phase 1 remains open for the other
-target apps and remaining safety coverage; no speech/translation/API integration.
+unit tests passed; lints have zero errors. Manual empty-field Korean insertion
+now passed in Kakao self-chat and Google Messages. Instagram is the last planned
+app check before the Phase1 feasibility decision; no speech/translation/API yet.
 
 Andrew's newly approved one-attempt Kakao trial PASSED and is now complete.
 He reported the exact expected Korean sample appeared and remained unsent,
@@ -23,9 +23,19 @@ state. No agent conversation read or phone mutation occurred after his report.
 Andrew was told he can remove the unsent Kakao sample manually. No more synthetic
 composition diagnosis is needed unless new evidence fails. He approved one
 manual unsent sample insertion per Google Messages and Instagram. Google
-Messages instructions are now pending; await his report before further phone
-actions. Baseline proof8/captures7/commits6, CONFIRMED, draftNONE/cleanupfalse,
-mic stopped, SwiftKey selected. Instagram has not started; its scope remains.
+Messages PASSED: user reported insertion and flow as expected; proof9/captures8/
+commits7, CONFIRMED, draftNONE/cleanupfalse, mic ended5.100s, SwiftKey selected.
+He described addressing himself; whether he personally sent it is unspecified.
+No automated Send occurred. Instagram instructions are now pending, with this
+9/8/7 baseline. Await his report before further phone actions; no retries.
+
+Astra/xhigh reassessed the remaining gate and withdrew an unnecessary proposal
+for another target-change fixture. Earlier REVIEW device tests exercised window/
+focus termination without retry; current guard units passed and source retains
+event/input invalidation and same-target/host checks before confirmation. Finish
+Instagram, then decide Phase1 from this combined evidence. Actual same-view
+conversation switch-back, broad geometry/lifecycle, and daily-use reliability
+remain limitations/future tests, not silently claimed passes or new ASR blockers.
 
 Previous secure980E build Kakao self-chat microphone -> Stop -> English review -> Cancel
 PASSED. Andrew reported the sample review closed and the composer cursor/SwiftKey
@@ -204,11 +214,12 @@ VISUAL_TEST=false. Do not substitute it for the secure REVIEW artifact.
 Prior diagnostic, refresh-only, and earlier smoke APKs are retained in ignored
 build folders. Detailed source review hashes are in DEVICE_TESTS.
 
-Latest checkpoint after successful manual Kakao trial: REVIEW_COMPLETED, proof8,
-draftNONE, destination captures7, commits6, confirmationCONFIRMED,
-cleanupfalse. Exact-app AppOps confirmed mic ended after5.450s. Counts restarted
-when the new APK was installed. One explicitly approved fixed Korean sample is
-now an unsent Kakao self-chat draft; other current-round insertions were synthetic.
+Latest checkpoint after successful Google Messages trial: REVIEW_COMPLETED, proof9,
+draftNONE, destination captures8, commits7, confirmationCONFIRMED,
+cleanupfalse. Exact-app AppOps confirmed mic ended after5.100s. Counts restarted
+when the new APK was installed. Explicitly approved fixed samples were inserted
+into Kakao and Messages; Instagram is now pending. Do not infer its live state
+from the baseline while Andrew performs the test.
 No Send/Enter, agent conversation inspection, screenshots, retained audio,
 credentials, paid calls, permission changes, or keyboard changes occurred.
 
@@ -220,15 +231,16 @@ credentials, paid calls, permission changes, or keyboard changes occurred.
    recorded tests; do not generalize this empty-field pass to those cases.
    The old composition diagnostic round is complete. The approved fix passed its
    scoped checks; do not retry uncertain commits or reopen that probe round.
-2. Preserve the passed Kakao trial; its single-attempt scope is consumed. Await
-   the approved Google Messages report, then verify own counters against8/7/6,
-   current confirmation/cleanup and mic state. Next perform the already-approved
-   Instagram trial after a clean baseline; do not ask for approval again. Each
-   scope is one manual unsent sample in a user-prepared empty field. No Send,
-   Copy/Paste substitute, or retry after uncertainty. No old tests or suites.
-3. Before claiming general feasibility, cover selected/caret changes, app/field
-   navigation and composition, small-height/large-font/rotation/split-screen,
-   lock/service recovery, and KakaoTalk/Instagram/Google Messages acceptance.
+2. Preserve passed Kakao and Google Messages trials; their scopes are consumed.
+   Await the already-approved Instagram report; verify own counters against9/8/7,
+   current confirmation/cleanup and mic state. Scope is one manual unsent sample
+   in a user-prepared empty field. No Send, Copy/Paste substitute, or retry after
+   uncertainty. No old tests or suites. Then make the bounded Phase1 decision;
+   do not add another synthetic fixture without a new failure or guard change.
+3. For broader daily-use reliability, extend selected/caret/navigation and
+   composition coverage, small-height/large-font/rotation/split-screen, and
+   lock/service recovery. These remain limits; do not silently turn the full
+   matrix into new prerequisites for beginning speech after the app round.
 4. Assess direct insertion's benefit against the accepted launcher -> mic ->
    editable English -> 요/반말 -> Copy & close -> manual paste fallback. Do not
    spend indefinitely on integration without measured user benefit.
@@ -258,8 +270,8 @@ they are not full current-build real-app acceptance. See DEVICE_TESTS for histor
 ## Repository and tools
 
 Private repository: https://github.com/drew345/KoScribe . main tracks origin/main.
-Reviewed confirmation change: 56a3d39; Kakao pass: 3fb62d4. The approved
-Google Messages/Instagram handoff is recorded afterward; use git log for its ID.
+Reviewed confirmation change: 56a3d39; Kakao pass: 3fb62d4; two-app scope: be6eb94.
+Google Messages pass/Instagram handoff is recorded afterward; use git log for its ID.
 Inspect staged files and scan for secrets before publishing.
 
 ADB/SDK: C:\AI\Codex\Tools\android-sdk (API 36/build tools 36.0.0).

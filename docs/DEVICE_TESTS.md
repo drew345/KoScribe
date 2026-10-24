@@ -1256,3 +1256,37 @@ No agent screenshot, chat/field-content inspection, UI mutation, API, or secret
 use. The one-attempt scope is now consumed, not permission for repetition.
 The fixed draft is left for Andrew to remove manually. Other apps and broader
 editor states remain pending; this alone does not complete Phase1.
+
+### Google Messages manual insertion PASS; Instagram pending (2026-10-24)
+
+Andrew authorized one manual unsent fixed Korean insertion per Google Messages
+and Instagram. Google Messages ran first with the same 요/Stop/unchanged-English/
+Confirm/explicit floating Insert procedure and secure3AA18446/smoke168091D7.
+Baseline proof8/captures7/commits6, draftNONE/cleanupfalse, stopped microphone.
+User reported everything worked as expected and insertion into the message field,
+replying to the combined exact-sample/dismissal question. He described addressing
+himself; actual personal Send status is unspecified. No automated Send occurred.
+
+Own proof9/captures8/commits7, current CONFIRMED/REVIEW_COMPLETED, draftNONE,
+cleanupfalse. New trace: POLITE -> positive unsilenced mic -> Stop/proved stopped
+-> two VERIFIED_EMPTY_CARET -> one FRESH_COMMIT_REQUESTED_ONCE -> focused-node
+refresh -> READY -> INSERT_CONFIRMED. Microphone use ended5.100s, SwiftKey selected.
+Agent did not inspect field/chat text, take screenshots, or mutate phone UI.
+This accepts the reported empty-field Google Messages flow, not arbitrary SMS/
+RCS states or content. Its one-attempt scope is consumed.
+
+Instagram instructions sent next using baseline9/8/7; outcome pending. No new
+approval required for that already authorized one-attempt scope. Stop on refusal/
+uncertainty/interruption; no retries or Copy/Paste substitute.
+
+Astra/xhigh audited the remaining focus-change gate. Earlier REVIEW ignored-
+commit tests on2B00 ended via WINDOW_OR_FOCUS_CHANGED and proved no retry (see
+earlier seven-pass checkpoint). Historical modal leaving-review tests are weaker
+evidence for the revised transaction. Current units cover changed target/caret/
+context, invalidation and one attempt; current source retains input/event
+invalidation and sameFreshTarget/host checks before the postcommit verdict.
+The approved composition change did not remove those checks. Therefore a new
+target-change fixture is not mandatory solely because the build changed. Finish
+the planned app round and decide Phase1 from combined evidence. Actual same-view
+conversation switching/back, lifecycle and broad geometry coverage remain
+explicit limits and future hardening; no pass is inferred for those cases.

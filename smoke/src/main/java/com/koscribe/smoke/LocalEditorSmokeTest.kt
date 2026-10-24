@@ -16,6 +16,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.After
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -47,6 +48,12 @@ class LocalEditorSmokeTest {
 
     @Before fun prepareOwnEditor() {
         instrumentation = InstrumentationRegistry.getInstrumentation()
+        val reviewFlags = listOf("reviewCopyReady", "reviewInsertEmptyReady",
+            "reviewInsertMiddleReady", "reviewKoreanReady", "reviewSelectionReady",
+            "reviewKoreanEditReady", "reviewUncertainReady")
+        assumeTrue("LEGACY_LOCAL_TEST_EXCLUDES_REVIEW_OPT_IN", reviewFlags.none {
+            InstrumentationRegistry.getArguments().getString(it) == "true"
+        })
         val ui = automation()
         val info = ui.serviceInfo
         info.flags = info.flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or

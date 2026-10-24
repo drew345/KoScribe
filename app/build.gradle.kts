@@ -4,8 +4,8 @@ plugins {
 }
 
 val startupExperimentArm = providers.gradleProperty("koscribeStartupArm").orElse("OFF").get()
-require(startupExperimentArm in setOf("OFF", "HOLD", "COLLAPSE", "PANEL", "OVERLAY", "RESELECT")) {
-    "koscribeStartupArm must be OFF, HOLD, COLLAPSE, PANEL, OVERLAY, or RESELECT"
+require(startupExperimentArm in setOf("OFF", "HOLD", "COLLAPSE", "PANEL", "OVERLAY", "RESELECT", "REVIEW")) {
+    "koscribeStartupArm must be OFF, HOLD, COLLAPSE, PANEL, OVERLAY, RESELECT, or REVIEW"
 }
 
 android {

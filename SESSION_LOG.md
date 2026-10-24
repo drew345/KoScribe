@@ -291,3 +291,28 @@
   broader geometry/reliability, and the fallback remain unimplemented or untested.
   Next is independently owned editable review/result handling with completion
   dismissal, keeping the fallback practical. Phase 1 acceptance remains open.
+
+## 2026-10-24 — Editable review and Copy checkpoint
+
+- Sol 6 Extra High implemented REVIEW: independent editable English review,
+  explicit confirmation, Copy & close, and fresh one-shot guarded Insert with
+  exact postcommit confirmation. Astra Extra High independently reviewed it.
+  Default OFF and recording-only RESELECT remain. No speech/API integration.
+- Candidate/default builds, 37 unit tests, lints (zero errors; app 23/smoke 3
+  warnings), and signatures passed. Installed product 5387AA79... and smoke
+  337DE462... are saved under ignored app/build/review-stage2; ordinary output OFF.
+- Fixture startup race corrected in the test only. Subsequent no-focus timeouts
+  were traced to the notification shade covering a drawn fixture. Closing it
+  resolved startup; no notification/chat content was read or guard changed.
+- Editable EN -> Copy passed in 6.454s: original draft preserved, sensitive clip
+  verified, no destination captures/commits, bubble dismissed until the next
+  keyboard cycle. Mic ended after 450ms. Actual SwiftKey keypresses remain untested.
+- Empty Insert observed the expected sample but failed confirmation in 12.098s:
+  one capture/commit; accessibility node still reported unknown caret/empty-hint
+  while connection was no longer verified empty-at-zero. Terminal UNCERTAIN;
+  no retry. Test Cancel cleared draft; cleanup false, mic ended after 473ms.
+- Andrew requested a checkpoint for his LAPTOP battery at 10%. Tests/builds are
+  stopped. Next: narrowly diagnose postcommit caret timing with code-only
+  synthetic observations, preserving terminal uncertainty. Other five REVIEW
+  gates, confirmed insertion dismissal, and real-app acceptance remain pending.
+  Exact evidence/source/APK hashes are in DEVICE_TESTS; restart from PROGRESS.

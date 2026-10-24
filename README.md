@@ -11,12 +11,13 @@ Eight synthetic cross-app checks pass on the A35, including middle insertion,
 edited review, Korean/emoji preservation, and cancellation/refusal. Real
 messaging-app acceptance and actual SwiftKey typing remain pending.
 
-The installed Oct24 test build has a contextual, draggable bubble with saved
-position. Synthetic A35 checks passed for keyboard visibility, Hide, password
-field exclusion, position after service restart, and recording/Stop/Cancel.
-That candidate still uses readonly sample review; Copy/Insert and completion
-dismissal are not available in it. The ordinary default build remains the older
-prototype until the replacement flow passes its gates.
+The installed Oct24 REVIEW build adds editable English review and Copy & close
+to the contextual, draggable bubble. Its synthetic Copy gate passed, including
+bubble dismissal and return after a new keyboard cycle. Direct insertion placed
+the expected sample in the test editor, but caret confirmation failed safely;
+confirmed-insertion dismissal remains unresolved. Earlier bubble visibility,
+dragging, and position-restoration gates passed on the RESELECT build. The ordinary
+default build remains the older prototype until the replacement flow passes.
 
 ## Agreed interaction
 

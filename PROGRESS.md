@@ -11,8 +11,22 @@ implemented and independently reviewed in the installed RESELECT candidate.
 Three exact synthetic phone gates passed: visibility/drag/Hide, saved position
 after service restart, and recording/Stop/Cancel through keyboard transitions.
 Copy/Insert dismissal is still pending because this arm has neither action.
-Explicit Hide proves the suppression mechanism only. Next: carry dismissal
-into the independently owned review/result flow before broader acceptance.
+Explicit Hide proves the suppression mechanism only. Andrew has now authorized
+editable English review and Copy/confirmed-insertion dismissal. Sol 6 Extra High
+implemented a separate REVIEW arm and synthetic tests; Astra Extra High reviewed
+the product and tests. Candidate/default builds, 37 unit tests, and lint passed.
+The REVIEW candidate is installed. Editable EN -> Copy passed in 6.454s,
+including original-draft preservation, sensitive clipboard metadata, bubble
+dismissal, and reappearance only after a keyboard hide/show cycle. The empty
+Insert gate observed the expected synthetic text but failed product confirmation
+in 12.098s: one capture/commit, then NODE_CARET_MISMATCH and terminal UNCERTAIN.
+No retry occurred. Confirmed-insertion dismissal is still unresolved.
+
+STOPPED CHECKPOINT: Andrew's LAPTOP battery is at 10%; no test/build is running.
+Microphone stopped (last AppOps duration 473ms), draft cleared by test Cancel,
+cleanup pending false. Resume with a narrow synthetic postcommit caret diagnostic;
+do not rerun insertion blindly or advance to speech/API work. USB readiness must
+be checked again. Full hashes/evidence are in docs/DEVICE_TESTS.md.
 
 Accepted minimum fallback: home-screen app -> mic -> editable English -> choose
 요/반말 -> translate -> Copy & close -> manual long-press paste. The bubble and
@@ -33,35 +47,48 @@ successful Kakao insertion remain unverified.
 
 ## Prior checkpoint and deferred next work
 
-The overnight checkpoint was completed. Stage 1 is implemented,
-independently reviewed, and passed its one exact phone gate. No Stage 2 work
-has begun. The Oct24 synthetic bubble gate is complete; real-app contextual
-visibility, completion dismissal, and broader geometry remain unverified.
+Stage 1 and the contextual bubble gates passed on their recorded earlier builds.
+Stage 2 REVIEW is now implemented and independently reviewed. Its Copy phone gate
+passed; its first Insert confirmation gate did not. Real-app contextual visibility,
+current-build insertion, and broader geometry remain unverified.
 
 1. DONE: Unbound recording -> Stop -> readonly sample review -> Cancel, with >3-second
    capture. Own microphone/UI/lock/timeout cleanup remains; no editor access or
    destination session exists. Separate recording and destination counters.
-2. NEXT: Editable English review, result preparation, and nonfocusable ready controls,
-   incorporating Copy/confirmed-insertion dismissal without reopening on the
-   same keyboard session. Until those actions exist, do not claim dismissal
-   acceptance from the Hide test. Keep the accepted launcher fallback practical.
-   Korean prototype modes still require the exact fixed English sample; EN can
-   use edits. No destination capture during editing/IME transitions. Prefer a
-   dedicated own review Activity after mic Stop with independent draft ownership;
-   do not reuse the old target-bound SessionActivity transaction. See the IME
-   lifecycle proposal and API 36 caveat in IMPLEMENTATION.md.
-3. Explicit Check destination (no insert): fresh full capture/revalidation and
-   terminally end the check. No commit, Copy, or silent retargeting. Ask Andrew
-   to retap the intended composer when the test needs that real user action.
+2. IMPLEMENTED: dedicated unbound editable review Activity, result preparation,
+   nonfocusable ready controls, Copy & close and fresh guarded Insert in REVIEW.
+   EN accepts edits; Korean samples require the exact fixed English source.
+   Copy completion is device-proven; confirmed insertion dismissal is not.
+3. NEXT: diagnose postcommit NODE_CARET_MISMATCH in one exact synthetic gate.
+   Record only timing, identity/generation matches, caret values, lengths and
+   expected-context match booleans. A bounded read-only diagnostic may observe
+   whether the node catches up after terminal uncertainty; never rearm, retry,
+   or relabel the ended transaction as successful. Existing node still reported
+   -1/-1 and empty/hint while the connection was no longer verified empty-at-zero.
+   Observation lag is a hypothesis, not an established cause.
+4. Then run the remaining exact REVIEW gates separately: empty/middle/Korean
+   confirmation, selected-range refusal, edited Korean rejection/Cancel, and
+   acknowledged-but-unchanged commit uncertainty. Actual SwiftKey keystrokes
+   remain a manual gate; automated edits use our own EditText action.
 
 Only after separate device-test authorization may an actual external insertion
 trial run. The prior one-sample trial is closed. Do not run the old confirmation
 method or whole suites. Default/release OFF retains the older prototype until
-replacement gates pass. Before Stage 3, replace Stage 1's unconditional RESELECT
-event/input callback exits with phase-aware full destination guards.
+replacement gates pass. REVIEW now has phase-aware destination guards; RESELECT
+remains recording-only. Synthetic insertion authorization is recorded in AGENTS.
 
 ## Latest measured results
 
+- REVIEW Copy passed (6.454s), with zero destination captures/commits and ended
+  microphone use of 450ms. Empty Insert observed expected sample text, then
+  confirmation failed (12.098s); final capture/commit counters 1/1, UNCERTAIN,
+  draft NONE after test Cancel, no cleanup pending, microphone ended after 473ms.
+- First fixture launch crashed on decor setup; publishing the fixture only after
+  setContentView and removing off-main hasWindowFocus calls corrected that race.
+  Subsequent startup timeouts were traced to the notification shade holding focus
+  above the drawn fixture. Collapsing it allowed the unchanged product to pass
+  Copy. No notification/conversation content was read. Check system-panel focus
+  before further startup debugging; awake/unlocked alone is insufficient.
 - Oct24 contextual bubble gates passed on the synthetic fixture with SwiftKey:
   idle show/hide, explicit Hide through the same IME session, reappearance after
   observed keyboard hide/show, physical drag without opening the menu, saved
@@ -122,22 +149,21 @@ Messages. Latest synthetic fixture cleanup left the keyboard hidden; do not
 assume the foreground is still synthetic. Verify live preconditions before each
 exact opt-in test; do not inspect chat history.
 
-Installed contextual-bubble RESELECT product SHA-256:
-7568BD4C21D0B7E66A232BCED5F6E4C48FD588195A576AA43F701713CB4E283B
-Saved at app/build/bubble-lifecycle/RESELECT.apk (ignored).
+Installed editable-review REVIEW product SHA-256:
+5387AA79E6FEBFE2E58977478AA915D1483DDBEE4BD3EA8486AC4F33BC0E0F68
+Saved at app/build/review-stage2/REVIEW.apk (ignored).
 Smoke APK SHA-256:
-598F1278742DCE9BA4EA5E2311A85D3C35EB85EAA65F51EADF9D8FE175DC0828
-Saved at app/build/bubble-lifecycle/smoke.apk (ignored). Idle/restore passed with
-earlier smoke 735770EB...; only the mic method needed the final test-only wait fix.
-Latest phase RESELECT_CANCELLED, proof count 1, destination count 0, cleanup
-pending false, mic ended after 984ms. A post-test service dump timed out once;
-one bounded retry returned the expected terminal state.
+337DE462EBA993231F2BB232E03869005CE1FB91DC5B5FC6C064914C5C9664E9
+Saved at app/build/review-stage2/smoke-REVIEW.apk (ignored).
+Latest phase REVIEW_CANCELLED, proof count 2, destination count 1, commit count 1,
+confirmation UNCERTAIN, draft NONE, cleanup pending false. Earlier service dumps
+occasionally timed out; final post-test dump returned the expected terminal state.
 Ordinary app/build/outputs/apk/debug/app-debug.apk was rebuilt with OFF;
 do not install it over the tested candidate. The prior Stage1 and pre-experiment
 restore APKs remain saved in their ignored folders.
 
 Candidate, final smoke, and default OFF build/lint checks passed.
-JVM tests: 32, zero failures/errors/skips. Lint: zero errors; app 20/smoke 3 warnings.
+JVM tests: 37, zero failures/errors/skips. Lint: zero errors; app 23/smoke 3 warnings.
 Signatures verified. Source review hashes and exact methods are in DEVICE_TESTS
 and INSTRUMENTATION. Warnings include prototype strings, existing tool-version
 advice, touch accessibility, and intentional screen-coordinate gravity.
@@ -162,7 +188,7 @@ advice, touch accessibility, and intentional screen-coordinate gravity.
 
 Private GitHub repository: https://github.com/drew345/KoScribe . Visibility
 reconfirmed PRIVATE on Oct24. main tracks origin/main. This Oct24 bubble
-checkpoint follows 709df8d; use git log for its final hash. Inspect staged files
+review checkpoint follows 29275ec; use git log for its final hash. Inspect staged files
 and scan for secrets before every push.
 
 ADB/SDK: C:\AI\Codex\Tools\android-sdk (ADB 37.0.1, API 36/build tools 36.0.0).

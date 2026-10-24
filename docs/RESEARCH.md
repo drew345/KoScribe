@@ -249,6 +249,27 @@ Primary evidence reviewed by Astra Ultra:
   returns void. The old flow's commit-request return is not insertion success
   confirmation and must not be relabeled as such for completion dismissal.
 
+## Editable review and completion evidence (2026-10-24)
+
+The REVIEW design separates an editable own Activity from the later destination
+transaction. Primary Android references confirm that accessibility
+[commitText](https://developer.android.com/reference/android/accessibilityservice/InputMethod.AccessibilityInputConnection#commitText(java.lang.CharSequence,%20int,%20android.view.inputmethod.TextAttribute))
+returns void and advances the caret using Java-character units. It can trigger
+selection updates; the editor may alter supplied text.
+[getSurroundingText](https://developer.android.com/reference/android/accessibilityservice/InputMethod.AccessibilityInputConnection#getSurroundingText(int,%20int,%20int))
+is a read-only IPC that can return null or shorter content. Therefore the
+implementation must treat exact same-destination context/caret matching as a
+separate success observation, widen the request by the inserted UTF-16 length,
+and keep an unconfirmed attempt terminal. This confirmation policy is our
+conservative design inference, not an Android atomic-insertion guarantee.
+
+Android's [clipboard guidance](https://developer.android.com/develop/ui/views/touch-and-input/copy-paste)
+uses setPrimaryClip and recommends marking sensitive content with
+ClipDescription.EXTRA_IS_SENSITIVE to suppress the system's content preview.
+KoScribe copies only after an explicit action, never reads or restores the prior
+clipboard, and dismisses its result only after the write returns without an
+exception. Device verification of Copy and dismissal is still required.
+
 ## Models and API separation
 
 The local Codex model catalog and the session's supported-agent metadata list

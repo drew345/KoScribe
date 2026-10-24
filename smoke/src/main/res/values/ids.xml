@@ -1,4 +1,5 @@
 <resources>
     <item name="local_test_editor" type="id" />
     <item name="local_protected_editor" type="id" />
+    <item name="local_uncertain_editor" type="id" />
 </resources>

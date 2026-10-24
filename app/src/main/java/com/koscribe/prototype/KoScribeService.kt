@@ -17,6 +17,7 @@ import android.graphics.Rect
 import android.graphics.drawable.GradientDrawable
 import android.os.Handler
 import android.os.Looper
+import android.os.IBinder
 import android.os.PersistableBundle
 import android.os.PowerManager
 import android.os.SystemClock
@@ -76,12 +77,36 @@ class KoScribeService : AccessibilityService() {
     private var overlayHeartbeat: Runnable? = null
     private var overlayInputGeneration: Int? = null
     private val unboundRecording = UnboundRecordingState()
+    private val unboundDraft = UnboundDraftState()
+    private var draftReviewOwner: Any? = null
+    private var draftScreenReceiver: BroadcastReceiver? = null
+    private var draftDeadline: Runnable? = null
+    private enum class DestinationPhase { PRECOMMIT, OBSERVING }
+    private data class FreshDestination(
+        val draftId: String,
+        val id: String,
+        val node: AccessibilityNodeInfo,
+        val root: AccessibilityNodeInfo,
+        val generation: Int,
+        val expected: CommitConfirmation.Expected,
+        val host: View,
+        val hostToken: IBinder?,
+        val hostWindowId: Int,
+        var phase: DestinationPhase = DestinationPhase.PRECOMMIT
+    )
+    private var freshDestination: FreshDestination? = null
+    @Volatile private var commitRequestCount = 0
+    @Volatile private var commitConfirmation = "NONE"
     @Volatile private var unboundRecordingProofCount = 0
     @Volatile private var destinationCaptureCount = 0
+
+    private fun unboundArm(): Boolean = startupExperiment == StartupExperiment.RESELECT ||
+        startupExperiment == StartupExperiment.REVIEW
     private enum class ObservationCode {
         NOT_CHECKED, LOCKED, NO_INPUT_METHOD, INPUT_NOT_STARTED, NO_EDITOR_INFO,
         NO_INPUT_CONNECTION, UNSUPPORTED_EDITOR_TYPE, NO_FOCUSED_APP_WINDOW,
-        MULTIPLE_FOCUSED_APP_WINDOWS, NO_FOCUSED_NODE, NODE_EDITOR_MISMATCH,
+        MULTIPLE_FOCUSED_APP_WINDOWS, WRONG_DISPLAY, OWN_EDITOR,
+        NO_FOCUSED_NODE, NODE_EDITOR_MISMATCH, NODE_DISABLED,
         PROTECTED_OR_NON_TEXT_NODE, SURROUNDING_UNAVAILABLE, UNKNOWN_TEXT_OFFSET,
         SELECTION_NOT_COLLAPSED, NODE_CARET_MISMATCH, ACTIVE_COMPOSITION,
         CALLBACK_CARET_MISMATCH, NODE_CLASS_UNKNOWN, SNAPSHOT_INVALID, READY
@@ -248,7 +273,10 @@ class KoScribeService : AccessibilityService() {
             "Experiment capture count: $experimentCaptureCount\n" +
             "Experiment phase: $experimentPhase\n" +
             "Unbound recording proof count: $unboundRecordingProofCount\n" +
+            "Draft phase: ${unboundDraft.current()?.phase?.name ?: "NONE"}\n" +
             "Destination capture count: $destinationCaptureCount\n" +
+            "Commit request count: $commitRequestCount\n" +
+            "Commit confirmation: $commitConfirmation\n" +
             "Overlay cleanup pending: ${overlayCleanupPending != null}\n" +
             "Own UI milestones (callback uptime vs capture completion / first content occurrence):\n" +
             ownMilestoneDiagnostics() + "\n" +
@@ -270,6 +298,17 @@ class KoScribeService : AccessibilityService() {
                 scheduleIdleBubbleRefresh()
                 return
             }
+            if (startupExperiment == StartupExperiment.REVIEW) {
+                generation++
+                composition.reset()
+                freshDestination?.let {
+                    if (it.phase == DestinationPhase.PRECOMMIT) guard.invalidate(it.id)
+                    else finishUncertain(it, "INPUT_STARTED")
+                    note("FRESH_INPUT_STARTED")
+                }
+                scheduleIdleBubbleRefresh()
+                return
+            }
             generation++
             composition.reset()
             inputStarted(attribute)
@@ -277,9 +316,24 @@ class KoScribeService : AccessibilityService() {
 
         override fun onFinishInput() {
             if (startupExperiment == StartupExperiment.RESELECT) {
+                if (unboundRecording.current() == null) {
+                    idleBubbleVisible = false
+                    expanded = false
+                    renderBubble()
+                }
+                scheduleIdleBubbleRefresh()
+                return
+            }
+            if (startupExperiment == StartupExperiment.REVIEW) {
+                composition.reset()
+                freshDestination?.let {
+                    if (it.phase == DestinationPhase.PRECOMMIT) guard.invalidate(it.id)
+                    else finishUncertain(it, "INPUT_FINISHED")
+                    note("FRESH_INPUT_FINISHED")
+                }
                 // Android clears currentInputStarted after this callback returns.
                 // Hide immediately, then inspect the settled state on the main loop.
-                if (unboundRecording.current() == null) {
+                if (unboundRecording.current() == null && unboundDraft.current() == null) {
                     idleBubbleVisible = false
                     expanded = false
                     renderBubble()
@@ -298,10 +352,20 @@ class KoScribeService : AccessibilityService() {
             candidatesStart: Int, candidatesEnd: Int
         ) {
             if (startupExperiment == StartupExperiment.RESELECT) return
+            if (startupExperiment == StartupExperiment.REVIEW) {
+                if (freshDestination != null)
+                    composition.update(newSelStart, newSelEnd, candidatesStart, candidatesEnd)
+                return
+            }
             composition.update(newSelStart, newSelEnd, candidatesStart, candidatesEnd)
         }
 
         fun compositionAt(caret: Int): CompositionState = composition.stateAt(caret)
+        fun resetComposition() = composition.reset()
+    }
+
+    private fun resetFreshComposition() {
+        (inputMethod as? TrackingInputMethod)?.resetComposition()
     }
 
     private fun inputStarted(info: EditorInfo) {
@@ -344,7 +408,7 @@ class KoScribeService : AccessibilityService() {
     private data class IdleWindowCheck(val ime: IdleBubblePolicy.Ime, val ordinaryInputReady: Boolean)
 
     private fun scheduleIdleBubbleRefresh() {
-        if (startupExperiment != StartupExperiment.RESELECT || !serviceConnected ||
+        if (!unboundArm() || !serviceConnected ||
             idleRefreshQueued) return
         idleRefreshQueued = true
         main.post {
@@ -354,9 +418,23 @@ class KoScribeService : AccessibilityService() {
     }
 
     private fun refreshIdleBubble(forceRender: Boolean = false) {
-        if (startupExperiment != StartupExperiment.RESELECT || !serviceConnected ||
+        if (!unboundArm() || !serviceConnected ||
             !::windowManager.isInitialized ||
-            unboundRecording.current() != null) return
+            unboundRecording.current() != null || freshDestination != null) return
+        val draft = unboundDraft.current()
+        if (draft != null) {
+            if (draft.phase == UnboundDraftState.Phase.REVIEW) {
+                idleBubbleVisible = false
+                if (forceRender) renderBubble()
+                return
+            }
+            if (!idleBubbleVisible || forceRender) {
+                idleBubbleVisible = true
+                expanded = true
+                renderBubble()
+            }
+            return
+        }
         val unlocked = runCatching {
             (getSystemService(POWER_SERVICE) as PowerManager).isInteractive &&
                 !(getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked
@@ -430,16 +508,40 @@ class KoScribeService : AccessibilityService() {
         instance = WeakReference(this)
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         serviceConnected = true
-        if (startupExperiment == StartupExperiment.RESELECT) scheduleIdleBubbleRefresh()
+        if (unboundArm()) scheduleIdleBubbleRefresh()
         else renderBubble()
     }
 
     override fun onCreateInputMethod(): InputMethod = TrackingInputMethod(this)
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-        if (startupExperiment == StartupExperiment.RESELECT) {
+        if (unboundArm()) {
+            val destination = freshDestination
+            val target = destination?.let { guard.session(it.id)?.target }
+            if (destination?.phase == DestinationPhase.OBSERVING &&
+                (event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
+                    event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
+                    (event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED &&
+                        event.packageName?.toString() != packageName))) {
+                finishUncertain(destination, "WINDOW_OR_FOCUS_CHANGED")
+                return
+            }
+            if (destination?.phase == DestinationPhase.PRECOMMIT &&
+                (event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
+                    event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
+                    (event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED &&
+                        event.packageName?.toString() != packageName) ||
+                    (target != null && event.packageName?.toString() == target.packageName &&
+                        event.windowId == target.windowId &&
+                        (event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED ||
+                            event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED ||
+                            event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED)))) {
+                guard.invalidate(destination.id)
+                note("FRESH_TARGET_EVENT")
+                return
+            }
             // Idle UI visibility is metadata only. No destination or editor is captured.
-            if (unboundRecording.current() == null &&
+            if (unboundRecording.current() == null && unboundDraft.current() == null &&
                 (event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
                     event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
                     event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED))
@@ -785,12 +887,18 @@ class KoScribeService : AccessibilityService() {
 
     override fun onInterrupt() {
         unboundRecording.current()?.id?.let { cancelUnboundRecording(it, "SERVICE_INTERRUPTED") }
+        unboundDraft.current()?.id?.let { endDraft(it, "SERVICE_INTERRUPTED") }
         pendingId?.let { invalidate(it, "SERVICE_INTERRUPTED") }
     }
 
     override fun onDestroy() {
         serviceConnected = false
         unboundRecording.endActive()
+        unboundDraft.current()?.id?.let(ReviewActivity::closeDraft)
+        unboundDraft.endActive()
+        clearDraftOwnership()
+        freshDestination?.id?.let { guard.cancel(it); guard.end(it) }
+        freshDestination = null
         stopOverlayOwnership()
         overlayCleanupPending?.close()
         capturedTargetChildWindows = null
@@ -899,7 +1007,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     private fun startMode(mode: OutputMode) {
-        if (startupExperiment == StartupExperiment.RESELECT) {
+        if (unboundArm()) {
             startUnboundRecording(mode)
             return
         }
@@ -1022,7 +1130,8 @@ class KoScribeService : AccessibilityService() {
     /** Debug-only destination-free session. No target APIs are called until a later explicit action. */
     private fun startUnboundRecording(mode: OutputMode) {
         if (pendingId != null || unboundRecording.current() != null ||
-            SessionActivity.isVisible || overlayCleanupPending != null) {
+            unboundDraft.current() != null || SessionActivity.isVisible ||
+            overlayCleanupPending != null) {
             status = "Finish or cancel the current recording first."
             renderBubble()
             return
@@ -1061,8 +1170,9 @@ class KoScribeService : AccessibilityService() {
             onStopEntry = { if (unboundRecording.owns(id)) note("RESELECT_STOP_ENTRY") },
             onReview = {
                 if (unboundRecording.microphoneStoppedForReview(id)) {
-                    experimentPhase = "RESELECT_READ_ONLY_REVIEW"
                     note("RESELECT_MIC_PROVED_STOPPED")
+                    if (startupExperiment == StartupExperiment.REVIEW) beginDraftReview(id, mode)
+                    else experimentPhase = "RESELECT_READ_ONLY_REVIEW"
                 }
             },
             onCancel = { cancelUnboundRecording(id, "USER_CANCELLED") },
@@ -1108,6 +1218,286 @@ class KoScribeService : AccessibilityService() {
         note("RESELECT_ENDED_${reason}")
         status = if (overlayCleanupPending != null) "Microphone cleanup uncertain. Restart the service."
             else "Recording cancelled."
+        refreshIdleBubble(forceRender = true)
+    }
+
+    private fun beginDraftReview(recordingId: String, mode: OutputMode) {
+        if (!unboundRecording.end(recordingId)) return
+        stopOverlayOwnership()
+        if (overlayCleanupPending != null) {
+            experimentPhase = "REVIEW_MIC_CLEANUP_UNCERTAIN"
+            status = "Microphone cleanup uncertain. Restart the service."
+            refreshIdleBubble(forceRender = true)
+            return
+        }
+        val draft = unboundDraft.begin(mode) ?: return
+        draftReviewOwner = null
+        idleBubbleVisible = false
+        expanded = false
+        experimentPhase = "REVIEW_EDITING"
+        renderBubble()
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                if (intent.action == Intent.ACTION_SCREEN_OFF) endDraft(draft.id, "SCREEN_OFF")
+            }
+        }
+        try {
+            registerReceiver(receiver, IntentFilter(Intent.ACTION_SCREEN_OFF), Context.RECEIVER_NOT_EXPORTED)
+            draftScreenReceiver = receiver
+        } catch (_: Exception) {
+            endDraft(draft.id, "SCREEN_RECEIVER_FAILED")
+            return
+        }
+        val deadline = Runnable { endDraft(draft.id, "DEADLINE") }
+        draftDeadline = deadline
+        main.postDelayed(deadline, 180_000L)
+        val intent = Intent(this, ReviewActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            putExtra(ReviewActivity.EXTRA_DRAFT_ID, draft.id)
+        }
+        try { startActivity(intent) }
+        catch (_: Exception) { endDraft(draft.id, "REVIEW_LAUNCH_FAILED") }
+    }
+
+    internal fun bindDraftReview(id: String, owner: Any): UnboundDraftState.Draft? {
+        val draft = unboundDraft.current() ?: return null
+        if (startupExperiment != StartupExperiment.REVIEW || draft.id != id ||
+            draft.phase != UnboundDraftState.Phase.REVIEW || draftReviewOwner != null ||
+            (getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked) return null
+        draftReviewOwner = owner
+        return draft
+    }
+
+    internal fun updateDraftEnglish(id: String, owner: Any, english: String): Boolean =
+        draftReviewOwner === owner && unboundDraft.edit(id, english)
+
+    internal fun confirmDraftReview(id: String, owner: Any): UnboundDraftState.Confirm {
+        if (startupExperiment != StartupExperiment.REVIEW || draftReviewOwner !== owner ||
+            (getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked)
+            return UnboundDraftState.Confirm.STALE
+        val result = unboundDraft.confirm(id)
+        if (result == UnboundDraftState.Confirm.READY) experimentPhase = "REVIEW_HANDOFF"
+        return result
+    }
+
+    internal fun cancelDraftReview(id: String, owner: Any) {
+        if (draftReviewOwner === owner) endDraft(id, "USER_CANCELLED")
+    }
+
+    internal fun reviewActivityFinished(id: String, owner: Any) {
+        if (draftReviewOwner !== owner) return
+        draftReviewOwner = null
+        val draft = unboundDraft.current()
+        if (draft?.id != id || draft.phase != UnboundDraftState.Phase.READY) {
+            endDraft(id, "REVIEW_EXIT_WITHOUT_CONFIRMATION")
+            return
+        }
+        experimentPhase = "REVIEW_READY"
+        status = "Tap the intended field, then Insert, or Copy & close."
+        expanded = true
+        refreshIdleBubble(forceRender = true)
+    }
+
+    private fun clearDraftOwnership() {
+        draftReviewOwner = null
+        draftScreenReceiver?.let { runCatching { unregisterReceiver(it) } }
+        draftScreenReceiver = null
+        draftDeadline?.let(main::removeCallbacks)
+        draftDeadline = null
+    }
+
+    private fun endDraft(id: String, reason: String, completed: Boolean = false) {
+        if (!unboundDraft.end(id)) return
+        ReviewActivity.closeDraft(id)
+        freshDestination?.takeIf { it.draftId == id }?.let { guard.cancel(it.id); guard.end(it.id) }
+        freshDestination = null
+        resetFreshComposition()
+        clearDraftOwnership()
+        experimentPhase = if (completed) "REVIEW_COMPLETED" else "REVIEW_CANCELLED"
+        note("REVIEW_ENDED_$reason")
+        if (completed) {
+            idleBubblePolicy.hideUntilNextImeCycle()
+            idleBubbleVisible = false
+            expanded = false
+            renderBubble()
+        } else {
+            status = "Review cancelled."
+            refreshIdleBubble(forceRender = true)
+        }
+    }
+
+    private fun copyDraft(id: String) {
+        if (freshDestination != null) return
+        val draft = unboundDraft.current() ?: return
+        if (draft.id != id || draft.phase !in setOf(UnboundDraftState.Phase.READY,
+                UnboundDraftState.Phase.UNCERTAIN)) return
+        val result = draft.result ?: return
+        val clip = ClipData.newPlainText("KoScribe sample", result)
+        clip.description.extras = PersistableBundle().apply {
+            putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
+        }
+        if (runCatching {
+                (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
+            }.isSuccess) {
+            commitConfirmation = "COPIED"
+            endDraft(id, "COPIED", completed = true)
+        } else {
+            status = "Copy failed. Result remains available."
+            refreshIdleBubble(forceRender = true)
+        }
+    }
+
+    /** A click owns one short transaction; no prior recording/review target is inherited. */
+    private fun insertDraft(draftId: String) {
+        val draft = unboundDraft.current() ?: return
+        if (startupExperiment != StartupExperiment.REVIEW || draft.id != draftId ||
+            draft.phase != UnboundDraftState.Phase.READY || draftReviewOwner != null ||
+            freshDestination != null) return
+        val result = draft.result ?: return
+        if (result.any { it == '\n' || it == '\r' })
+            return refuseFreshInsertion("RESULT_NOT_SINGLE_LINE")
+        val host = bubble?.takeIf { it.isAttachedToWindow && it.isShown && it.isEnabled }
+        if (host == null) return refuseFreshInsertion("BUBBLE_UNAVAILABLE")
+        host.findViewById<Button>(R.id.ready_insert)?.isEnabled = false
+        host.findViewById<Button>(R.id.ready_copy)?.isEnabled = false
+        val token = host.windowToken
+        val hostWindowId = runCatching { host.createAccessibilityNodeInfo().windowId }.getOrDefault(-1)
+        if (token == null || hostWindowId < 0) return refuseFreshInsertion("BUBBLE_UNVERIFIED")
+
+        resetFreshComposition()
+        destinationCaptureCount++
+        val first = observeEditor() ?: return refuseFreshInsertion(observationCode.name)
+        val expected = CommitConfirmation.expected(first.snapshot, result)
+            ?: return refuseFreshInsertion("RESULT_TOO_LONG_OR_UNSAFE")
+        val session = guard.begin(draft.mode, first.snapshot, SystemClock.elapsedRealtime())
+            ?: return refuseFreshInsertion("CAPTURE_REJECTED")
+        if (!guard.publish(session.id, result)) {
+            guard.end(session.id)
+            return refuseFreshInsertion("RESULT_REJECTED")
+        }
+        val transaction = FreshDestination(draftId, session.id, first.node, first.root,
+            first.generation, expected, host, token, hostWindowId)
+        freshDestination = transaction
+        // Yield once so queued editor/window events can terminally invalidate this
+        // capture before the final synchronous reobservation and one commit.
+        main.post { commitFreshDestination(transaction, result) }
+    }
+
+    private fun commitFreshDestination(transaction: FreshDestination, result: String) {
+        if (freshDestination !== transaction || transaction.phase != DestinationPhase.PRECOMMIT ||
+            unboundDraft.current()?.takeIf {
+                it.id == transaction.draftId && it.phase == UnboundDraftState.Phase.READY &&
+                    it.result == result
+            } == null) return
+        val second = observeEditor()
+        val same = second != null && sameFreshTarget(transaction, second)
+        val decision = guard.reserveCommit(transaction.id,
+            if (same) second?.snapshot else null, SystemClock.elapsedRealtime())
+        if (decision != GuardDecision.Ready) {
+            note("FRESH_INSERT_REFUSED")
+            guard.end(transaction.id)
+            freshDestination = null
+            resetFreshComposition()
+            refuseFreshInsertion(if (second == null) observationCode.name else
+                (decision as GuardDecision.Refused).reason.name)
+            return
+        }
+        // The guard has consumed the attempt before any editor IPC. No later tap can
+        // get another Insert for this draft, even if the IPC throws or proves nothing.
+        if (!unboundDraft.markAttempted(transaction.draftId)) {
+            guard.end(transaction.id)
+            freshDestination = null
+            resetFreshComposition()
+            return refuseFreshInsertion("DRAFT_CHANGED")
+        }
+        transaction.phase = DestinationPhase.OBSERVING
+        commitConfirmation = "PENDING"
+        experimentPhase = "REVIEW_COMMIT_OBSERVING"
+        try {
+            commitRequestCount++
+            note("FRESH_COMMIT_REQUESTED_ONCE")
+            second!!.connection.commitText(result, 1, null)
+        } catch (_: Exception) {
+            finishUncertain(transaction, "COMMIT_EXCEPTION")
+            return
+        }
+        // An editor may apply the void commit asynchronously. Read only; never retry.
+        main.post { verifyFreshCommit(transaction, 0) }
+    }
+
+    private fun sameFreshHost(transaction: FreshDestination): Boolean =
+        bubble === transaction.host && transaction.host.isAttachedToWindow &&
+            transaction.host.windowToken == transaction.hostToken &&
+            runCatching { transaction.host.createAccessibilityNodeInfo().windowId }
+                .getOrDefault(-1) == transaction.hostWindowId
+
+    private fun sameFreshTarget(transaction: FreshDestination, observed: Observation): Boolean =
+        sameFreshHost(transaction) && observed.node == transaction.node &&
+            observed.root == transaction.root && observed.generation == transaction.generation &&
+            guard.session(transaction.id)?.target?.let { original ->
+                val now = observed.snapshot
+                now.packageName != packageName && now.packageName == original.packageName &&
+                    now.windowId == original.windowId && now.uniqueNodeId == original.uniqueNodeId &&
+                    now.viewId == original.viewId && now.className == original.className &&
+                    now.editorFieldId == original.editorFieldId && now.inputType == original.inputType
+            } == true
+
+    private fun verifyFreshCommit(transaction: FreshDestination, poll: Int) {
+        if (freshDestination !== transaction || transaction.phase != DestinationPhase.OBSERVING)
+            return
+        if (!sameFreshHost(transaction)) return finishUncertain(transaction, "HOST_CHANGED")
+        val observed = observeEditor(transaction.expected.beforeCount,
+            transaction.expected.afterCount, postCommit = true)
+        if (observed == null || !sameFreshTarget(transaction, observed))
+            return finishUncertain(transaction, "TARGET_CHANGED")
+        if (CommitConfirmation.matches(transaction.expected, observed.snapshot)) {
+            guard.end(transaction.id)
+            freshDestination = null
+            resetFreshComposition()
+            commitConfirmation = "CONFIRMED"
+            endDraft(transaction.draftId, "INSERT_CONFIRMED", completed = true)
+            return
+        }
+        val original = guard.session(transaction.id)?.target
+            ?: return finishUncertain(transaction, "ORIGINAL_CONTEXT_LOST")
+        val now = observed.snapshot
+        val oldStartsAt = original.offset - now.offset
+        val unchanged = oldStartsAt >= 0 &&
+            oldStartsAt + original.surroundingText.length <= now.surroundingText.length &&
+            now.surroundingText.regionMatches(oldStartsAt, original.surroundingText, 0,
+                original.surroundingText.length) &&
+            now.offset + now.selectionStart == original.offset + original.selectionStart &&
+            now.selectionStart == now.selectionEnd
+        if (!unchanged || poll >= 4)
+            return finishUncertain(transaction, "POSTCONTEXT_UNCONFIRMED")
+        main.postDelayed({ verifyFreshCommit(transaction, poll + 1) }, 120L)
+    }
+
+    private fun finishUncertain(transaction: FreshDestination, code: String) {
+        if (freshDestination !== transaction) return
+        guard.end(transaction.id)
+        freshDestination = null
+        resetFreshComposition()
+        commitConfirmation = "UNCERTAIN"
+        experimentPhase = "REVIEW_UNCERTAIN"
+        note("FRESH_COMMIT_UNCERTAIN_$code")
+        status = "Insertion could not be confirmed. Check the field before Copy or manual paste."
+        refreshIdleBubble(forceRender = true)
+    }
+
+    private fun refuseFreshInsertion(code: String) {
+        commitConfirmation = "REFUSED"
+        experimentPhase = "REVIEW_READY"
+        note("FRESH_INSERT_REFUSED_$code")
+        status = when (code) {
+            "SELECTION_NOT_COLLAPSED", "SELECTION_CHANGED" ->
+                "Text is selected. Tap to place the cursor, then try Insert."
+            "RESULT_TOO_LONG_OR_UNSAFE" ->
+                "This Phase 1 Insert test supports up to 512 characters. Use Copy & close."
+            "RESULT_NOT_SINGLE_LINE" ->
+                "This Phase 1 Insert test accepts one line. Use Copy & close for line breaks."
+            else -> "Could not verify a safe destination. Tap the intended text field and try Insert, or Copy."
+        }
         refreshIdleBubble(forceRender = true)
     }
 
@@ -1340,7 +1730,8 @@ class KoScribeService : AccessibilityService() {
         val windowChildren: ChildWindowSnapshot?
     )
 
-    private fun observeEditor(): Observation? {
+    private fun observeEditor(beforeCount: Int = 64, afterCount: Int = 64,
+        postCommit: Boolean = false): Observation? {
         if (startupExperiment == StartupExperiment.RESELECT) destinationCaptureCount++
         observationCode = ObservationCode.NOT_CHECKED
         val locked = (getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked
@@ -1349,6 +1740,8 @@ class KoScribeService : AccessibilityService() {
             ?: return refuse(ObservationCode.NO_INPUT_METHOD)
         if (!method.currentInputStarted) return refuse(ObservationCode.INPUT_NOT_STARTED)
         val info = method.currentInputEditorInfo ?: return refuse(ObservationCode.NO_EDITOR_INFO)
+        if (startupExperiment == StartupExperiment.REVIEW && info.packageName == packageName)
+            return refuse(ObservationCode.OWN_EDITOR)
         val connection = method.currentInputConnection
             ?: return refuse(ObservationCode.NO_INPUT_CONNECTION)
         if (!safeInputType(info.inputType)) return refuse(ObservationCode.UNSUPPORTED_EDITOR_TYPE)
@@ -1357,18 +1750,32 @@ class KoScribeService : AccessibilityService() {
         }
         if (focusedWindows.isEmpty()) return refuse(ObservationCode.NO_FOCUSED_APP_WINDOW)
         if (focusedWindows.size > 1) return refuse(ObservationCode.MULTIPLE_FOCUSED_APP_WINDOWS)
-        val root = focusedWindows.single().getRoot(0) ?: return refuse(ObservationCode.NO_FOCUSED_NODE)
+        if (startupExperiment == StartupExperiment.REVIEW &&
+            focusedWindows.single().displayId != Display.DEFAULT_DISPLAY)
+            return refuse(ObservationCode.WRONG_DISPLAY)
+        val focusedWindow = focusedWindows.single()
+        val root = focusedWindow.getRoot(0) ?: return refuse(ObservationCode.NO_FOCUSED_NODE)
         if (!root.refresh()) return refuse(ObservationCode.NO_FOCUSED_NODE)
+        if (startupExperiment == StartupExperiment.REVIEW &&
+            (root.windowId != focusedWindow.id ||
+                root.packageName?.toString() != info.packageName))
+            return refuse(ObservationCode.NODE_EDITOR_MISMATCH)
         val focus = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
             ?: return refuse(ObservationCode.NO_FOCUSED_NODE)
         if (!focus.isFocused || !focus.isEditable ||
             focus.packageName?.toString() != info.packageName)
             return refuse(ObservationCode.NODE_EDITOR_MISMATCH)
+        if (startupExperiment == StartupExperiment.REVIEW &&
+            (focus.windowId != focusedWindow.id || focus.inputType != info.inputType))
+            return refuse(ObservationCode.NODE_EDITOR_MISMATCH)
+        if (startupExperiment == StartupExperiment.REVIEW && !focus.isEnabled)
+            return refuse(ObservationCode.NODE_DISABLED)
         if (focus.isPassword || !safeInputType(focus.inputType))
             return refuse(ObservationCode.PROTECTED_OR_NON_TEXT_NODE)
         val unique = focus.uniqueId?.takeIf(String::isNotBlank) ?: "source-node"
         val surrounding = try {
-            connection.getSurroundingText(64, 64, InputConnection.GET_TEXT_WITH_STYLES)
+            connection.getSurroundingText(beforeCount, afterCount,
+                InputConnection.GET_TEXT_WITH_STYLES)
         } catch (_: Exception) { null } ?: return refuse(ObservationCode.SURROUNDING_UNAVAILABLE)
         val text = surrounding.text
         val composing = (text as? Spanned)?.let { spanText ->
@@ -1393,7 +1800,7 @@ class KoScribeService : AccessibilityService() {
             return refuse(ObservationCode.NODE_CARET_MISMATCH)
         }
         if (nodeUnknownPair) note("OBS_VERIFIED_EMPTY_CARET")
-        val composition = method.compositionAt(caret)
+        val composition = if (postCommit) CompositionState.UNKNOWN else method.compositionAt(caret)
         if (composition == CompositionState.COMPOSING || composing) {
             return refuse(ObservationCode.ACTIVE_COMPOSITION)
         }
@@ -1484,7 +1891,7 @@ class KoScribeService : AccessibilityService() {
         holder: LinearLayout, params: WindowManager.LayoutParams,
         requested: BubblePlacement.Point
     ): BubblePlacement.Point? {
-        if (startupExperiment != StartupExperiment.RESELECT || !serviceConnected ||
+        if (!unboundArm() || !serviceConnected || freshDestination != null ||
             unboundRecording.current() != null || bubble !== holder || !holder.isAttachedToWindow)
             return null
         val geometry = idleBubbleGeometry ?: return null
@@ -1613,8 +2020,9 @@ class KoScribeService : AccessibilityService() {
 
     private fun renderBubble() {
         if (!serviceConnected || !::windowManager.isInitialized) return
-        if (startupExperiment == StartupExperiment.RESELECT && unboundRecording.current() != null)
+        if (unboundArm() && unboundRecording.current() != null)
             return // Keep the existing window unchanged until this recording ends.
+        if (freshDestination != null) return // Preserve the ready host through capture and proof.
         if (startupExperiment == StartupExperiment.OVERLAY && pendingId != null &&
             overlayPanel != null) return // Keep the captured host window unchanged until terminal cleanup.
         bubble?.let {
@@ -1630,26 +2038,50 @@ class KoScribeService : AccessibilityService() {
         idleBubbleGeometry = null
         bubble = null
         bubbleParams = null
-        if (startupExperiment == StartupExperiment.RESELECT && !idleBubbleVisible) return
-        val frame = if (startupExperiment == StartupExperiment.RESELECT) bubbleFrame() else null
+        if (unboundArm() && (!idleBubbleVisible ||
+                unboundDraft.current()?.phase == UnboundDraftState.Phase.REVIEW)) return
+        val frame = if (unboundArm()) bubbleFrame() else null
         val available = frame?.area
         if (available != null && (available.right - available.left < dp(56) ||
                 available.bottom - available.top < dp(48))) return
         val holder = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
+            if (startupExperiment == StartupExperiment.REVIEW) {
+                isSaveEnabled = false
+                importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+                importantForContentCapture = View.IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS
+            }
             if (expanded) {
                 setBackgroundColor(0xFFF7F7F7.toInt())
                 setPadding(dp(8), dp(8), dp(8), dp(8))
                 elevation = dp(4).toFloat()
             }
         }
-        val controls = if (startupExperiment == StartupExperiment.RESELECT && expanded)
+        val controls = if (unboundArm() && expanded)
             LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         else holder
         if (expanded) {
             controls.addView(caption("KoScribe · sample only", true))
             controls.addView(caption(status))
-            val modeRow = if (startupExperiment == StartupExperiment.RESELECT)
+            val draft = if (startupExperiment == StartupExperiment.REVIEW)
+                unboundDraft.current()?.takeIf { it.phase != UnboundDraftState.Phase.REVIEW }
+            else null
+            if (draft != null) {
+                controls.addView(caption("Selected mode: ${draft.mode.label}"))
+                controls.addView(caption(draft.result ?: "").apply {
+                    maxLines = 3
+                    ellipsize = android.text.TextUtils.TruncateAt.END
+                })
+                if (draft.phase == UnboundDraftState.Phase.READY) {
+                    controls.addView(action("Insert") { insertDraft(draft.id) }
+                        .apply { id = R.id.ready_insert })
+                }
+                controls.addView(action("Copy & close") { copyDraft(draft.id) }
+                    .apply { id = R.id.ready_copy })
+                controls.addView(action("Cancel") { endDraft(draft.id, "USER_CANCELLED") }
+                    .apply { id = R.id.ready_cancel })
+            } else {
+            val modeRow = if (unboundArm())
                 LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
             else null
             for (mode in OutputMode.entries) {
@@ -1661,7 +2093,7 @@ class KoScribeService : AccessibilityService() {
             if (modeRow != null) controls.addView(modeRow, LinearLayout.LayoutParams(-1, -2))
             if (startupExperiment == StartupExperiment.OFF && recoveryText != null)
                 controls.addView(action("Copy result manually") { copyRecovery() })
-            val footerRow = if (startupExperiment == StartupExperiment.RESELECT)
+            val footerRow = if (unboundArm())
                 LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
             else null
             if (footerRow != null)
@@ -1676,6 +2108,7 @@ class KoScribeService : AccessibilityService() {
                 footerRow.addView(close, LinearLayout.LayoutParams(0, -2, 1f))
                 controls.addView(footerRow, LinearLayout.LayoutParams(-1, -2))
             } else controls.addView(close)
+            }
             if (controls !== holder) {
                 val viewport = android.widget.ScrollView(this).apply { addView(controls) }
                 holder.addView(viewport, LinearLayout.LayoutParams(-1, -1))
@@ -1699,26 +2132,28 @@ class KoScribeService : AccessibilityService() {
             holder.addView(pill, LinearLayout.LayoutParams(dp(56), dp(48)))
         }
         val params = WindowManager.LayoutParams(
-            if (startupExperiment == StartupExperiment.RESELECT && expanded)
+            if (unboundArm() && expanded)
                 minOf(dp(260), available!!.right - available.left)
             else if (expanded) dp(260) else WindowManager.LayoutParams.WRAP_CONTENT,
-            if (startupExperiment == StartupExperiment.RESELECT && expanded)
+            if (unboundArm() && expanded)
                 minOf(dp(320), available!!.bottom - available.top)
             else WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             PixelFormat.TRANSLUCENT
         ).apply {
-            gravity = if (startupExperiment == StartupExperiment.RESELECT)
+            if (startupExperiment == StartupExperiment.REVIEW)
+                flags = flags or WindowManager.LayoutParams.FLAG_SECURE
+            gravity = if (unboundArm())
                 Gravity.TOP or Gravity.LEFT else Gravity.TOP or Gravity.END
-            x = if (startupExperiment == StartupExperiment.RESELECT) 0 else dp(8)
-            y = if (startupExperiment == StartupExperiment.RESELECT) 0 else dp(110)
+            x = if (unboundArm()) 0 else dp(8)
+            y = if (unboundArm()) 0 else dp(110)
         }
         try {
-            if (startupExperiment == StartupExperiment.RESELECT) holder.visibility = View.INVISIBLE
+            if (unboundArm()) holder.visibility = View.INVISIBLE
             windowManager.addView(holder, params)
             bubble = holder
-            if (startupExperiment == StartupExperiment.RESELECT) {
+            if (unboundArm()) {
                 bubbleParams = params
                 if (!expanded) enableCollapsedDrag(holder.getChildAt(0) as Button, holder, params)
                 positionNewBubble(holder, params, frame!!)

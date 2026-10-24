@@ -217,6 +217,55 @@ The planned later destination check needs its own fresh transaction and full
 event/input guards; the Stage 1 unconditional RESELECT callback exits must be
 replaced with phase-aware handling before that check can exist.
 
+## Editable English review synthetic checks (2026-10-24)
+
+Use the separately built and reviewed `-PkoscribeStartupArm=REVIEW` candidate,
+not the earlier RESELECT recording-only candidate. Run only exact methods in
+`ReviewFlowSmokeTest`, one at a time, with their sole matching flag:
+
+| Method | Sole flag |
+| --- | --- |
+| `editedEnglishCopyClosesAndReappearsAfterImeCycle` | `reviewCopyReady` |
+| `editedEnglishInsertsIntoEmptyFixtureOnce` | `reviewInsertEmptyReady` |
+| `longEnglishInsertsAtMiddlePreservingKoreanAndEmoji` | `reviewInsertMiddleReady` |
+| `fixedKoreanSampleInsertsIntoEmptyFixture` | `reviewKoreanReady` |
+| `selectedRangeRefusesAndPreservesResult` | `reviewSelectionReady` |
+| `koreanEditRejectsThenCancelPreservesFixture` | `reviewKoreanEditReady` |
+| `acknowledgedButUnchangedCommitIsTerminallyUncertain` | `reviewUncertainReady` |
+
+```powershell
+adb -d shell am instrument --user 0 -w -r -e class 'com.koscribe.smoke.ReviewFlowSmokeTest#editedEnglishCopyClosesAndReappearsAfterImeCycle' -e reviewCopyReady true com.koscribe.smoke/com.koscribe.smoke.KoScribeTestRunner
+```
+
+These tests launch and mutate only our synthetic fixture and KoScribe's review
+editor, with SwiftKey selected/visible. They never open or inspect a conversation,
+invoke Send/Enter, or change keyboard selection. Copy replaces the clipboard
+with a fixed synthetic result; do not read or restore earlier clipboard content.
+The Copy test checks our clip metadata before examining the known synthetic text.
+The uncertainty fixture acknowledges both commit overloads without changing
+text, exercising terminal uncertainty and the absence of another Insert action.
+
+Tests check zero destination captures/commits during recording and review, then
+fresh capture only after explicit Insert. Exact text/one-commit counters and
+bubble dismissal are assertions, not conclusions from a void API return. English
+edits use the owned review EditText's accessibility action; this verifies editable
+content handling with the keyboard visible, not actual SwiftKey keystrokes or
+prediction. Those still require a manual device check. No real translation runs.
+
+Inspect each result before continuing. Root operates ADB; coding/review agents
+do not. Read only exact app AppOps, fixed service codes, own nodes, and keyboard
+metadata. Keep all older real-app tests outside this run; never execute a whole
+class/suite. The actual phone results belong in DEVICE_TESTS and PROGRESS.
+
+Startup prerequisite: awake/unlocked does not exclude an open notification shade.
+On Oct24 the fixture attached/resumed/drew normally but the shade held focus;
+UiAutomation exposed only two SYSTEM windows. A fixed-category WindowManager
+focus check identified the shade; closing it resolved startup without changing
+product guards or timeout. Never read notification contents to diagnose this.
+Fixture publication follows setContentView; never query hasWindowFocus off the
+main thread during construction. Startup timeout diagnostics contain only own
+lifecycle counters, window-type counts, package classifications, and flag bits.
+
 ## Contextual bubble synthetic checks (2026-10-24)
 
 Use a reviewed RESELECT build with `BubbleLifecycleSmokeTest`. These tests launch

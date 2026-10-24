@@ -46,6 +46,13 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   still needs explicit controls and reliable microphone cleanup. Visibility
   observation is separate from destination capture or insertion eligibility.
   Use Astra Ultra subagents when a problem is very difficult.
+- Andrew then authorized editable English review and bubble dismissal after
+  Copy or confirmed insertion. Implement this in a separate debug REVIEW arm,
+  preserving the tested RESELECT baseline and default OFF. Synthetic Copy and
+  insertion checks are in scope; real-conversation tests remain non-inserting.
+  A commit request returning is not success. Require observed same-destination
+  text/caret confirmation before dismissal; an ambiguous attempted commit must
+  never regain Insert through retries, editing, or stale callbacks.
 
 ## Nonnegotiable product constraints
 

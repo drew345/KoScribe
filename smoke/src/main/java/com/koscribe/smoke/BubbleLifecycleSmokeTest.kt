@@ -60,7 +60,10 @@ class BubbleLifecycleSmokeTest {
         val mic = args.getString("bubbleMicReady") == "true"
         val restore = args.getString("bubbleRestoreReady") == "true"
         val other = listOf("externalDraftReady", "externalRecordCancelReady", "startupHoldReady",
-            "startupCollapseReady", "startupPanelReady", "overlayReady", "reselectReady")
+            "startupCollapseReady", "startupPanelReady", "overlayReady", "reselectReady",
+            "reviewCopyReady", "reviewInsertEmptyReady", "reviewInsertMiddleReady",
+            "reviewKoreanReady", "reviewSelectionReady", "reviewKoreanEditReady",
+            "reviewUncertainReady")
             .any { args.getString(it) == "true" }
         assumeTrue("BUBBLE_TEST_REQUIRES_ONE_EXACT_OPT_IN",
             listOf(idle, mic, restore).count { it } == 1 && !other)
@@ -77,7 +80,10 @@ class BubbleLifecycleSmokeTest {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
         })
         await("FIXTURE_NOT_FOREGROUND") {
-            SmokeEditorActivity.current.get()?.takeIf { it.hasWindowFocus() }
+            automation().windows.firstOrNull {
+                it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.isFocused &&
+                    it.getRoot(0)?.packageName?.toString() == fixture
+            }
         }
     }
 

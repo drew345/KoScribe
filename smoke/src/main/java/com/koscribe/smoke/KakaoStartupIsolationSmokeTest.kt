@@ -56,7 +56,10 @@ class KakaoStartupIsolationSmokeTest {
             arguments.getString("reselectReady") == "true" ||
             arguments.getString("bubbleIdleReady") == "true" ||
             arguments.getString("bubbleMicReady") == "true" ||
-            arguments.getString("bubbleRestoreReady") == "true"
+            arguments.getString("bubbleRestoreReady") == "true" ||
+            listOf("reviewCopyReady", "reviewInsertEmptyReady", "reviewInsertMiddleReady",
+                "reviewKoreanReady", "reviewSelectionReady", "reviewKoreanEditReady",
+                "reviewUncertainReady").any { arguments.getString(it) == "true" }
         assumeTrue("STARTUP_PROBE_REQUIRES_ONE_EXPLICIT_FLAG",
             selected == 1 && !olderExternalFlag)
         assertTrue("WRONG_INSTRUMENTATION_PACKAGE",

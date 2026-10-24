@@ -6,7 +6,10 @@ First Kakao flow safely refused insertion; other external-app checks and actual
 SwiftKey keystroke editing remain pending.
 On 2026-10-24 the RESELECT candidate also passed three exact synthetic bubble
 gates: visibility/drag/Hide, service-restart position restoration, and recording
-through keyboard transitions. See the final section for scope and limits.
+through keyboard transitions. The later REVIEW candidate passed editable EN ->
+Copy and completion dismissal; its empty Insert gate observed the expected text
+but could not confirm caret agreement. Current insertion acceptance is unresolved.
+See the final sections for scope and limits; earlier passes apply to their builds.
 
 ## Environment to verify
 
@@ -648,3 +651,88 @@ Kakao result applies to its earlier Stage1 APK. Editable English review,
 Copy/insertion dismissal, actual destination insertion, rotation, split-screen,
 external-display/reboot behavior, and the fallback implementation remain open.
 Phase 1 acceptance and the speech/API phase have not been reached.
+
+## Editable English review checkpoint (2026-10-24)
+
+Andrew authorized editable English review and dismissal after Copy or confirmed
+insertion. Sol 6 Extra High implemented the separate debug REVIEW arm and smoke
+tests; Astra Extra High independently reviewed them. Default/release OFF and the
+recording-only RESELECT arm are retained. No API, credential, transcription, or
+translation was added. English edits are real; Korean results remain fixed samples.
+
+The product owns a transient unbound draft after proven microphone Stop, opens a
+nonexported secure review Activity, then shows nonfocusable result controls.
+No destination is captured until explicit Insert. Copy uses a sensitive clip and
+clears the result only after the clipboard write returns. Insert reserves a single
+attempt before IPC and requires exact same-destination postcontext/caret evidence.
+Uncertainty permanently removes Insert for that draft; no edit/retry loophole.
+Independent review required full identity/continuity checks, queued-event yields,
+widened postcommit context, pending-Copy exclusion, and content-lifecycle cleanup.
+
+Frozen reviewed source SHA-256:
+
+- Service: `A0C2A77D1D381226F0318C880419A7DB83A0478F94A5B854294F2CF2130EC59C`.
+- Review Activity: `663DEE26065EEE3786B1A0B1CBAF0FAC3A1BEF64A9A8BD927AD605A5AC79203B`.
+- Draft state: `A386646D28D3D56937C30A744D9C72907067F54C761CF8C6274C80E1CB13F5E0`.
+- Commit confirmation: `AF4B51822BD08E30ADC37298546D7FC9E5FF101BF399B7FC0399CDA9D5065A19`.
+- Review smoke: `47FA422AEE0CC096096A9F838AD0345E726E1DB38DAC48958D4FD20323E1CC36`.
+- Fixture: `78D125F9F07A0BD9E193BF4CA0E5E4A8D28D74DF35D2A2C5A37915AE92597C46`.
+
+Installed product SHA-256:
+`5387AA79E6FEBFE2E58977478AA915D1483DDBEE4BD3EA8486AC4F33BC0E0F68`.
+Installed final smoke SHA-256:
+`337DE462EBA993231F2BB232E03869005CE1FB91DC5B5FC6C064914C5C9664E9`.
+Saved under ignored `app/build/review-stage2/REVIEW.apk` and `smoke-REVIEW.apk`.
+The ordinary app-debug.apk output is OFF; do not substitute it for this candidate.
+
+REVIEW and default OFF builds passed; 37 JVM tests passed with no failures/errors/
+skips. Lint: zero errors, app 23/smoke 3 warnings. Signatures verified. Test-only
+fixture diagnostics were subsequently rebuilt/linted and independently reviewed.
+
+Initial fixture startup crashed with `Window couldn't find content container view`.
+Publishing its Activity before setContentView and querying hasWindowFocus off-main
+could race decor initialization (source-supported diagnosis). The test-only fix
+publishes after layout setup and uses accessibility window metadata for focus.
+It removed the crash. Subsequent startup timeouts (8.597, 8.550, 8.590, 8.558s)
+occurred before recording/Copy. Owned lifecycle/window diagnostics established
+RESUMED, attached, main-loop heartbeat, default display, visible/drawn surface,
+but no focus callback and only two SYSTEM accessibility windows. WindowManager
+classified the actual focus owner as NOTIFICATION_SHADE. Closing that panel
+resolved startup with no product change. No notification content was inspected.
+These were setup failures, not evidence of a REVIEW recording/Copy failure.
+
+Exact methods in `ReviewFlowSmokeTest`:
+
+| Gate | Measured result |
+| --- | --- |
+| `editedEnglishCopyClosesAndReappearsAfterImeCycle` | Passed in 6.454s. Positive mic proof -> Stop -> editable EN review -> own editor edit -> confirmation -> explicit Copy. Original synthetic draft preserved; zero destination captures/commits; expected sensitive clip checked. Bubble dismissed throughout the same IME session and returned after verified hide/show. AppOps mic duration 450ms, ended. |
+| `editedEnglishInsertsIntoEmptyFixtureOnce` | Failed in 12.098s at SUCCESS_NOT_CONFIRMED. Its preceding exact-text wait passed: expected edited sample was observed in the synthetic field. One capture and one commit occurred, then product caret verification became terminally UNCERTAIN. Confirmation/dismissal assertions did not pass. |
+| Other five REVIEW methods | Not run; deferred at the battery checkpoint. |
+
+Empty-insertion fixed codes: precommit `OBS_VERIFIED_EMPTY_CARET` and
+`OBS_READY_UNKNOWN` twice; then `FRESH_COMMIT_REQUESTED_ONCE`,
+`CARET_EMPTY_PROBE_CN_NY_HY`, `OBS_NODE_CARET_MISMATCH`,
+`FRESH_COMMIT_UNCERTAIN_TARGET_CHANGED`, and test cleanup `REVIEW_ENDED_USER_CANCELLED`.
+CN means the connection was no longer verified empty-at-zero; NY means node
+selection was -1/-1; HY means node text was empty or a hint. The generic
+TARGET_CHANGED label does not establish an actual destination switch. Node/input
+observation lag is plausible but unproven. No commit retry occurred. Final state:
+REVIEW_CANCELLED, proof count 2, captures 1, commits 1, confirmation UNCERTAIN,
+draft NONE, cleanup pending false; AppOps mic ended after 473ms. The test observed
+expected text before waiting for confirmation; final post-cleanup field contents
+were not separately checked. Do not count this as an Insert gate pass.
+
+Andrew requested a stopping point because his LAPTOP battery was at 10% (not the
+phone). No test/build remains running. Next session: one narrow synthetic
+postcommit diagnostic of relative timing, target identity/generation, node and
+connection caret data, lengths and expected-context match booleans only. Bounded
+read-only observations after uncertainty may diagnose whether the node catches
+up; they must not recapture, rearm, retry, or declare the ended transaction a
+success. Keep the tested product frozen until a reviewed fix is justified.
+
+SwiftKey stayed selected/visible; automated edits used the owned EditText action,
+so actual keyboard keystrokes/prediction remain untested. No conversations,
+screenshots, retained audio, Send/Enter, credential or paid API call were involved.
+Copy replaced the clipboard with the disclosed fixed sample. Confirmed insertion,
+middle/Korean safety gates, current-build real-app compatibility, and full Phase 1
+acceptance remain open.

@@ -1,3 +1,9 @@
 <resources>
     <item name="local_test_editor" type="id" />
+    <item name="review_english" type="id" />
+    <item name="review_confirm" type="id" />
+    <item name="review_cancel" type="id" />
+    <item name="ready_insert" type="id" />
+    <item name="ready_copy" type="id" />
+    <item name="ready_cancel" type="id" />
 </resources>

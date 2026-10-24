@@ -24,6 +24,27 @@ eligibility. Active recording/review owns its controls until terminal cleanup.
 Position changes must not violate that ownership or move a captured host.
 Test this on synthetic screens before real-app confirmation.
 
+After the contextual-bubble gate passed, Andrew authorized editable English
+review and completion dismissal on 2026-10-24. The next candidate is a separate
+debug REVIEW arm; keep tested RESELECT and default/release OFF intact. Stop must
+prove microphone cleanup before handing a transient content ID to a dedicated
+nonexported review Activity. No text goes into saved hierarchy state, Intent
+extras, storage, or logs. The English editor uses SwiftKey. EN accepts edits;
+Korean samples still require the exact fixed source until real translation exists.
+
+Confirm ends review and leaves a service-owned result with nonfocusable Insert,
+Copy & close, and Cancel controls. It captures no destination until explicit
+Insert. Copy marks its new clip sensitive; a failed write retains the result.
+Fresh insertion must retain identity/context/caret/composition and continuity
+checks, reserve its one attempt before IPC, and verify the exact resulting local
+context and collapsed caret in the same node/root/input session. Widen the
+post-insertion context request by the result's UTF-16 length so long results
+cannot appear successful from a truncated fragment. Unsupported or ambiguous
+confirmation is terminal for insertion of that draft; only deliberate recovery
+or cancellation remains. Copy or confirmed insertion clears transient content
+and suppresses idle redisplay until a verified new keyboard cycle. These are
+implementation requirements; phone acceptance is still pending.
+
 The accepted fallback is a launcher Activity with mic -> editable English ->
 요/반말 translation -> Copy & close, followed by manual paste. Design content
 review/translation independently of destination integration so this remains a
@@ -47,7 +68,9 @@ accessibility bubble, including unsilenced own-recorder reads and direct Cancel.
 The original captured destination still invalidates during longer recordings.
 RESELECT Stage 1 now separates recording from destination capture and passed
 one >3-second recording -> Stop -> readonly review -> Cancel device gate.
-Editable review and the fresh destination step remain to be implemented.
+Editable review and fresh guarded insertion are now implemented in REVIEW.
+Copy dismissal passed its synthetic device gate; insertion confirmation remains
+unresolved after one observed sample insertion with a postcommit caret mismatch.
 Never keep the microphone recording simply to keep a bubble alive.
 
 Andrew selected OpenAI cloud speech recognition for the first version and
@@ -87,18 +110,19 @@ action, not an automatic fallback.
 
 Implement this in API-free stages. Independent recording -> Stop -> readonly
 sample review -> Cancel passed beyond the observed 2.6-second window event.
-Next add editable English review and the explicit fresh destination check. A
-separate debug RESELECT arm must block insertion/Copy during current real-app
-tests and label its action `Check destination (no insert)`. OFF/release defaults
+The separate REVIEW arm now supplies editable review, Copy, and synthetic-only
+fresh insertion testing. RESELECT continues to block insertion/Copy during its
+real-app recording tests. Any later real-app destination-only check must be labeled
+`Check destination (no insert)`. OFF/release defaults
 remain unchanged until the new path is reviewed and tested. No real-app insertion
 is authorized by selecting this workflow alone.
 
-For the next editable-review stage, the current recommendation is a dedicated
-own Activity after microphone Stop, with a new unbound draft owner rather than
-the old target-bound SessionActivity contract. Dismiss it before Andrew selects
-the destination. Standard Activity/EditText focus is simpler than making the
-service overlay editable; the bubble remains recording/Insert entry. This is
-a proposal for the next stage, not implemented or tested yet.
+REVIEW implements a dedicated own Activity after microphone Stop, with an
+independent unbound draft owner. It finishes before destination selection.
+The bubble remains the recording/Insert entry. Automated editable-content/Copy
+handling passed with SwiftKey visible; actual SwiftKey keystroke editing remains
+untested. A failed postcommit observation stays terminally uncertain; diagnosing
+node/InputConnection timing must not resurrect or retry that transaction.
 
 If an editable overlay is chosen, clear both NOT_FOCUSABLE and ALT_FOCUSABLE_IM,
 wait for actual own-window/EditText focus before requesting SwiftKey, and later

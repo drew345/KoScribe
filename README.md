@@ -3,7 +3,7 @@
 Personal Android dictation app: speak English and insert natural Korean into
 the focused text field, while continuing to use Microsoft SwiftKey.
 
-**Status: Phase 1 feasibility passed on A35; Phase 2 speech candidate under test.**
+**Status: Bounded Phase 1 and Phase 2 gates passed on A35; Korean translation is next.**
 Fixed Korean insertion passed in empty KakaoTalk, Google Messages and Instagram
 fields. Synthetic checks cover preservation of surrounding text, selected-text
 refusal, uncertain commits without retries, editable review, and dismissal after
@@ -16,8 +16,10 @@ The separate [Phase 2 candidate](docs/PHASE2.md) adds private on-phone API key
 entry and real English transcription after Stop. Source review, unit tests and
 setup checks preceded private key entry. Real speech review/Cancel and
 SwiftKey-edited insertion passed in the test editor. Recording-control visibility
-and active Cancel also passed; network error recovery remains to check. Korean translation is the next
-phase. The [Phase 1 sample build](docs/PHASE1.md) remains available
+and active Cancel also passed. Offline failure followed by a fresh successful
+recording/review/Cancel passed on October25. Broader daily-use reliability remains
+untested, including the cause of a morning service-readiness incident. Korean
+translation has not started. The [Phase 1 sample build](docs/PHASE1.md) remains available
 without an API key; ordinary and release builds default to OFF. See
 [PROGRESS](PROGRESS.md) for the current installed build and next action.
 

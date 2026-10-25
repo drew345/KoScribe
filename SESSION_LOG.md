@@ -668,3 +668,14 @@
   Astra accepted this evidence. Asked Andrew to restore normal connectivity and
   record a distinct fresh sentence, check review, then review Cancel. Pending
   user report and own counters; no earlier readiness root-cause fix is inferred.
+- Fresh online recovery PASSED: distinct sentence correctly reviewed, user Cancel
+  returned cursor without changing field. Own proof1->2, REVIEW_CANCELLED with
+  REVIEW_ENDED_USER_CANCELLED, draftNONE/captures0/commits0/cleanupfalse;
+  mic ended5.048s, SwiftKey unchanged, cached bubble READY/shown. These durations
+  measure recording, not API latency. Astra/xhigh accepted the bounded Phase2
+  gate with prior speech/edit/Insert, setup, control and unit/source evidence.
+- Andrew requested a stopping point. Saved checkpoint; no work remains running.
+  Phase3 has not been implemented or tested. Resume with confirmed-English
+  gpt-6-luna/xhigh translation and the existing credential/insertion contracts.
+  No new real-app insertion scope is granted. Preserve unresolved morning
+  lifecycle cause and later processing-Cancel/geometry/quality/cost/latency limits.

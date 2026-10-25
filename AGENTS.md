@@ -22,6 +22,13 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   personal key privately and confirmed DeveloperStuff backup; actual speech
   tests have begun. Never rerun fake-key/deletion or missing-key setup tests
   against his live credential. PROGRESS owns current device evidence.
+- Phase2's bounded gate was met on2026-10-25: deliberate offline failure and
+  fresh online review/Cancel passed, together with prior actual ASR/edit/Insert,
+  setup, control and unit/source evidence; Astra/xhigh accepted the gate.
+  Andrew then requested stopping. Phase3 translation is the next planned work,
+  not yet implemented. Preserve the live key, explicit debug/default-OFF boundary
+  and existing insertion rules. Broader lifecycle and original readiness cause
+  remain open; this grants no new real-app insertion trial.
 - Andrew subsequently authorized continued scoped KakaoTalk self-chat
   diagnostics using recording -> Stop -> Cancel, without inserting or sending.
   This scope permits repeat non-inserting diagnostics as needed; do not ask

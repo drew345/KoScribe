@@ -4,6 +4,14 @@ Updated: 2026-10-25 (Asia/Seoul).
 
 ## Current state
 
+STOPPED at Andrew's request on October25. Bounded Phase2 gate PASSED and
+Astra/xhigh accepted the combined evidence. No tests, builds, recording or
+background work remain running. Phase3 implementation has not started.
+Next session: implement the agreed Korean translation after confirmed English,
+using gpt-6-luna/xhigh, same on-phone credential and guarded explicit Insert.
+Verify current official API details/account access without reading the saved key;
+use Sol6/xhigh coding and independent Astra/xhigh review. Preserve the v5 baseline.
+
 Andrew resumed work on October 25 from the clean night checkpoint0b0889a.
 USB debugging was initially unauthorized; Andrew approved it and the
 connection now works. Three own service dumps timed out, including after a user
@@ -34,12 +42,16 @@ own proof0->1, RESELECT_CANCELLED and RESELECT_ENDED_SPEECH_NETWORK, draftNONE,
 captures/commits0, cleanupfalse; microphone ended4.858s. SwiftKey unchanged.
 The new cached snapshot is READY/IME visible with the bubble attached and shown,
 renderVISIBLE. This verifies current offline visibility, not an original-cause fix.
-Astra/xhigh accepted the offline evidence. Andrew may now restore connectivity;
-asked for one fresh, distinct English sentence -> correct review -> review Cancel,
-unchanged field and no insertion. Await his report and own cleanup verification.
+Astra/xhigh accepted both parts of the recovery check. After restoring normal
+connectivity, Andrew recorded a distinct new sentence, saw correct English review,
+then cancelled; cursor returned and the field remained unchanged. Own proof1->2,
+REVIEW_CANCELLED/REVIEW_ENDED_USER_CANCELLED, draftNONE/captures0/commits0,
+cleanupfalse; mic ended5.048s, SwiftKey unchanged, bubble READY/shown.
+These microphone figures are recording duration, not API latency.
 Do not repeat service restarts or weaken eligibility checks. Keep the saved key
-intact. The controlled offline/fresh-online pair remains the pending bounded
-Phase 2 gate; do not repeat earlier successful tests.
+intact. Together with the earlier real ASR/edit/Insert, control, setup and source/
+unit evidence, this meets the bounded Phase2 gate. Do not repeat passed tests
+without new evidence. Earlier readiness cause and broader lifecycle remain open.
 
 The approved postcommit confirmation change is implemented, independently
 reviewed, and passed seven separate synthetic phone checks on secure3AA18446.
@@ -53,7 +65,7 @@ first real EN transcription -> review -> Cancel and real speech -> SwiftKey edit
 -> guarded insertion/dismissal tests now passed. The clipped Stop fix also passed
 manual visibility and active-recording Cancel on controls v4: both buttons fully
 visible, no review or text change, microphone stopped. Korean translation remains
-unimplemented; Phase 2's offline failure passed and fresh online recovery is pending.
+unimplemented; Phase2's offline failure and fresh online recovery both passed.
 
 Andrew's newly approved one-attempt Kakao trial PASSED and is now complete.
 He reported the exact expected Korean sample appeared and remained unsent,
@@ -155,7 +167,8 @@ as requested, without review or text changes. Own proof0->1, RESELECT_CANCELLED,
 draftNONE/captures0/commits0/cleanupfalse, no Stop event; microphone ended8.803s.
 SwiftKey stays selected. This accepts current-phone control visibility and active
 Cancel; it does not accept every font/window geometry or cancellation in processing.
-The October 24 night checkpoint was saved. October 25 recovery test is pending above.
+The October24 night checkpoint was saved. October25 recovery subsequently passed;
+the current requested-stop checkpoint is recorded above.
 
 Previous secure980E build Kakao self-chat microphone -> Stop -> English review -> Cancel
 PASSED. Andrew reported the sample review closed and the composer cursor/SwiftKey
@@ -369,10 +382,10 @@ night checkpoint. Current October25 idle diagnostics/readiness are tracked above
    and speech/edit/Insert passed. The clipped Stop fix and manual active-recording
    Cancel also passed on controls v4. Do not repeat those gates without new evidence.
    No API keys in chat or shell; no unattended audio upload, fake-key/deletion
-   or missing-key reruns. Resolve the current missing-bubble readiness check above,
-   then complete one controlled network failure followed by a fresh successful recording. Any
-   connectivity change should be deliberate and performed by Andrew; keep the
-   saved key intact. Broader reliability remains a later phase.
+   or missing-key reruns. Offline failure and fresh online recovery passed on v5;
+   the bounded Phase2 gate is accepted. Resume with Phase3 confirmed-English
+   translation after this requested stop. Keep the saved key intact. Broader
+   reliability remains a later phase; the original morning readiness cause is open.
 3. For broader daily-use reliability, extend selected/caret/navigation and
    composition coverage, small-height/large-font/rotation/split-screen, and
    lock/service recovery. These remain limits; do not silently turn the full
@@ -380,10 +393,10 @@ night checkpoint. Current October25 idle diagnostics/readiness are tracked above
 4. Assess direct insertion's benefit against the accepted launcher -> mic ->
    editable English -> 요/반말 -> Copy & close -> manual paste fallback. Do not
    spend indefinitely on integration without measured user benefit.
-5. Phase 2 error recovery acceptance remains pending. First
-   actual transcription succeeded. Private key entry and DeveloperStuff backup
-   are user-confirmed; preserve that credential. Improve recording-state prominence
-   in the later UI phase as Andrew requested.
+5. Phase3 needs user-reviewed meaning/tone in both Korean forms and measured
+   latency/cost. Model remains gpt-6-luna/xhigh; account translation access is
+   unverified. Private key/DeveloperStuff backup are confirmed. Preserve that
+   credential. Improve recording-state prominence in the later UI phase.
 
 Earlier RESELECT synthetic gates proved keyboard-based visibility, dragging,
 Hide suppression, and saved position after service restart. Earlier Stage 1
@@ -403,7 +416,8 @@ they are not full current-build real-app acceptance. See DEVICE_TESTS for histor
 - Dismiss bubble after Copy or confirmed insertion until a new keyboard cycle.
 - Personal on-phone key entry with Keystore-backed encryption, no key in Git/APK/
   logs. Translation choice gpt-6-luna/xhigh; OpenAI transcription baseline recorded
-  in RESEARCH. Account access and paid quality/latency tests remain unverified.
+  in RESEARCH. Translation account access and broader quality/latency/cost remain
+  unverified; actual transcription access and the scoped speech checks passed.
 - Final icon, permissions/battery/reboot UX, signing and distribution remain later.
 
 ## Repository and tools

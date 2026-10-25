@@ -1573,3 +1573,25 @@ helps distinguish fresh recovery from stale output. Await user correctness and
 unchanged-field report plus proof increment/Stop/REVIEW_CANCELLED, no draft,
 cleanupfalse, zero destination/commit counts and stopped mic. Original morning
 timeout/missing-bubble cause remains unknown; this is not a lifecycle-fix claim.
+
+### October25 fresh online recovery PASS; bounded Phase2 accepted; requested stop
+
+Andrew restored normal connectivity, recorded a different deliberate sentence,
+reported correct English review, then tapped review Cancel. Cursor returned to
+the test field and no text was entered. Same v5 process: proof1->2,
+REVIEW_CANCELLED, draftNONE/captures0/commits0/confirmationNONE/cleanupfalse.
+New trace MODE_SELECTED_ENGLISH, MIC_READ_POSITIVE_UNSILENCED, STOP_ENTRY,
+REVIEW_ENDED_USER_CANCELLED. AppOps recording ended5.048s; SwiftKey unchanged.
+Cached refresh73 READY/IME visible, attached/shown host; render21VISIBLE.
+
+Astra/xhigh accepted the bounded Phase2 gate using this failure/recovery pair,
+prior real ASR/SwiftKey-edit/guarded-insertion pass, credential/setup evidence,
+53 unit tests and independent source review. Microphone durations are not
+transcription latency. Processing-time Cancel, broader accuracy/geometry/lifecycle,
+OEM transfer, latency and cost remain unverified. Original readiness cause is open.
+
+Andrew requested stopping. No further phone action, test, API request, code build
+or automation was started. Phase3 implementation remains next, with the selected
+gpt-6-luna/xhigh, same saved key, editable English confirmation before translation,
+fresh guarded destination capture only on Insert and default/release disabled.
+No new real-conversation insertion authorization follows from this acceptance.

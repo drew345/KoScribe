@@ -245,9 +245,13 @@ Phase 2 implementation checkpoint: the EN speech and credential candidate is
 implemented under the explicit debug flag and independently reviewed. Tests cover
 bounded audio, request cancellation/stale outcomes, parsing, and no automatic
 network replay. Phone setup checks use only a fake credential and the owned
-synthetic editor. Real key entry and deliberate paid transcription follow these
-checks; accuracy, edit preservation through real ASR, and error recovery still
-gate Phase 3. See [Phase 2](docs/PHASE2.md) and PROGRESS for measured status.
+synthetic editor. Andrew subsequently saved his live key and confirmed its backup;
+never rerun fake-key/deletion or missing-key setup against it. On October25,
+accurate real ASR, SwiftKey edit/insertion, control/Cancel and deliberate offline
+failure/fresh-online recovery evidence met the bounded Phase2 gate; Astra/xhigh
+accepted it. Phase3 translation is next after Andrew's requested stop. Broader
+lifecycle/geometry, processing Cancel, latency/cost and original morning readiness
+cause remain unverified. See [Phase 2](docs/PHASE2.md) and PROGRESS.
 
 | Phase | Scope | Gate before advancing |
 | --- | --- | --- |

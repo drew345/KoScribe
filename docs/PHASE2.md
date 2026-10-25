@@ -1,8 +1,9 @@
 # Phase2 speech and credentials
 
 Implementation began2026-10-24 after bounded Phase1 feasibility passed in all
-three named apps. See PROGRESS for exact source/build/device status; this file
-describes the candidate, not an acceptance claim.
+three named apps. The bounded Phase2 gate was met on2026-10-25 and accepted by
+independent Astra/xhigh review. See PROGRESS and DEVICE_TESTS for exact evidence
+and remaining limits. Phase3 implementation has not started at the requested stop.
 
 ## Candidate and baseline
 
@@ -72,7 +73,8 @@ transcripts and provider/network failures show sanitized errors, not raw respons
 bodies or exception details. Local audio/transcript history is not retained;
 this does not assert zero provider retention. The first deliberate transcription
 and later SwiftKey-edited insertion passed on A35. Broader accuracy, error recovery,
-latency/cost and Phase 2 acceptance remain subject to the gates in PROGRESS.
+latency/cost remain unmeasured. Bounded Phase2 acceptance is recorded below and
+in PROGRESS; broader quality and performance require later evaluation.
 
 ## First device checks
 
@@ -135,3 +137,12 @@ The user reports transcript correctness and unchanged test field. No old buffer
 or request is reused. Astra/xhigh's October25 source review supports this pair
 plus the recorded passes as the bounded Phase2 gate; broad lifecycle/geometry,
 processing Cancel, quality, cost and latency remain separately unmeasured.
+
+October25 result: both offline failure and fresh online review/Cancel passed on
+secure diagnostic v5. Own proof0->1->2, terminal SPEECH_NETWORK then
+REVIEW_ENDED_USER_CANCELLED, draftNONE/cleanupfalse, captures/commits0, stopped
+microphone and unchanged SwiftKey. User confirmed new-sentence accuracy and
+unchanged test field. Combined with earlier real speech/edit/insertion, setup,
+control and unit/source evidence, this satisfies bounded Phase2 acceptance.
+The earlier service timeout/missing-bubble cause remains unknown; v5 adds
+diagnostics only and is not a lifecycle fix. No new real-app trial is authorized.

@@ -1675,3 +1675,112 @@ with SwiftKey remains a manual check; do not claim a phone-layout pass yet.
 New process16745 responded immediately: NOT_CAPTURED, all proof/translation/
 capture/commit counters0, draftNONE/cleanupfalse, microphone inactive, SwiftKey
 unchanged. Cached bubble READY/visible. No new recording or translation was run.
+
+### October25 automatic original-intent candidate: local PASS; first setup blocked
+
+Andrew explicitly authorized Translate & insert with manual fallback and accepted
+test mode. AstraUltra designed the policy; Sol6/xhigh agents implemented policy,
+integration and opt-in tests; independent Astra/xhigh cleared final source.
+Product: secure REVIEW/AUTO=true; SPEECH/TRANSLATION/VISUAL=false. Only owned
+smoke fixture and Korean modes are automatic; external apps and EN stay manual.
+Build/all77 units/signatures passed; lint0errors/app35/smoke3warnings. Default
+debug/release restored OFF/allflagsfalse. In-place updates preserve the live key.
+
+Saved/installed product `app/build/automatic-insert/AUTO-sample-v1.apk`, SHA-256
+`CEE0D1DE3EEA62A5C51A96613B2D5EC8E1F8E64DBAA4F1EDDE87C965E6332D74`;
+smoke `app/build/automatic-insert/smoke-auto-v1.apk`, SHA-256
+`1A2FC9A36365B85ECDE3D7232EC674D8BE520D95482C8760B56A0B4B6C33BC39`.
+Source hashes: service8CCF2420, reviewD0D07EC1, policy62EAF90C,
+policy-testE4F37947, build3D7B0248, smokeC5596FD6.
+
+Ran only AutomaticInsertSmokeTest#unchangedEmptyOriginalAutoInsertsOnceAndDismisses
+with autoEmptyReady=true. It failed FIXTURE_NOT_FOCUSED at seedFixture after9.2s,
+before any mode click. Post-test own PID32396 stayed NOT_CAPTURED, proof0,
+originalcaptured0/phaseNONE/reasonNONE, autoattempt/fallback0, capture/commit0,
+draftNONE/cleanupfalse; mic inactive, SwiftKey unchanged, unlocked. This is no
+automatic-insertion verdict. No paid API call or credential/test setup occurred.
+
+The new harness demanded exact accessibility-node caret even for an empty field;
+the established helper checked focused node and known text. The A35 previously
+reported -1/-1 for empty node selection while the input connection proved0/0.
+This is the suspected setup cause, not measured in this failed run. Narrow
+harness correction adds refreshed-node/direct-owned-EditText proof and sanitized
+numeric/boolean failure metadata. Product safeguards remain unchanged. Rebuild
+and rerun only the same case after independent review.
+
+Smoke-only correction EDBDEFA4 was independently cleared, built/linted/signed,
+saved/installed as `app/build/automatic-insert/smoke-auto-v2.apk`, SHA-256
+`60E5E0E99A8E485ED168C9EB761609EB891A97063564AD72CA54674FD3F4E10C`.
+Product CEE0D1DE unchanged. The same exact empty test then failed after4.926s with
+ORIGINAL_INTENT_NOT_ARMED_IN_REVIEW, beyond seeding and sample microphone proof.
+Same PID32396: original captured1, FALLBACK/REVIEW_WINDOW_UNVERIFIED, proof1,
+autoattempts0/captures0/commits0; REVIEW_CANCELLED by harness cleanup, draftNONE,
+cleanupfalse. Mic ended582ms. Trace shows original capture, mode, mic proof/Stop,
+then failed review attestation before any AUTO_OWN_INPUT_STARTED entry.
+
+This isolates failure to own-review attestation, not a successful auto return.
+The reason combines several predicates; it does not yet establish which one
+failed. AstraUltra and Astra/xhigh recommend fixed boolean/callback/generation
+diagnostics with unchanged immediate terminal fallback, then one fresh owned
+sample. No guard broadening, API call, external conversation or Send action.
+
+### October25 diagnostic v2: review registration ordering measured
+
+Independent Astra/xhigh cleared diagnostic-only service7D6797EB/review4996A807.
+All77 units passed, lint0 errors/35 warnings, signature verified. Saved/installed
+`app/build/automatic-insert/AUTO-review-diag-v2.apk`, SHA-256
+`DE3A62D02E6BD529D3416026B83C6D2E0409B0156077E8AB54E113FBDEB5620C`.
+Default debug/release flags restored OFF/allfalse. Smoke-auto-v2 unchanged.
+
+Same exact empty test failed ORIGINAL_INTENT_NOT_ARMED_IN_REVIEW after4.93s.
+At the local WINDOW_FOCUS callback: generation ORIGINAL, input started but not
+own, focused application count0, valid local own window ID and editor node in
+that window, remote review window absent/root absent. First failed predicate ROOT.
+This measures missing initial accessibility registration, not node mismatch or
+changed original content. PID9446 captured1/proof1/fallback1; attempts/captures/
+commits0, draftNONE/cleanupfalse after harness Cancel, mic ended517ms. SwiftKey
+unchanged. The action geometry assertion passed before the armed-review assertion,
+but actual manual SwiftKey editing/button usability remains pending.
+
+Next correction may await only absent initial review metadata within a bounded
+ENTERING_REVIEW interval; it must retain all contradictory event/input/owner
+invalidators and never revive the completed fallback. No automatic pass yet.
+
+### October25 review-readiness v3: next event refusal isolated
+
+Source14EB76F9 and policy-test88F1D25B independently cleared. All78 unit tests
+passed (no failures/errors/skips), lint0 errors/35 warnings, signature verified.
+Saved/installed `app/build/automatic-insert/AUTO-review-ready-v3.apk`, SHA-256
+`619C9241B9D4EB6EF2097A4A25E06657959DD6BE90AECA591323CC1D953B02AC`.
+Ordinary debug/release restored OFF. Smoke-auto-v2 unchanged, app data preserved.
+
+Same empty test failed ORIGINAL_INTENT_NOT_ARMED_IN_REVIEW after3.862s. Trace now
+shows AUTO_REVIEW_ENTRY_WAIT followed by UNEXPECTED_WINDOW_CHANGE, before own
+input start or full window readiness. This proves entry to the new wait but
+does not identify which window changed. PID13306: proof1/original1/fallback1,
+attempts/captures/commits0, draftNONE/cleanupfalse, mic ended525ms. No API request.
+Next diagnostics will classify the event and window roles before any exception
+is considered. All terminal guards and one-attempt rules remain in force.
+
+### October25 window diagnostic v4: original window removal measured
+
+Final source58C392A9 independently cleared; build/78 units passed, lint0 errors/
+35 warnings, signature verified. Saved/installed
+`app/build/automatic-insert/AUTO-window-diag-v4.apk`, SHA-256
+`79F9B730216D9C99B8EEA4B27E37D7D5C9E32EEDC4BC7A03989FA73CE21E7A3D`.
+Default debug/release outputs restored OFF; smoke-auto-v2 unchanged.
+
+Same empty test failed ORIGINAL_INTENT_NOT_ARMED_IN_REVIEW after3.616s.
+First event refusal: ENTERING_REVIEW, pending wait age20ms/check0; WINDOWS event
+age19ms, windows-change mask2 (REMOVED in local Android36 SDK), role ORIGINAL.
+POST_DECISION metadata: original absent, expected local review present, one
+focused window/application matching expected review, local and entry IDs agree,
+review not remotely bound yet. Root/source relation UNKNOWN because no additional
+node reads were made for diagnostics. This establishes original-window removal;
+it does not prove original identity on return. PID16450 proof1/intent1/fallback1,
+attempts/captures/commits0, draftNONE/cleanupfalse, mic ended575ms. No API request.
+
+Next: one opt-in non-inserting owned fixture trace across recording/review/Cancel
+and return. Product guards stay unchanged. A removal exception would require an
+explicit paired occlusion protocol and stable original window/root/node proof;
+unavailable/changed identity must preserve manual fallback.

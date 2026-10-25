@@ -29,6 +29,13 @@ require(translationInput != "true" ||
     (speechInput == "true" && startupExperimentArm == "REVIEW" && visualTest == "false")) {
     "koscribeTranslation requires speech input, secure REVIEW, and koscribeVisualTest=false"
 }
+val autoInsert = providers.gradleProperty("koscribeAutoInsert").orElse("false").get()
+require(autoInsert == "true" || autoInsert == "false") {
+    "koscribeAutoInsert must be true or false"
+}
+require(autoInsert != "true" || (startupExperimentArm == "REVIEW" && visualTest == "false")) {
+    "koscribeAutoInsert requires secure REVIEW and koscribeVisualTest=false"
+}
 
 android {
     namespace = "com.koscribe.prototype"
@@ -50,12 +57,14 @@ android {
             buildConfigField("boolean", "VISUAL_TEST", visualTest)
             buildConfigField("boolean", "SPEECH_INPUT", speechInput)
             buildConfigField("boolean", "TRANSLATION_INPUT", translationInput)
+            buildConfigField("boolean", "AUTO_INSERT", autoInsert)
         }
         getByName("release") {
             buildConfigField("String", "STARTUP_EXPERIMENT_ARM", "\"OFF\"")
             buildConfigField("boolean", "VISUAL_TEST", "false")
             buildConfigField("boolean", "SPEECH_INPUT", "false")
             buildConfigField("boolean", "TRANSLATION_INPUT", "false")
+            buildConfigField("boolean", "AUTO_INSERT", "false")
         }
     }
 

@@ -4,6 +4,48 @@ Updated: 2026-10-25 (Asia/Seoul).
 
 ## Current state
 
+Andrew now explicitly authorized the one-button Translate & insert experiment,
+with manual fallback when original field/cursor cannot be verified. He accepted
+test mode first. Root uses AstraUltra architecture analysis, Sol6/xhigh policy
+and service integration, then independent Astra/xhigh review before build/device.
+New opt-in AUTO_INSERT candidate preserves v2/manual behavior, allows automatic
+eligibility only in the owned smoke fixture initially, and retain no old write
+transaction. Read-only intent begins at deliberate mode click; only verified
+return permits a fresh guarded transaction. External apps stay manual. Source is independently
+cleared by Astra/xhigh, including the pending-key Hide/Close cleanup race fix and
+manual fallback. Build/all77 units/signatures passed; lint0errors with app35/smoke3
+warnings. API-free AUTO-sample-v1 and smoke-auto-v1 are installed, data preserved;
+ordinary debug/release restored OFF with all booleansfalse. First exact empty
+test stopped at FIXTURE_NOT_FOCUSED during setup, before mode selection. Own
+PID32396 still has all counters0/draftNONE/cleanupfalse and mic stopped, SwiftKey
+unchanged. No automatic behavior was exercised. New harness required exact node
+caret0 where old working helper checked focus/text only. Reviewed smoke-only
+correction EDBDEFA4 built/signed/installed as smoke-auto-v2; it accepts -1/-1 only
+with refreshed owned node and direct owned EditText empty/focused/caret0 proof.
+The rerun reached capture/recording/review: originalcaptured1/proof1, then terminal
+FALLBACK REVIEW_WINDOW_UNVERIFIED before any accepted own-input-start callback.
+Attempts/captures/commits0, draft cancelled by harness cleanup, mic ended582ms.
+Diagnostic-only v2 was independently cleared, built (all77 units; lint0 errors),
+signed and installed. The same empty run again fell back before any write.
+Its fixed-code trace proves the local focused review window/editor existed while
+accessibility reported no focused application window and no registered review
+window; the input generation was still original. This is a startup readiness
+ordering failure, not evidence of a changed destination. PID9446: proof1,
+originalcaptured1/fallback1, attempts/captures/commits0, draftNONE/cleanupfalse;
+mic ended517ms. The bounded readiness fix was independently cleared and built;
+all78 units/signature passed, lint0 errors/35 warnings. Installed v3 SHA619C9241.
+Fresh empty run reaches AUTO_REVIEW_ENTRY_WAIT, then a separate terminal
+UNEXPECTED_WINDOW_CHANGE before own-input/ready proof. PID13306: proof1/intent1/
+fallback1; attempts/captures/commits0, draftNONE/cleanupfalse; mic ended525ms.
+Diagnostic-only v4 source58C392A9 was cleared, built and installed (SHA79F9B730).
+The next empty run identified ORIGINAL WINDOWS_CHANGE_REMOVED (mask2), 20ms
+into entry wait, while the expected own review was present and uniquely focused.
+PID16450: proof1/intent1/fallback1, no attempts/captures/commits, draftNONE and
+mic575ms stopped. Next is an exact opt-in NON-INSERTING fixture lifecycle trace
+through review/Cancel/return, checking whether original window/root/node identity
+survives. Product guards stay unchanged. No automatic insertion has passed yet.
+Older v2 baseline details follow; prior priority uncertainty is superseded.
+
 Andrew resumed on October25 from clean checkpoint619f132 and explicitly started
 Phase3 요/반말 translation. Bounded Phase2 remains accepted; saved secure v5 is
 preserved. Two Sol6/xhigh agents implemented the client and UI/state flow;
@@ -44,7 +86,8 @@ New process16745 responds idle: proof/translation/capture/commit counters0,
 draftNONE/cleanupfalse, stopped mic and SwiftKey unchanged. No new recording.
 Actual SwiftKey review-button visibility is pending. Distinct 반말/action visibility is ready as
 the next test if translation-first proceeds. Translation cancellation/error recovery,
-반말 and broader quality remain; no automatic insertion is implemented.
+반말 and broader quality remain. This historical manual baseline is preserved;
+the current automatic experiment is described above.
 
 Andrew resumed work on October 25 from the clean night checkpoint0b0889a.
 USB debugging was initially unauthorized; Andrew approved it and the
@@ -369,7 +412,10 @@ remains foreground after instrumentation cleanup.
 Verify live readiness next session. Fixture cleanup may return
 to a real app; never assume the foreground is still synthetic.
 
-Installed product: `app/build/translation/TRANSLATION-actions-v2.apk`,
+Installed product: `app/build/automatic-insert/AUTO-window-diag-v4.apk`,
+SHA-256 `79F9B730216D9C99B8EEA4B27E37D7D5C9E32EEDC4BC7A03989FA73CE21E7A3D`.
+REVIEW/AUTO=true; speech/translation/visual=false. Keep live key intact.
+Saved manual speech/translation baseline: `app/build/translation/TRANSLATION-actions-v2.apk`,
 SHA-256 `EEE3459902AFF0AE7F15B230D661C5E527AF4BA339ECF6507216761BD78FEEA8`.
 Saved first-translation baseline: `app/build/translation/TRANSLATION-v1.apk`,
 SHA-256 `810D9564F5D169E69E08C5617FE5F14FCE94189AE71280C9252FFC8CEEB4BF18`.
@@ -383,9 +429,10 @@ Phase 1 rollback: `app/build/composed-confirmation/REVIEW-secure.apk`,
 SHA-256 `3AA18446275E46E3712D5232EC8D02DC4AEF0D3C1D88D7CE7CAECE6080DF99DD`.
 Earlier seven-pass product remains saved at app/build/confirmation-refresh/REVIEW.apk
 with SHA-256 `2B00BE44077579BBD92D3D6A8D7FCED7E7391E17B05F56B5D1652444F4AD4D9E`.
-Installed smoke: `app/build/speech-input/smoke-setup-v4.apk` (ignored).
-SHA-256: `2782686D4D4BAA5E878CDF1B22950F5EBFA0D3C6098AF4E239A892791B505B0C`.
-This adds opt-in credential/missing-key tests, preserving prior scoped methods.
+Installed smoke: `app/build/automatic-insert/smoke-auto-v2.apk` (ignored).
+SHA-256 `60E5E0E99A8E485ED168C9EB761609EB891A97063564AD72CA54674FD3F4E10C`.
+New automatic tests are exact opt-in/API-free; never run the whole suite or any
+earlier credential/missing-key methods against the saved live key.
 Older smoke/product artifacts remain under their recorded ignored build folders.
 Ordinary `app/build/outputs/apk/debug/app-debug.apk` has been rebuilt as OFF with
 VISUAL_TEST=false, SPEECH_INPUT=false and TRANSLATION_INPUT=false. Release flags
@@ -407,6 +454,13 @@ control visibility and active-recording Cancel passed. That was the October24
 night checkpoint. Current October25 idle diagnostics/readiness are tracked above.
 
 ## Next work and gates
+
+Current immediate step: one non-inserting owned-fixture review/Cancel/return
+trace to establish whether the original identity survives review occlusion.
+Do not exempt removal without a reviewed paired transition protocol and evidence.
+After automatic empty insertion actually passes,
+run middle preservation and negative/cancel cases individually, then deliberate
+live Korean tests. External apps retain manual Insert; no new real-app trial.
 
 1. Preserve both manual passes. The shorter instruction is conditional on the
    intended field/caret already being restored. Current-build preservation,

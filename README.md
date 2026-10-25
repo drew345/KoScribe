@@ -31,6 +31,13 @@ without an API key; ordinary and release builds default to OFF. See
 
 ## Agreed interaction
 
+The steps below describe the tested manual-insertion baseline. Andrew has now
+authorized testing a one-button **Translate & insert** path: automatically insert
+only if the original field, cursor and nearby text can still be verified, otherwise
+show manual Insert. The reviewed experiment is implemented under a default-OFF
+debug flag and starts in the owned test editor; device acceptance is pending.
+Other apps retain the manual baseline.
+
 1. Tap an editable text field to show the keyboard and the floating bubble,
    then tap the bubble. The idle bubble stays hidden outside editing. Drag it
    to a preferred position; remember that position across uses.

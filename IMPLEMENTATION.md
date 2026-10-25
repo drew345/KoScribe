@@ -15,6 +15,16 @@ and review do not bind a destination. A skip-English-review option
 is deferred until later. Keep SwiftKey and never send. Test on the A35 with
 Wispr Flow still installed.
 
+October25 update: Andrew explicitly authorized a one-button Translate & insert
+candidate with manual fallback. Keep the tested manual baseline. The candidate
+may record a transient read-only intent at deliberate mode selection, then
+compare original field/root, caret, context and observed continuity after its
+authenticated review return. This creates no write transaction during recording
+or review. Only a verified return and prepared result permit a fresh existing
+guarded transaction; failure falls back before writing, while an attempted
+uncertain commit remains terminal. Initial default-OFF debug automatic eligibility
+is owned smoke fixture only; external-app automatic compatibility is not assumed.
+
 ## Proposed architecture
 
 2026-10-24 priority: first fix idle bubble visibility, dragging/persistence, and

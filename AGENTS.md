@@ -34,11 +34,17 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   on-phone key and gpt-6-luna/xhigh; no secret extraction or credential changes.
   Build/review before requesting USB. Start device acceptance in the owned test
   editor; no previously consumed real-app insertion scope is reopened.
-- After the first real 요 translation passed, Andrew considered finishing Korean
-  tests before streamlining insertion, then reopened that priority decision.
-  Keep explicit Insert until a new flow is agreed and reviewed.
-  A future Translate & insert path must verify the intended destination and
-  fall back to manual selection on uncertainty; do not merely auto-call Insert.
+- On2026-10-25 Andrew explicitly authorized trying one-button Translate & insert,
+  with manual Insert fallback when the original field/cursor cannot be verified.
+  He accepted starting in test mode. Preserve the manual baseline and every fresh
+  precommit/postcommit safeguard. A separate default-OFF debug candidate may
+  remember a transient read-only original intent at deliberate mode selection;
+  this is not a live write transaction or permission to rearm an invalidated one.
+  Verify original field/root/caret/context and narrow review-return continuity
+  before a new guarded transaction. No match/uncertain continuity means manual
+  fallback before any write; an ambiguous attempted write remains terminal.
+  Initial automatic eligibility is restricted to the owned smoke fixture;
+  external apps retain manual Insert pending separate reviewed acceptance.
 - Andrew subsequently authorized continued scoped KakaoTalk self-chat
   diagnostics using recording -> Stop -> Cancel, without inserting or sending.
   This scope permits repeat non-inserting diagnostics as needed; do not ask
@@ -122,16 +128,19 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
 - Per message: open bubble, choose `요`, `반말`, or `EN` to begin recording,
   then Stop. Keep the selected output mode visible during recording.
 - Initially show an editable English transcript for every message. Translate
-  only after confirmation; prepare the result before destination selection.
+  only after confirmation; prepare the result before any insertion transaction.
   Add an option to skip review only in a later phase.
 - Korean modes are conversational 해요체 and casual 반말. Do not add a
   습니다 mode. English output is secondary, but approved in the selector.
-- After transcript confirmation/translation, Andrew checks the intended field
+- In the manual baseline, after transcript confirmation/translation Andrew checks the intended field
   and cursor, taps it if needed, then taps Insert. Capture/check that explicit
   destination afresh and insert
   only when verified safe. Never inherit an invalidated transaction. Preserve
   existing text. Refuse uncertain selection, changed target, or ambiguous
   insertion; keep the result available for explicit recovery.
+- The authorized one-button candidate may skip that manual action only after
+  proving the saved original intent still matches. Idle bubble visibility remains
+  metadata-only; never read/retain destination text merely because the bubble appears.
 - Never send messages, activate editor actions, emulate Enter, or tap Send.
   Never let translation output issue UI commands.
 - Do not use whole-field replacement (`ACTION_SET_TEXT`) as an insertion

@@ -722,3 +722,51 @@
   scrolling English content. Actual SwiftKey layout check remains pending.
   New process16745 responsive/idle, all counters0/draftNONE/cleanupfalse, mic
   stopped and SwiftKey unchanged. Await priority clarification; no new test begun.
+
+## 2026-10-25 — One-button flow authorized
+
+- Andrew selected Translate & insert with manual fallback if original field and
+  cursor cannot be verified, keeping all safety checks; accepted test mode first.
+- AstraUltra designs the original-intent/known-review-return gate; Sol6/xhigh
+  agents own pure policy/tests and service/UI/build integration. Root retains
+  build/device/docs/Git; independent Astra/xhigh review precedes device testing.
+- Initial automatic scope is owned fixture only, default/release OFF, with
+  API-free synthetic tests before live speech. No old insertion transaction may
+  be rearmed; post-attempt uncertainty stays terminal. Installed v2 remains idle.
+- Candidate independently source-cleared. Build/all77 units/signatures passed;
+  lint0errors (app35/smoke3 warnings). Saved/installed API-free AUTO-sample-v1
+  (SHACEE0D1DE) plus smoke-auto-v1 (SHA1A2FC9A3), preserving app data/key.
+  Ordinary debug/release restored/verified OFF and all flagsfalse.
+- First exact empty fixture test stopped in setup: FIXTURE_NOT_FOCUSED, before
+  mode selection. Own PID32396 all proof/intent/capture/commit counters0,
+  draftNONE/cleanupfalse, mic inactive and SwiftKey unchanged. New helper's exact
+  node-caret requirement differs from old working focus/text helper; known empty
+  node -1/-1 reporting is suspected. Narrow test-only correction requires direct
+  owned EditText empty/caret0 proof; Astra review before smoke rebuild/rerun.
+- Reviewed smoke correction EDBDEFA4 built/signed and installed as smoke-auto-v2
+  (SHA60E5E0E9); product unchanged. Same empty test now reached sample recording
+  and review, originalcaptured1/proof1, but auto eligibility terminated with
+  REVIEW_WINDOW_UNVERIFIED before an accepted own-input callback. No automatic
+  attempt/capture/commit; harness cancelled review, mic ended582ms, cleanupfalse.
+  Both Astra reviewers recommend fixed-code predicate diagnostics first; no
+  timing relaxation or rearming. Sol prepares that narrow diagnostic patch.
+- Diagnostic-only v2 independently cleared, built/all77 units/lint0 errors,
+  signed and installed (SHADE3A62D0); defaults restored OFF. Fresh empty test
+  measured local review focus before remote accessibility registration: no
+  focused application windows, own window absent, original input generation.
+  Terminal fallback remained unchanged. PID9446 proof1/intent1, no attempts or
+  writes, draftNONE/cleanupfalse, mic ended517ms. Narrow bounded initial-readiness
+  fix is next; all conflicting metadata and lifecycle invalidators stay terminal.
+- Readiness fix14EB76F9 independently cleared: same exact local binding, absent
+  remote window/no focus only, fixed1s deadline, terminal contradictions and
+  early Confirm, no rearm. Added early-Confirm policy regression; all78 units,
+  signature and lint0 errors passed. Saved/installed v3 SHA619C9241, defaults OFF.
+  Empty rerun now reaches ENTRY_WAIT then UNEXPECTED_WINDOW_CHANGE. PID13306
+  proof1/intent1/fallback1, no writes, draftNONE/cleanupfalse, mic525ms stopped.
+  Next diagnostics classify that event before any proposed behavioral change.
+- Diagnostic-only v4 source58C392A9 independently cleared; build/78 units/lint0
+  errors/signature passed. Saved/installed APK79F9B730; defaults restored OFF.
+  Empty run measured original-window REMOVED,20ms into wait, expected own review
+  present and uniquely focused. PID16450 no writes, draftNONE/cleanupfalse,
+  mic575ms stopped. Next is a separate non-inserting fixture lifecycle trace;
+  no removal exception or rearming is authorized by this evidence alone.

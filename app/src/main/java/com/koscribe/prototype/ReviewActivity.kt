@@ -32,18 +32,42 @@ class ReviewActivity : Activity() {
         fun finishReadyDraft(id: String): Boolean {
             val activity = active.get()?.takeIf { it.draftId == id && !it.isFinishing }
                 ?: return false
+            KoScribeService.active()?.beginAutoReturn(id, activity.owner)
             activity.handedOff = true
             activity.finish()
             return true
+        }
+
+        fun ownsFocusedReview(id: String, owner: Any): Boolean = active.get()?.let {
+            it.draftId == id && it.owner === owner && !it.isFinishing &&
+                !it.isDestroyed && it.window.decorView.hasWindowFocus()
+        } == true
+
+        /** Only the currently bound review window may justify an own-window transition. */
+        fun expectedWindowId(id: String, owner: Any): Int? {
+            val activity = active.get()?.takeIf {
+                it.draftId == id && it.owner === owner && !it.isFinishing && !it.isDestroyed
+            } ?: return null
+            val decor = activity.window.decorView.takeIf { it.isAttachedToWindow } ?: return null
+            return runCatching { decor.createAccessibilityNodeInfo().windowId }
+                .getOrNull()?.takeIf { it >= 0 }
         }
 
         fun translationFailed(id: String, message: String): Boolean {
             val activity = active.get()?.takeIf { it.draftId == id && !it.isFinishing }
                 ?: return false
             activity.setProcessing(false)
-            activity.confirmButton.text = "Translate"
+            activity.confirmButton.text = if (activity.autoRequested)
+                "Translate & insert" else "Translate"
             activity.showFeedback(message)
             return true
+        }
+
+        fun autoUnavailable(id: String) {
+            active.get()?.takeIf { it.draftId == id && !it.isFinishing }?.let {
+                it.autoRequested = false
+                it.updateAutoLabel()
+            }
         }
     }
 
@@ -54,6 +78,9 @@ class ReviewActivity : Activity() {
     private lateinit var editor: EditText
     private lateinit var instructions: TextView
     private lateinit var confirmButton: Button
+    private var autoRequested = false
+    private var translationReview = false
+    private var koreanSampleReview = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,8 +89,11 @@ class ReviewActivity : Activity() {
             KoScribeService.active()?.bindDraftReview(draftId, owner) else null
         if (draft == null) { finish(); return }
         active = WeakReference(this)
-        val translationReview = BuildConfig.TRANSLATION_INPUT &&
+        translationReview = BuildConfig.TRANSLATION_INPUT &&
             draft.source == UnboundDraftState.Source.SPEECH && draft.mode != OutputMode.ENGLISH
+        koreanSampleReview = draft.source == UnboundDraftState.Source.SAMPLE &&
+            draft.mode != OutputMode.ENGLISH
+        autoRequested = KoScribeService.active()?.autoInsertOffered(draftId, owner) == true
 
         if (!VisualTestMode.enabled) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
@@ -80,18 +110,18 @@ class ReviewActivity : Activity() {
             "VISUAL TEST · KoScribe" else "KoScribe") +
             " · English review · ${draft.mode.label}", true).apply { textSize = 17f })
         val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        confirmButton = action(if (translationReview)
-            "Confirm & translate" else "Confirm English") {
+        confirmButton = action(confirmLabel()) {
             val service = KoScribeService.active()
             service?.updateDraftEnglish(draftId, owner, editor.text.toString())
             when (service?.confirmDraftReview(draftId, owner)) {
                 UnboundDraftState.Confirm.READY -> {
+                    service?.beginAutoReturn(draftId, owner)
                     handedOff = true
                     finish()
                 }
                 UnboundDraftState.Confirm.TRANSLATING -> setProcessing(true)
                 UnboundDraftState.Confirm.TRANSLATION_ERROR -> {
-                    confirmButton.text = "Translate"
+                    confirmButton.text = if (autoRequested) "Translate & insert" else "Translate"
                     showFeedback("Translation could not start. Edit English or tap Translate.")
                 }
                 UnboundDraftState.Confirm.EMPTY -> showFeedback("Enter English before confirming.")
@@ -118,8 +148,12 @@ class ReviewActivity : Activity() {
             importantForContentCapture = View.IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS
         }
         instructions = caption(when {
+            translationReview && autoRequested ->
+                "Edit English, then translate. Only confirmed English is sent to OpenAI. KoScribe inserts only if the original field and cursor verify; otherwise choose the field and tap Insert."
             translationReview ->
                 "Edit English, then confirm. Only confirmed English is sent to OpenAI for translation."
+            koreanSampleReview && autoRequested ->
+                "Fixed sample; no speech recognition ran. Confirm to insert only if the original field and cursor verify. Otherwise choose the field and tap Insert."
             BuildConfig.SPEECH_INPUT && !BuildConfig.TRANSLATION_INPUT ->
                 "Edit the English transcript, then confirm. Korean translation arrives in the next phase."
             BuildConfig.SPEECH_INPUT ->
@@ -174,6 +208,17 @@ class ReviewActivity : Activity() {
         if (processing) showFeedback("Translating to the selected mode… Cancel remains available.")
     }
 
+    private fun confirmLabel(): String = when {
+        autoRequested && translationReview -> "Translate & insert"
+        autoRequested && koreanSampleReview -> "Confirm & insert"
+        translationReview -> "Confirm & translate"
+        else -> "Confirm English"
+    }
+
+    private fun updateAutoLabel() {
+        if (::confirmButton.isInitialized) confirmButton.text = confirmLabel()
+    }
+
     private fun showFeedback(message: String) {
         feedback.text = message
         feedback.visibility = if (message.isBlank()) View.GONE else View.VISIBLE
@@ -209,6 +254,20 @@ class ReviewActivity : Activity() {
         KoScribeService.active()?.cancelDraftReview(draftId, owner)
         handedOff = true
         finish()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (BuildConfig.AUTO_INSERT && ::editor.isInitialized && window.decorView.hasWindowFocus())
+            KoScribeService.active()?.autoReviewFocused(draftId, owner, window.decorView, editor,
+                fromResume = true)
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (BuildConfig.AUTO_INSERT && ::editor.isInitialized)
+            KoScribeService.active()?.autoReviewWindowFocus(draftId, owner, hasFocus,
+                window.decorView, editor)
     }
 
     override fun onPause() {

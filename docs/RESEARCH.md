@@ -468,6 +468,23 @@ Use filename `recording.wav`, content type `audio/wav`, `response_format=json`,
 model. Fixed API host, no redirects, no automatic retry, sanitized errors and
 bounded request lifetime are application design decisions, not provider guarantees.
 
+## Original destination verification limits — 2026-10-25
+
+Official [AccessibilityEvent documentation](https://developer.android.com/reference/android/view/accessibility/AccessibilityEvent)
+says a parent can modify or block a view's event. [AccessibilityNodeInfo](https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo)
+describes node identity (which may be absent) and refresh as updating the represented
+view; failed refresh means the view is obsolete. These APIs do not document a
+conversation identity or guarantee every semantic rebinding will be reported.
+
+Inference/design boundary: matching a node/root/caret/context plus absence of
+observed changes cannot prove universal custom-app conversation continuity.
+The first automatic-return candidate therefore admits only the owned fixture,
+invalidates on observed target changes/unknown transitions, and starts a fresh
+guarded insertion only after a narrow authenticated own-review return. External
+apps retain manual Insert until separate reviewed compatibility evidence. This
+is additional intended-destination proof, not permission to reuse an invalidated
+write transaction or to weaken the existing pre/postcommit checks.
+
 Android [backup documentation](https://developer.android.com/identity/data/autobackup)
 defines independent file/database/sharedpref/external/root and device-protected
 domains. Store encrypted credentials in noBackupFilesDir, exclude all applicable

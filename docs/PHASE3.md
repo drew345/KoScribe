@@ -16,9 +16,9 @@ PROGRESS owns the latest source, build and test status.
   screenshots or audio enters the translation request. EN skips translation.
 - Keep secure review visible while translating, with editing/duplicate confirmation
   disabled and Cancel reachable. Success closes review into the existing compact
-  result control; no required second preview/confirmation. Andrew questioned
-  whether Confirm & translate could also insert; that needs a separate verified
-  destination-return design. Current insertion remains explicit. Error preserves English for editing
+  result control; no required second preview/confirmation. Andrew now authorized
+  a separate verified-original-destination Translate & insert candidate; the
+  tested manual baseline remains available. Error preserves English for editing
   and explicit new confirmation. No automatic retry or model substitution.
 - Cancel, pause/background, lock, credential change, service interruption and
   expiry end the job/draft. A stale callback must never publish into a cancelled,
@@ -106,3 +106,39 @@ Real-app insertion scopes from Phase1 are consumed. Phase3 acceptance in the
 owned editor does not grant a new Kakao/Instagram/Messages insertion trial.
 The morning service-readiness cause and broader geometry/lifecycle/OEM-transfer
 limits remain separate; this phase does not establish a fix for them.
+
+## Authorized one-button experiment (October25)
+
+Keep default/release OFF and the saved manual translation v2 baseline. Automatic
+eligibility initially applies only to the owned smoke fixture and Korean modes;
+EN and external apps keep manual Insert. Allow an API-free secure REVIEW sample
+build for destination-policy tests before deliberate paid speech/translation.
+
+At explicit mode selection, before asynchronous key checking, capture only a
+bounded local read-only intent if the current editor passes protected-field,
+identity/context/caret/composition checks. Keep no original InputConnection or
+active SessionGuard transaction. Missing intent does not prevent recording/review.
+Idle visibility never reads destination text; intent text is never sent to API,
+logged, persisted or copied. Terminal ambiguity clears automatic eligibility.
+
+After explicit English confirmation and a valid result, accept only the known
+own-review return sequence. A fresh observation must match the original exact
+node/root/field/context/caret before entering existing guarded insertion, and
+the final precommit check must still satisfy original intent. No late match
+revives invalidated automatic eligibility. Manual fallback is allowed only
+before a write attempt; ambiguous commit retains the existing no-retry rule.
+
+The measured initial review callback can precede accessibility registration.
+The candidate may wait at most one second from that first local focus callback
+only while the expected remote window is absent and no window reports focus.
+Keep the exact local owner, decor, editor, window token/ID and valid input
+sequence. Contradictions, cancellation and early confirmation permanently drop
+automatic eligibility; full remote proof must arrive within the fixed deadline.
+This wait changes no original-destination or write/confirmation safeguards.
+
+First acceptance: pure-state adversarial tests and independent source review;
+owned-fixture API-free unchanged empty/middle insertion plus changed-caret/text/
+field and cancel fallback cases; then deliberate actual Korean flow. Preserve
+existing text, SwiftKey, one-attempt and never-Send rules. Broader custom-app
+semantic rebinding cannot be proved by view identity alone and is not covered
+by the earlier manual insertion passes. Record measured limitations honestly.

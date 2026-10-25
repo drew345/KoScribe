@@ -14,12 +14,27 @@ Idle baseline: NOT_CAPTURED, proof/captures/commits0, draftNONE/cleanupfalse,
 mic stopped, SwiftKey selected. Timeout cause is unknown; retain this lifecycle
 incident as a limitation, not a diagnosed/fixed code bug. No code/build changes.
 
-Owned Test message screen opened. Await Andrew's deliberate offline sample:
-he disables Wi-Fi and mobile data, records briefly, taps Stop once and reports
-the error while staying offline. No retry, insertion, Copy or Send. Verify a
-terminal SPEECH_NETWORK/TIMEOUT and cleanup before asking him to restore network
-and make a fresh sample. Keep the saved key intact. Astra/xhigh cleared this
-pair as the remaining bounded Phase 2 gate; do not repeat earlier successful tests.
+The offline trial could not start: with Wi-Fi/mobile data off, SwiftKey and Wispr
+appeared but Ko did not. One manual keyboard hide/reopen also left Ko absent.
+Own service remains responsive/idle with proof/captures/commits0 and microphone
+inactive; no recording or API request started. Andrew was told to restore normal
+connectivity. Source review finds no network dependency in idle visibility, but
+current diagnostics cannot distinguish a visibility refusal from failed layout.
+Sol/xhigh added cached, content-free visibility/render reason diagnostics;
+Astra/xhigh cleared the corrected source. Build/signature, all53 units and lint
+(zero errors/37 warnings) passed. Installed secure diagnostic v5 with app data
+preserved; ordinary/release outputs restored OFF/visualfalse/SPEECHfalse.
+First v5 snapshot: FOCUSED_APP_COUNT, inputStarts1, no suppression/host/render,
+zero recording/capture/commit counts. System window metadata currently reports
+a focused TYPE_SYSTEM window; this explains this snapshot, not necessarily the
+earlier symptom. Andrew now reports Ko appeared after returning to Test message.
+Own counters remain0/mic inactive; the subsequent cached snapshot again has
+FOCUSED_APP_COUNT, so sustained READY is not claimed. Sent the controlled offline
+procedure again, explicitly closing Quick Settings before using the field. Await
+his error report with connectivity kept off; if Ko is absent, stop before EN.
+Do not repeat service restarts or weaken eligibility checks. Keep the saved key
+intact. The controlled offline/fresh-online pair remains the pending bounded
+Phase 2 gate; do not repeat earlier successful tests.
 
 The approved postcommit confirmation change is implemented, independently
 reviewed, and passed seven separate synthetic phone checks on secure3AA18446.
@@ -301,7 +316,9 @@ remains foreground after instrumentation cleanup.
 Verify live readiness next session. Fixture cleanup may return
 to a real app; never assume the foreground is still synthetic.
 
-Installed product: `app/build/speech-input/SPEECH-controls-v4.apk`,
+Installed product: `app/build/speech-input/SPEECH-idle-diagnostics-v5.apk`,
+SHA-256 `5579B7FAE962CD93B97B14720C8431565268E04944C4E7B0BDFD9B2F15A62147`.
+Previous controls/Cancel baseline remains saved as SPEECH-controls-v4.apk,
 SHA-256 `524133623674E42B4BE8E5745C92BAD85A649D1C46AD46EF9181441858461F05`.
 Successful ASR/edit/Insert baseline remains saved as SPEECH-secure-v3.apk,
 SHA-256 `F2079E8AE1181930911E7820AD4A735A56911F1C122FE06CA76DC594E0F811F9`.
@@ -329,8 +346,8 @@ credential marker was saved/deleted during setup. Andrew subsequently saved his
 real key privately and confirmed backup; it was not inspected. Real transcription,
 review Cancel and edited-text insertion are user-confirmed. No Send/Enter,
 conversation inspection, screenshot, or keyboard change occurred. Current-phone
-control visibility and active-recording Cancel passed. No work remains running;
-the phone may be disconnected and locked for the night.
+control visibility and active-recording Cancel passed. That was the October24
+night checkpoint. Current October25 idle diagnostics/readiness are tracked above.
 
 ## Next work and gates
 
@@ -347,8 +364,8 @@ the phone may be disconnected and locked for the night.
    and speech/edit/Insert passed. The clipped Stop fix and manual active-recording
    Cancel also passed on controls v4. Do not repeat those gates without new evidence.
    No API keys in chat or shell; no unattended audio upload, fake-key/deletion
-   or missing-key reruns. Tomorrow's remaining Phase 2 check is one controlled
-   network failure followed by a fresh successful recording. Any
+   or missing-key reruns. Resolve the current missing-bubble readiness check above,
+   then complete one controlled network failure followed by a fresh successful recording. Any
    connectivity change should be deliberate and performed by Andrew; keep the
    saved key intact. Broader reliability remains a later phase.
 3. For broader daily-use reliability, extend selected/caret/navigation and

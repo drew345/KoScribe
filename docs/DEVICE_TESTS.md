@@ -1500,3 +1500,54 @@ instructed to disable Wi-Fi/mobile data, deliberately record a short test senten
 Stop once, remain offline and report the error. No automated recording, changed
 network settings, insertion, retry or sending. Outcome pending. Retain the service
 readiness incident as a lifecycle limitation; recovery is not a root-cause fix.
+
+### October 25 offline trial blocked before recording: idle bubble missing
+
+Andrew disabled Wi-Fi and mobile data, then tapped the owned Test message field.
+SwiftKey and Wispr appeared but Ko did not. One manual full keyboard hide/reopen
+also failed to show Ko. The fresh own service still responds with NOT_CAPTURED,
+proof/captures/commits0, draftNONE/confirmationNONE/cleanupfalse. AppOps shows no
+active microphone; the phone is unlocked and keyboard metadata reports shown.
+Ko is enabled and bound. A crashed-service marker also remains in Android's
+metadata, but it does not establish a current crash or explain this symptom.
+
+No EN session or transcription request began, so this is a readiness failure,
+not the planned offline API error result. Andrew was told to restore normal
+connectivity. Source review finds no network/key gate in idle visibility.
+Possible causes include Ko's own input/window eligibility metadata or initial
+overlay placement; current diagnostics cannot distinguish them. One bounded
+diagnostic update is being prepared, with cached reason codes/counters only,
+before any further speech attempt. No repeated restart, changed safety checks,
+credential access, text inspection, insertion or sending.
+
+Diagnostic candidate v5 (October25): Sol/xhigh added cached visibility/refresh
+and render enums/counters only. Astra/xhigh cleared the final source after guarding
+old layout callbacks from overwriting a replacement host's diagnostic outcome and
+renaming the add/setup failure code accurately. Reviewed service SHA256
+`36A811DFF53228FC3BECFE8F966B793DBB90314C71CD66D4489EFE8DB0DD5B75`;
+IdleBubblePolicy SHA256
+`15EF937CEDE0A5173F4BC13892D9054CC010805CBB8DFE9C8B7BCC9EB9809BF7`.
+No visibility/insertion predicates, network, credential or microphone behavior
+changed. Dump formats cached values only, with no new Android/node/window reads.
+
+Build/signature, all53 unit tests and lint0 errors/37 warnings passed. Saved and
+installed `app/build/speech-input/SPEECH-idle-diagnostics-v5.apk`, SHA256
+`5579B7FAE962CD93B97B14720C8431565268E04944C4E7B0BDFD9B2F15A62147`.
+In-place install preserved app data; ordinary debug/release outputs restored
+OFF/visualfalse/SPEECHfalse. Smoke unchanged; no instrumentation ran.
+
+First responsive v5 snapshot: refresh1 INPUT_STARTED, IDLE_CHECKED,
+FOCUSED_APP_COUNT, connected/inputStarts1, unlocked, wanted/suppressed false,
+no host/render. Recording/capture/commit counts0; no draft or cleanup pending.
+Window-type/focus/bounds-only check showed focused TYPE_SYSTEM rather than an
+application. Asked Andrew to close the system panel and return to Test message
+with SwiftKey, then report bubble visibility without recording. This current
+snapshot does not diagnose the original v4 symptom or accept a fix.
+
+Andrew then reported Ko appeared after returning to the editor, with mobile data
+on. Later own snapshot had refresh20/FOCUSED_APP_COUNT, no host and render2 hidden,
+while all recording/destination/commit counts remained0 and mic inactive. Thus
+user-visible recovery is reported, but sustained READY was not sampled. Reissued
+the controlled offline procedure with explicit Quick Settings closure; stop if
+Ko is absent, otherwise one deliberate EN recording/Stop and terminal error report.
+No failed API attempt has occurred yet at this handoff.

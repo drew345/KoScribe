@@ -642,3 +642,22 @@
   SwiftKey selected. Opened owned Test message. Sent the reviewed offline sample
   procedure; await terminal error report while the phone remains offline. No
   key manipulation, code/build change, new real-app scope or automated recording.
+- Offline trial did not reach recording: Andrew saw SwiftKey/Wispr but no Ko,
+  including after one full keyboard hide/reopen. Same fresh process responds
+  idle with zero recording/capture/commit counts; microphone inactive. Told him
+  to restore connectivity. No API/network failure result is claimed. Astra source
+  review identifies visibility metadata versus initial layout as possibilities;
+  Sol is adding cached enum/counter diagnostics without changing behavior or
+  reading field content. Resolve readiness before resuming the speech gate.
+- Diagnostic source cleared Astra/xhigh review after two accuracy corrections;
+  build/signature,53 units and lint0 errors/37 warnings passed. Installed v5
+  5579B7FA with data/key preserved; default/release flags restored disabled.
+  First cached reason FOCUSED_APP_COUNT, inputStarts1, no suppression/host/render;
+  recording/capture/commit counts0. Window-type-only evidence currently shows a
+  focused system panel. Asked Andrew to close shade/Quick Settings, return to
+  Test message and tap its field without recording. Earlier cause remains unknown.
+- Andrew reported Ko appeared after returning to the editor (mobile data on).
+  Own counters/microphone stayed idle; last cached check again lacked a focused
+  application, so do not claim a measured sustained READY state. Reissued offline
+  instructions with explicit Quick Settings closure and stop-if-bubble-missing.
+  Await exact terminal error before asking him to restore connectivity.

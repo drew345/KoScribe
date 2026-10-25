@@ -62,6 +62,46 @@ class KoScribeService : AccessibilityService() {
     private var idleDragging = false
     private var idleBubbleGeometry: IdleBubbleGeometry? = null
     private var serviceConnected = false
+    private enum class IdleRefreshReason {
+        NONE, SERVICE_CONNECTED, INPUT_STARTED, INPUT_FINISHED, WINDOW_EVENT,
+        FOCUS_EVENT, OTHER_EVENT, OTHER_SCHEDULED, DIRECT
+    }
+    private enum class IdleRefreshGate {
+        NONE, ARM_OFF, DISCONNECTED, NO_WINDOW_MANAGER, RECORDING,
+        DESTINATION, DRAFT_REVIEW, DRAFT_RESULT, IDLE_CHECKED
+    }
+    private enum class IdleCheckStage {
+        NOT_CHECKED, LOCKED, WINDOWS_UNAVAILABLE, FOCUSED_APP_COUNT,
+        FOCUSED_APP_DISPLAY, IME_MULTIPLE_OR_WRONG_DISPLAY, IME_ABSENT,
+        IME_BOUNDS_EMPTY, INPUT_METHOD_UNAVAILABLE, INPUT_NOT_STARTED,
+        EDITOR_INFO_UNAVAILABLE, UNSAFE_INPUT_TYPE, ROOT_PACKAGE_UNAVAILABLE,
+        PACKAGE_MISMATCH, READY, CHECK_ERROR
+    }
+    private enum class IdleRenderOutcome {
+        NOT_ATTEMPTED, BLOCKED_RECORDING, BLOCKED_DESTINATION, REMOVE_FAILED,
+        HIDDEN_BY_POLICY_OR_REVIEW, AREA_TOO_SMALL, AWAIT_LAYOUT,
+        FRAME_CHANGED, PLACEMENT_FAILED, VISIBLE, ADD_OR_SETUP_FAILED
+    }
+    private data class IdleRefreshSnapshot(
+        val count: Int, val reason: IdleRefreshReason, val gate: IdleRefreshGate,
+        val stage: IdleCheckStage, val ime: IdleBubblePolicy.Ime,
+        val connected: Boolean, val inputStarts: Int,
+        val unlocked: Boolean?, val wanted: Boolean?, val suppressed: Boolean,
+        val policyVisible: Boolean, val hostExists: Boolean,
+        val hostAttached: Boolean, val hostShown: Boolean
+    ) {
+        fun code(): String = "count=$count reason=$reason gate=$gate stage=$stage ime=$ime" +
+            " connected=$connected inputStarts=$inputStarts" +
+            " unlocked=${unlocked ?: "UNKNOWN"} wanted=${wanted ?: "UNKNOWN"}" +
+            " suppressed=$suppressed policyVisible=$policyVisible" +
+            " hostExists=$hostExists attached=$hostAttached shown=$hostShown"
+    }
+    private var idleRefreshReason = IdleRefreshReason.OTHER_SCHEDULED
+    private var idleRefreshCount = 0
+    private var idleInputStartCount = 0
+    @Volatile private var lastIdleRefresh: IdleRefreshSnapshot? = null
+    @Volatile private var idleRenderCount = 0
+    @Volatile private var idleRenderOutcome = IdleRenderOutcome.NOT_ATTEMPTED
     private val bubblePrefs by lazy { getSharedPreferences("bubble_position", Context.MODE_PRIVATE) }
     private var status = "Focus a text field, then choose a mode."
     private var compactResultNotice: String? = null
@@ -318,6 +358,8 @@ class KoScribeService : AccessibilityService() {
             "Commit request count: $commitRequestCount\n" +
             "Commit confirmation: $commitConfirmation\n" +
             "Overlay cleanup pending: ${overlayCleanupPending != null}\n" +
+            "Last idle refresh: ${lastIdleRefresh?.code() ?: "none"}\n" +
+            "Last idle render: count=$idleRenderCount outcome=${idleRenderOutcome.name}\n" +
             "Own UI milestones (callback uptime vs capture completion / first content occurrence):\n" +
             ownMilestoneDiagnostics() + "\n" +
             "Recent guard events (codes only):\n" +
@@ -334,8 +376,9 @@ class KoScribeService : AccessibilityService() {
         private val composition = CompositionEvidence()
 
         override fun onStartInput(attribute: EditorInfo, restarting: Boolean) {
+            idleInputStartCount++
             if (startupExperiment == StartupExperiment.RESELECT) {
-                scheduleIdleBubbleRefresh()
+                scheduleIdleBubbleRefresh(IdleRefreshReason.INPUT_STARTED)
                 return
             }
             if (startupExperiment == StartupExperiment.REVIEW) {
@@ -347,7 +390,7 @@ class KoScribeService : AccessibilityService() {
                     else finishUncertain(it, "INPUT_STARTED")
                     note("FRESH_INPUT_STARTED")
                 }
-                scheduleIdleBubbleRefresh()
+                scheduleIdleBubbleRefresh(IdleRefreshReason.INPUT_STARTED)
                 return
             }
             generation++
@@ -362,7 +405,7 @@ class KoScribeService : AccessibilityService() {
                     expanded = false
                     renderBubble()
                 }
-                scheduleIdleBubbleRefresh()
+                scheduleIdleBubbleRefresh(IdleRefreshReason.INPUT_FINISHED)
                 return
             }
             if (startupExperiment == StartupExperiment.REVIEW) {
@@ -380,7 +423,7 @@ class KoScribeService : AccessibilityService() {
                     expanded = false
                     renderBubble()
                 }
-                scheduleIdleBubbleRefresh()
+                scheduleIdleBubbleRefresh(IdleRefreshReason.INPUT_FINISHED)
                 return
             }
             composition.reset()
@@ -447,29 +490,45 @@ class KoScribeService : AccessibilityService() {
         if (returningToEditor && !returnContinuity.finishedInput()) invalidate(id, "INPUT_FINISH_SEQUENCE")
     }
 
-    private data class IdleWindowCheck(val ime: IdleBubblePolicy.Ime, val ordinaryInputReady: Boolean)
+    private data class IdleWindowCheck(
+        val ime: IdleBubblePolicy.Ime, val ordinaryInputReady: Boolean,
+        val stage: IdleCheckStage
+    )
 
-    private fun scheduleIdleBubbleRefresh() {
-        if (!unboundArm() || !serviceConnected ||
-            idleRefreshQueued) return
+    private fun scheduleIdleBubbleRefresh(reason: IdleRefreshReason = IdleRefreshReason.OTHER_SCHEDULED) {
+        if (!unboundArm() || !serviceConnected) return
+        idleRefreshReason = reason
+        if (idleRefreshQueued) return
         idleRefreshQueued = true
         main.post {
             idleRefreshQueued = false
-            refreshIdleBubble()
+            refreshIdleBubble(reason = idleRefreshReason)
         }
     }
 
-    private fun refreshIdleBubble(forceRender: Boolean = false) {
-        if (!unboundArm() || !serviceConnected ||
-            !::windowManager.isInitialized ||
-            unboundRecording.current() != null || freshDestination != null) return
+    private fun refreshIdleBubble(
+        forceRender: Boolean = false, reason: IdleRefreshReason = IdleRefreshReason.DIRECT
+    ) {
+        var gate = IdleRefreshGate.NONE
+        var stage = IdleCheckStage.NOT_CHECKED
+        var ime = IdleBubblePolicy.Ime.UNKNOWN
+        var unlocked: Boolean? = null
+        var wanted: Boolean? = null
+        try {
+        if (!unboundArm()) { gate = IdleRefreshGate.ARM_OFF; return }
+        if (!serviceConnected) { gate = IdleRefreshGate.DISCONNECTED; return }
+        if (!::windowManager.isInitialized) { gate = IdleRefreshGate.NO_WINDOW_MANAGER; return }
+        if (unboundRecording.current() != null) { gate = IdleRefreshGate.RECORDING; return }
+        if (freshDestination != null) { gate = IdleRefreshGate.DESTINATION; return }
         val draft = unboundDraft.current()
         if (draft != null) {
             if (draft.phase == UnboundDraftState.Phase.REVIEW) {
+                gate = IdleRefreshGate.DRAFT_REVIEW
                 idleBubbleVisible = false
                 if (forceRender) renderBubble()
                 return
             }
+            gate = IdleRefreshGate.DRAFT_RESULT
             if (!idleBubbleVisible || forceRender) {
                 idleBubbleVisible = true
                 expanded = true
@@ -483,22 +542,29 @@ class KoScribeService : AccessibilityService() {
             }
             return
         }
-        val unlocked = runCatching {
+        val isUnlocked = runCatching {
             (getSystemService(POWER_SERVICE) as PowerManager).isInteractive &&
                 !(getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked
         }.getOrDefault(false)
+        unlocked = isUnlocked
         // Only window type, display, focus, bounds, and the focused root package
         // are read. This is a visibility heuristic, never insertion eligibility.
-        val check = if (!unlocked) IdleWindowCheck(IdleBubblePolicy.Ime.UNKNOWN, false)
+        val check = if (!isUnlocked) IdleWindowCheck(IdleBubblePolicy.Ime.UNKNOWN, false,
+                IdleCheckStage.LOCKED)
             else runCatching { inspectIdleWindows() }
-            .getOrDefault(IdleWindowCheck(IdleBubblePolicy.Ime.UNKNOWN, false))
-        val wanted = idleBubblePolicy.shouldShow(check.ime, check.ordinaryInputReady,
-            unlocked, activeOwner = false)
-        if (wanted != idleBubbleVisible || forceRender) {
-            idleBubbleVisible = wanted
-            if (!wanted) expanded = false
+            .getOrDefault(IdleWindowCheck(IdleBubblePolicy.Ime.UNKNOWN, false,
+                IdleCheckStage.CHECK_ERROR))
+        stage = check.stage
+        ime = check.ime
+        val shouldShow = idleBubblePolicy.shouldShow(check.ime, check.ordinaryInputReady,
+            isUnlocked, activeOwner = false)
+        wanted = shouldShow
+        gate = IdleRefreshGate.IDLE_CHECKED
+        if (shouldShow != idleBubbleVisible || forceRender) {
+            idleBubbleVisible = shouldShow
+            if (!shouldShow) expanded = false
             renderBubble()
-        } else if (wanted) {
+        } else if (shouldShow) {
             val holder = bubble
             if (holder == null) {
                 renderBubble()
@@ -518,15 +584,27 @@ class KoScribeService : AccessibilityService() {
                 moveBubbleToScreenPoint(holder, params, desired)
             }
         }
+        } finally {
+            idleRefreshCount++
+            val holder = bubble
+            lastIdleRefresh = IdleRefreshSnapshot(idleRefreshCount, reason, gate, stage, ime,
+                serviceConnected, idleInputStartCount, unlocked, wanted,
+                idleBubblePolicy.suppressedForDiagnostics(), idleBubbleVisible,
+                holder != null, holder?.isAttachedToWindow == true, holder?.isShown == true)
+        }
     }
 
     private fun inspectIdleWindows(): IdleWindowCheck {
-        val snapshot = windows ?: return IdleWindowCheck(IdleBubblePolicy.Ime.UNKNOWN, false)
+        val snapshot = windows ?: return IdleWindowCheck(IdleBubblePolicy.Ime.UNKNOWN, false,
+            IdleCheckStage.WINDOWS_UNAVAILABLE)
         val focused = snapshot.filter {
             it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.isFocused
         }
-        if (focused.size != 1 || focused.single().displayId != Display.DEFAULT_DISPLAY)
-            return IdleWindowCheck(IdleBubblePolicy.Ime.UNKNOWN, false)
+        if (focused.size != 1) return IdleWindowCheck(IdleBubblePolicy.Ime.UNKNOWN, false,
+            IdleCheckStage.FOCUSED_APP_COUNT)
+        if (focused.single().displayId != Display.DEFAULT_DISPLAY)
+            return IdleWindowCheck(IdleBubblePolicy.Ime.UNKNOWN, false,
+                IdleCheckStage.FOCUSED_APP_DISPLAY)
         val imes = snapshot.filter {
             it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD &&
                 it.displayId == Display.DEFAULT_DISPLAY
@@ -534,21 +612,33 @@ class KoScribeService : AccessibilityService() {
         if (imes.size > 1 || snapshot.any {
                 it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD &&
                     it.displayId != Display.DEFAULT_DISPLAY
-            }) return IdleWindowCheck(IdleBubblePolicy.Ime.UNKNOWN, false)
-        if (imes.isEmpty()) return IdleWindowCheck(IdleBubblePolicy.Ime.ABSENT, false)
+            }) return IdleWindowCheck(IdleBubblePolicy.Ime.UNKNOWN, false,
+                IdleCheckStage.IME_MULTIPLE_OR_WRONG_DISPLAY)
+        if (imes.isEmpty()) return IdleWindowCheck(IdleBubblePolicy.Ime.ABSENT, false,
+            IdleCheckStage.IME_ABSENT)
         val imeBounds = Rect()
         imes.single().getBoundsInScreen(imeBounds)
-        if (imeBounds.isEmpty) return IdleWindowCheck(IdleBubblePolicy.Ime.UNKNOWN, false)
+        if (imeBounds.isEmpty) return IdleWindowCheck(IdleBubblePolicy.Ime.UNKNOWN, false,
+            IdleCheckStage.IME_BOUNDS_EMPTY)
         val method = inputMethod as? TrackingInputMethod
-            ?: return IdleWindowCheck(IdleBubblePolicy.Ime.VISIBLE, false)
-        if (!method.currentInputStarted) return IdleWindowCheck(IdleBubblePolicy.Ime.VISIBLE, false)
+            ?: return IdleWindowCheck(IdleBubblePolicy.Ime.VISIBLE, false,
+                IdleCheckStage.INPUT_METHOD_UNAVAILABLE)
+        if (!method.currentInputStarted) return IdleWindowCheck(IdleBubblePolicy.Ime.VISIBLE, false,
+            IdleCheckStage.INPUT_NOT_STARTED)
         val info = method.currentInputEditorInfo
-            ?: return IdleWindowCheck(IdleBubblePolicy.Ime.VISIBLE, false)
-        if (!safeInputType(info.inputType)) return IdleWindowCheck(IdleBubblePolicy.Ime.VISIBLE, false)
+            ?: return IdleWindowCheck(IdleBubblePolicy.Ime.VISIBLE, false,
+                IdleCheckStage.EDITOR_INFO_UNAVAILABLE)
+        if (!safeInputType(info.inputType)) return IdleWindowCheck(IdleBubblePolicy.Ime.VISIBLE, false,
+            IdleCheckStage.UNSAFE_INPUT_TYPE)
         // getRoot(0) avoids the framework's default descendant prefetch.
         val focusedPackage = focused.single().getRoot(0)?.packageName?.toString()
         return IdleWindowCheck(IdleBubblePolicy.Ime.VISIBLE,
-            focusedPackage != null && focusedPackage == info.packageName)
+            focusedPackage != null && focusedPackage == info.packageName,
+            when {
+                focusedPackage == null -> IdleCheckStage.ROOT_PACKAGE_UNAVAILABLE
+                focusedPackage != info.packageName -> IdleCheckStage.PACKAGE_MISMATCH
+                else -> IdleCheckStage.READY
+            })
     }
 
     override fun onServiceConnected() {
@@ -556,7 +646,7 @@ class KoScribeService : AccessibilityService() {
         instance = WeakReference(this)
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         serviceConnected = true
-        if (unboundArm()) scheduleIdleBubbleRefresh()
+        if (unboundArm()) scheduleIdleBubbleRefresh(IdleRefreshReason.SERVICE_CONNECTED)
         else renderBubble()
     }
 
@@ -603,7 +693,11 @@ class KoScribeService : AccessibilityService() {
                 (event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
                     event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
                     event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED))
-                scheduleIdleBubbleRefresh()
+                scheduleIdleBubbleRefresh(when (event.eventType) {
+                    AccessibilityEvent.TYPE_VIEW_FOCUSED -> IdleRefreshReason.FOCUS_EVENT
+                    AccessibilityEvent.TYPE_WINDOWS_CHANGED -> IdleRefreshReason.WINDOW_EVENT
+                    else -> IdleRefreshReason.OTHER_EVENT
+                })
             return
         }
         val deliveredUptimeMs = SystemClock.uptimeMillis()
@@ -2385,6 +2479,14 @@ class KoScribeService : AccessibilityService() {
         return BubblePlacement.Point(location[0], location[1])
     }
 
+    /** Called on the UI thread after an asynchronous host layout; dump reads the cached bits. */
+    private fun cacheIdleHostState(holder: View) {
+        if (bubble !== holder) return
+        val previous = lastIdleRefresh ?: return
+        lastIdleRefresh = previous.copy(hostExists = true,
+            hostAttached = holder.isAttachedToWindow, hostShown = holder.isShown)
+    }
+
     private fun moveBubbleToScreenPoint(
         holder: LinearLayout, params: WindowManager.LayoutParams,
         requested: BubblePlacement.Point
@@ -2430,6 +2532,8 @@ class KoScribeService : AccessibilityService() {
                 holder.removeOnLayoutChangeListener(this)
                 if (!serviceConnected || bubble !== holder || unboundRecording.current() != null) return
                 if (frame != bubbleFrame()) {
+                    idleRenderOutcome = IdleRenderOutcome.FRAME_CHANGED
+                    cacheIdleHostState(holder)
                     holder.post {
                         if (serviceConnected && bubble === holder && unboundRecording.current() == null)
                             renderBubble()
@@ -2441,8 +2545,15 @@ class KoScribeService : AccessibilityService() {
                     BubblePlacement.Point(actual.x - params.x, actual.y - params.y))
                 val desired = BubblePlacement.resolve(savedBubbleAnchor(), holder.width,
                     holder.height, frame.area)
-                if (moveBubbleToScreenPoint(holder, params, desired) != null)
+                val placed = moveBubbleToScreenPoint(holder, params, desired) != null
+                if (placed)
                     holder.visibility = View.VISIBLE
+                // Placement may have replaced this host after a frame change.
+                if (bubble === holder) {
+                    idleRenderOutcome = if (placed) IdleRenderOutcome.VISIBLE
+                        else IdleRenderOutcome.PLACEMENT_FAILED
+                    cacheIdleHostState(holder)
+                }
             }
         })
     }
@@ -2594,9 +2705,15 @@ class KoScribeService : AccessibilityService() {
 
     private fun renderBubble() {
         if (!serviceConnected || !::windowManager.isInitialized) return
-        if (unboundArm() && unboundRecording.current() != null)
+        if (unboundArm()) idleRenderCount++
+        if (unboundArm() && unboundRecording.current() != null) {
+            idleRenderOutcome = IdleRenderOutcome.BLOCKED_RECORDING
             return // Keep the existing window unchanged until this recording ends.
-        if (freshDestination != null) return // Preserve the ready host through capture and proof.
+        }
+        if (freshDestination != null) {
+            if (unboundArm()) idleRenderOutcome = IdleRenderOutcome.BLOCKED_DESTINATION
+            return // Preserve the ready host through capture and proof.
+        }
         if (startupExperiment == StartupExperiment.OVERLAY && pendingId != null &&
             overlayPanel != null) return // Keep the captured host window unchanged until terminal cleanup.
         bubble?.let {
@@ -2605,6 +2722,7 @@ class KoScribeService : AccessibilityService() {
                 // Do not add a second window while the old one may still exist.
                 it.visibility = View.GONE
                 it.isEnabled = false
+                if (unboundArm()) idleRenderOutcome = IdleRenderOutcome.REMOVE_FAILED
                 return
             }
         }
@@ -2613,11 +2731,17 @@ class KoScribeService : AccessibilityService() {
         bubble = null
         bubbleParams = null
         if (unboundArm() && (!idleBubbleVisible ||
-                unboundDraft.current()?.phase == UnboundDraftState.Phase.REVIEW)) return
+                unboundDraft.current()?.phase == UnboundDraftState.Phase.REVIEW)) {
+            idleRenderOutcome = IdleRenderOutcome.HIDDEN_BY_POLICY_OR_REVIEW
+            return
+        }
         val frame = if (unboundArm()) bubbleFrame() else null
         val available = frame?.area
         if (available != null && (available.right - available.left < dp(56) ||
-                available.bottom - available.top < dp(48))) return
+                available.bottom - available.top < dp(48))) {
+            idleRenderOutcome = IdleRenderOutcome.AREA_TOO_SMALL
+            return
+        }
         val holder = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             if (startupExperiment == StartupExperiment.REVIEW) {
@@ -2777,6 +2901,7 @@ class KoScribeService : AccessibilityService() {
             y = if (unboundArm()) 0 else dp(110)
         }
         try {
+            if (unboundArm()) idleRenderOutcome = IdleRenderOutcome.AWAIT_LAYOUT
             if (unboundArm()) holder.visibility = View.INVISIBLE
             windowManager.addView(holder, params)
             bubble = holder
@@ -2786,6 +2911,10 @@ class KoScribeService : AccessibilityService() {
                 resultDragHandle?.let { enableResultDrag(it, holder, params) }
                 positionNewBubble(holder, params, frame!!)
             }
-        } catch (_: Exception) { bubble = null; bubbleParams = null }
+        } catch (_: Exception) {
+            bubble = null
+            bubbleParams = null
+            if (unboundArm()) idleRenderOutcome = IdleRenderOutcome.ADD_OR_SETUP_FAILED
+        }
     }
 }

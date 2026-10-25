@@ -8,6 +8,9 @@ internal class IdleBubblePolicy {
 
     fun hideUntilNextImeCycle() { hiddenUntilImeCycle = true }
 
+    /** Cached policy state only; does not inspect an editor or change the policy. */
+    fun suppressedForDiagnostics(): Boolean = hiddenUntilImeCycle
+
     fun shouldShow(ime: Ime, ordinaryInputReady: Boolean, unlocked: Boolean,
         activeOwner: Boolean): Boolean {
         if (activeOwner) return true

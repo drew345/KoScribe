@@ -44,6 +44,13 @@ PID16450: proof1/intent1/fallback1, no attempts/captures/commits, draftNONE and
 mic575ms stopped. Next is an exact opt-in NON-INSERTING fixture lifecycle trace
 through review/Cancel/return, checking whether original window/root/node identity
 survives. Product guards stay unchanged. No automatic insertion has passed yet.
+Checkpoint d9364ba is pushed to verified private origin/main. Dedicated lifecycle
+test C6214251 is independently cleared, smoke build/signature/lint0 errors passed,
+and smoke-lifecycle-v3 installed (SHA7631FD3D). Product v4 is unchanged. Before
+running it, phone check found screenOFF/showingtrue and mic stopped. Requested
+wake/unlock; no lifecycle run has started. Next exact case:
+AutoLifecycleDiagnosticSmokeTest#originalWindowReviewCancelReturnIsObservedWithoutInsertion
+with autoLifecycleReady=true. Do not substitute a full instrumentation suite.
 Older v2 baseline details follow; prior priority uncertainty is superseded.
 
 Andrew resumed on October25 from clean checkpoint619f132 and explicitly started
@@ -429,8 +436,8 @@ Phase 1 rollback: `app/build/composed-confirmation/REVIEW-secure.apk`,
 SHA-256 `3AA18446275E46E3712D5232EC8D02DC4AEF0D3C1D88D7CE7CAECE6080DF99DD`.
 Earlier seven-pass product remains saved at app/build/confirmation-refresh/REVIEW.apk
 with SHA-256 `2B00BE44077579BBD92D3D6A8D7FCED7E7391E17B05F56B5D1652444F4AD4D9E`.
-Installed smoke: `app/build/automatic-insert/smoke-auto-v2.apk` (ignored).
-SHA-256 `60E5E0E99A8E485ED168C9EB761609EB891A97063564AD72CA54674FD3F4E10C`.
+Installed smoke: `app/build/automatic-insert/smoke-lifecycle-v3.apk` (ignored).
+SHA-256 `7631FD3D7E4CB8213749F1D05F142B93A3692123F6AABF4C6687F0DE896E64C3`.
 New automatic tests are exact opt-in/API-free; never run the whole suite or any
 earlier credential/missing-key methods against the saved live key.
 Older smoke/product artifacts remain under their recorded ignored build folders.
@@ -455,7 +462,7 @@ night checkpoint. Current October25 idle diagnostics/readiness are tracked above
 
 ## Next work and gates
 
-Current immediate step: one non-inserting owned-fixture review/Cancel/return
+Current immediate step: await requested phone unlock, then one non-inserting owned-fixture review/Cancel/return
 trace to establish whether the original identity survives review occlusion.
 Do not exempt removal without a reviewed paired transition protocol and evidence.
 After automatic empty insertion actually passes,

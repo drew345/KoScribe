@@ -770,3 +770,9 @@
   present and uniquely focused. PID16450 no writes, draftNONE/cleanupfalse,
   mic575ms stopped. Next is a separate non-inserting fixture lifecycle trace;
   no removal exception or rearming is authorized by this evidence alone.
+- Published reviewed default-OFF experiment and measured failures as d9364ba
+  after staged secret scan (zero matches); GitHub verified private. Dedicated
+  lifecycle observer C6214251 then independently cleared, built/signed/linted
+  (0 errors/3 warnings) and installed as smoke-lifecycle-v3 SHA7631FD3D. Product
+  unchanged. Phone was asleep before execution; requested unlock. No lifecycle
+  run has begun, no new write/API action. The pending test is Cancel-only.

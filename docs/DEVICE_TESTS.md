@@ -1784,3 +1784,21 @@ Next: one opt-in non-inserting owned fixture trace across recording/review/Cance
 and return. Product guards stay unchanged. A removal exception would require an
 explicit paired occlusion protocol and stable original window/root/node proof;
 unavailable/changed identity must preserve manual fallback.
+
+### October25 lifecycle observer ready; awaiting unlock
+
+New `AutoLifecycleDiagnosticSmokeTest` source C6214251 independently reviewed.
+Exact opt-in `autoLifecycleReady=true`; only owned empty fixture, Ko→요→Stop→
+review→Cancel, with natural return and no refocus/reseed. Separately reports
+accessibility identity and direct Activity/editor/token/lifecycle counters;
+original-window event timestamps are explicitly listener callback receipt times.
+No Confirm/Insert/Copy/Paste/Send, API/key access or conversation inspection.
+No-write/microphone/draft cleanup assertions are mandatory; identity results
+STABLE/CHANGED/UNAVAILABLE are observations, not automatic insertion acceptance.
+
+Smoke build/signature/lint passed (0 errors/3 warnings). Saved/installed
+`app/build/automatic-insert/smoke-lifecycle-v3.apk`, SHA-256
+`7631FD3D7E4CB8213749F1D05F142B93A3692123F6AABF4C6687F0DE896E64C3`.
+Product v4 remains unchanged. Pre-run phone check: screenOFF/showingtrue,
+microphone stopped; requested unlock and did not start instrumentation.
+Pending exact method: `originalWindowReviewCancelReturnIsObservedWithoutInsertion`.

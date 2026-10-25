@@ -123,6 +123,17 @@ class KoScribeService : AccessibilityService() {
     private val unboundDraft = UnboundDraftState()
     private val speechGate = SpeechTransferGate()
     private var speechJob: SpeechTranscriber.Job? = null
+    private var translationJob: KoreanTranslator.Job? = null
+    private var translationGeneration = 0
+    private var translationStartedUptimeMs: Long? = null
+    private var translationRequests = 0
+    private var translationSuccesses = 0
+    private var translationErrors = 0
+    private var translationCancels = 0
+    private var translationLastDurationMs: Long? = null
+    private var translationLastUsage: KoreanTranslator.Usage? = null
+    private var speechStopEntryUptimeMs: Long? = null
+    private var speechLastStopToReviewMs: Long? = null
     private var speechKeyCheckGeneration = 0
     private var speechKeyCheckPending = false
     private var draftReviewOwner: Any? = null
@@ -354,6 +365,13 @@ class KoScribeService : AccessibilityService() {
             "Experiment phase: $experimentPhase\n" +
             "Unbound recording proof count: $unboundRecordingProofCount\n" +
             "Draft phase: ${unboundDraft.current()?.phase?.name ?: "NONE"}\n" +
+            "Speech Stop to review created ms: ${speechLastStopToReviewMs ?: "none"}\n" +
+            "Translation requests/success/errors/cancels: $translationRequests/$translationSuccesses/$translationErrors/$translationCancels\n" +
+            "Last translation request duration ms: ${translationLastDurationMs ?: "none"}\n" +
+            "Last translation usage input/cached/output/reasoning tokens: " +
+            (translationLastUsage?.let {
+                "${it.inputTokens}/${it.cachedInputTokens}/${it.outputTokens}/${it.reasoningTokens}"
+            } ?: "none") + "\n" +
             "Destination capture count: $destinationCaptureCount\n" +
             "Commit request count: $commitRequestCount\n" +
             "Commit confirmation: $commitConfirmation\n" +
@@ -522,7 +540,8 @@ class KoScribeService : AccessibilityService() {
         if (freshDestination != null) { gate = IdleRefreshGate.DESTINATION; return }
         val draft = unboundDraft.current()
         if (draft != null) {
-            if (draft.phase == UnboundDraftState.Phase.REVIEW) {
+            if (draft.phase == UnboundDraftState.Phase.REVIEW ||
+                draft.phase == UnboundDraftState.Phase.TRANSLATING) {
                 gate = IdleRefreshGate.DRAFT_REVIEW
                 idleBubbleVisible = false
                 if (forceRender) renderBubble()
@@ -1051,6 +1070,7 @@ class KoScribeService : AccessibilityService() {
         speechKeyCheckPending = false
         speechJob?.cancel()
         speechJob = null
+        cancelTranslationJob()
         speechGate.clear()
         clearPostCommitProbe()
         unboundRecording.endActive()
@@ -1290,7 +1310,7 @@ class KoScribeService : AccessibilityService() {
     /** Debug-only destination-free session. No target APIs are called until a later explicit action. */
     private fun startUnboundRecording(mode: OutputMode) {
         if (BuildConfig.SPEECH_INPUT) {
-            if (mode != OutputMode.ENGLISH) {
+            if (mode != OutputMode.ENGLISH && !BuildConfig.TRANSLATION_INPUT) {
                 status = "Korean translation arrives in the next phase. Choose EN for speech input."
                 renderBubble()
                 return
@@ -1370,7 +1390,12 @@ class KoScribeService : AccessibilityService() {
                     }
                 }
             },
-            onStopEntry = { if (unboundRecording.owns(id)) note("RESELECT_STOP_ENTRY") },
+            onStopEntry = {
+                if (unboundRecording.owns(id)) {
+                    note("RESELECT_STOP_ENTRY")
+                    if (BuildConfig.SPEECH_INPUT) speechStopEntryUptimeMs = SystemClock.uptimeMillis()
+                }
+            },
             onReview = {
                 if (unboundRecording.microphoneStoppedForReview(id)) {
                     note("RESELECT_MIC_PROVED_STOPPED")
@@ -1419,6 +1444,7 @@ class KoScribeService : AccessibilityService() {
 
     private fun cancelUnboundRecording(id: String, reason: String) {
         if (!unboundRecording.end(id)) return
+        speechStopEntryUptimeMs = null
         speechGate.cancel(id)
         speechJob?.cancel()
         speechJob = null
@@ -1439,6 +1465,7 @@ class KoScribeService : AccessibilityService() {
         unboundRecording.current()?.id?.let { cancelUnboundRecording(it, "SPEECH_KEY_CHANGED") }
         speechJob?.cancel()
         speechJob = null
+        unboundDraft.current()?.id?.let { endDraft(it, "CREDENTIAL_CHANGED") }
     }
 
     private fun speechErrorMessage(code: String): String = when (code) {
@@ -1476,8 +1503,11 @@ class KoScribeService : AccessibilityService() {
                 }
                 when (result) {
                     is SpeechTranscriber.Result.Text -> {
-                        if (unboundRecording.microphoneStoppedForReview(recordingId))
-                            beginDraftReview(recordingId, OutputMode.ENGLISH, result.value)
+                        if (unboundRecording.microphoneStoppedForReview(recordingId)) {
+                            val mode = unboundRecording.current()?.mode
+                            if (mode != null) beginDraftReview(recordingId, mode, result.value)
+                            else cancelUnboundRecording(recordingId, "SPEECH_STATE_CHANGED")
+                        }
                         else cancelUnboundRecording(recordingId, "SPEECH_STATE_CHANGED")
                     }
                     is SpeechTranscriber.Result.Error ->
@@ -1498,13 +1528,20 @@ class KoScribeService : AccessibilityService() {
             refreshIdleBubble(forceRender = true)
             return
         }
-        val draft = if (transcript != null && BuildConfig.SPEECH_INPUT && mode == OutputMode.ENGLISH)
-            unboundDraft.beginSpeech(transcript) else unboundDraft.begin(mode)
+        val draft = if (BuildConfig.SPEECH_INPUT) {
+            if (transcript == null || (mode != OutputMode.ENGLISH && !BuildConfig.TRANSLATION_INPUT)) null
+            else unboundDraft.beginSpeech(mode, transcript)
+        } else unboundDraft.begin(mode)
         if (draft == null) {
+            speechStopEntryUptimeMs = null
             status = "Could not open English review. Start a new recording."
             refreshIdleBubble(forceRender = true)
             return
         }
+        speechStopEntryUptimeMs?.let {
+            speechLastStopToReviewMs = (SystemClock.uptimeMillis() - it).coerceAtLeast(0L)
+        }
+        speechStopEntryUptimeMs = null
         draftReviewOwner = null
         idleBubbleVisible = false
         expanded = false
@@ -1522,9 +1559,7 @@ class KoScribeService : AccessibilityService() {
             endDraft(draft.id, "SCREEN_RECEIVER_FAILED")
             return
         }
-        val deadline = Runnable { endDraft(draft.id, "DEADLINE") }
-        draftDeadline = deadline
-        main.postDelayed(deadline, 180_000L)
+        scheduleDraftDeadline(draft.id, 180_000L)
         val intent = Intent(this, ReviewActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             putExtra(ReviewActivity.EXTRA_DRAFT_ID, draft.id)
@@ -1551,7 +1586,114 @@ class KoScribeService : AccessibilityService() {
             return UnboundDraftState.Confirm.STALE
         val result = unboundDraft.confirm(id)
         if (result == UnboundDraftState.Confirm.READY) experimentPhase = "REVIEW_HANDOFF"
+        if (result == UnboundDraftState.Confirm.TRANSLATING) {
+            val draft = unboundDraft.current() ?: return UnboundDraftState.Confirm.STALE
+            if (!BuildConfig.TRANSLATION_INPUT || !startDraftTranslation(draft, owner)) {
+                unboundDraft.translationFailed(id, draft.translationAttempt)
+                return UnboundDraftState.Confirm.TRANSLATION_ERROR
+            }
+        }
         return result
+    }
+
+    private fun startDraftTranslation(draft: UnboundDraftState.Draft, owner: Any): Boolean {
+        if (translationJob != null || draft.phase != UnboundDraftState.Phase.TRANSLATING ||
+            draftReviewOwner !== owner || draft.mode == OutputMode.ENGLISH) return false
+        val generation = ++translationGeneration
+        val started = SystemClock.uptimeMillis()
+        val attempt = draft.translationAttempt
+        lateinit var job: KoreanTranslator.Job
+        return try {
+            job = KoreanTranslator(this).newJob(draft.mode, draft.english) { result ->
+                main.post {
+                    if (translationJob !== job || generation != translationGeneration ||
+                        draftReviewOwner !== owner ||
+                        unboundDraft.current()?.takeIf {
+                            it.id == draft.id && it.phase == UnboundDraftState.Phase.TRANSLATING &&
+                                it.translationAttempt == attempt
+                        } == null) return@post
+                    translationJob = null
+                    translationStartedUptimeMs = null
+                    translationLastDurationMs = (SystemClock.uptimeMillis() - started).coerceAtLeast(0L)
+                    if ((getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked) {
+                        translationCancels++
+                        endDraft(draft.id, "TRANSLATION_LOCKED")
+                        return@post
+                    }
+                    when (result) {
+                        is KoreanTranslator.Result.Text -> {
+                            if (!unboundDraft.translationSucceeded(draft.id, attempt, result.value)) {
+                                translationErrors++
+                                if (unboundDraft.translationFailed(draft.id, attempt)) {
+                                    if (!ReviewActivity.translationFailed(draft.id,
+                                            "Translation response could not be used. Tap Translate to retry."))
+                                        endDraft(draft.id, "TRANSLATION_REVIEW_LOST")
+                                } else endDraft(draft.id, "TRANSLATION_RESULT_REJECTED")
+                                return@post
+                            }
+                            translationSuccesses++
+                            translationLastUsage = result.usage
+                            experimentPhase = "TRANSLATION_READY"
+                            if (!ReviewActivity.finishReadyDraft(draft.id))
+                                endDraft(draft.id, "TRANSLATION_REVIEW_LOST")
+                        }
+                        is KoreanTranslator.Result.Error -> {
+                            translationErrors++
+                            note("TRANSLATION_${result.code.name}")
+                            if (unboundDraft.translationFailed(draft.id, attempt)) {
+                                if (!ReviewActivity.translationFailed(draft.id,
+                                        translationErrorMessage(result.code)))
+                                    endDraft(draft.id, "TRANSLATION_REVIEW_LOST")
+                            } else endDraft(draft.id, "TRANSLATION_STATE_CHANGED")
+                        }
+                    }
+                }
+            }
+            translationJob = job
+            translationStartedUptimeMs = started
+            translationRequests++
+            translationLastDurationMs = null
+            translationLastUsage = null
+            experimentPhase = "TRANSLATING"
+            job.start()
+            true
+        } catch (_: Exception) {
+            translationErrors++
+            cancelTranslationJob(countCancellation = false)
+            false
+        }
+    }
+
+    private fun translationErrorMessage(code: KoreanTranslator.Code): String = when (code) {
+        KoreanTranslator.Code.KEY_UNAVAILABLE -> "API key unavailable. Check KoScribe settings, then tap Translate."
+        KoreanTranslator.Code.AUTH ->
+            "Translation access was rejected. Check API key permissions and model access."
+        KoreanTranslator.Code.RATE_LIMIT -> "Translation limit reached. Try again later with Translate."
+        KoreanTranslator.Code.TIMEOUT -> "Translation timed out. Tap Translate to retry."
+        KoreanTranslator.Code.INVALID_INPUT -> "Edit English to 512 characters or fewer, then tap Translate."
+        KoreanTranslator.Code.REFUSED -> "Translation was refused. Edit English or cancel."
+        KoreanTranslator.Code.INCOMPLETE -> "Translation was incomplete. Tap Translate to retry."
+        else -> "Translation failed (${code.name}). Edit English or tap Translate."
+    }
+
+    private fun cancelTranslationJob(countCancellation: Boolean = true) {
+        translationGeneration++
+        if (translationJob != null) {
+            if (countCancellation) translationCancels++
+            translationStartedUptimeMs?.let {
+                translationLastDurationMs = (SystemClock.uptimeMillis() - it).coerceAtLeast(0L)
+            }
+        }
+        translationJob?.cancel()
+        translationJob = null
+        translationStartedUptimeMs = null
+    }
+
+    private fun scheduleDraftDeadline(id: String, delayMs: Long) {
+        draftDeadline?.let(main::removeCallbacks)
+        val deadline = Runnable { endDraft(id, "DEADLINE") }
+        draftDeadline = deadline
+        main.postDelayed(deadline, delayMs)
     }
 
     internal fun cancelDraftReview(id: String, owner: Any) {
@@ -1583,6 +1725,7 @@ class KoScribeService : AccessibilityService() {
 
     private fun endDraft(id: String, reason: String, completed: Boolean = false) {
         if (!unboundDraft.end(id)) return
+        cancelTranslationJob()
         compactResultNotice = null
         clearPostCommitProbe()
         ReviewActivity.closeDraft(id)
@@ -2731,7 +2874,8 @@ class KoScribeService : AccessibilityService() {
         bubble = null
         bubbleParams = null
         if (unboundArm() && (!idleBubbleVisible ||
-                unboundDraft.current()?.phase == UnboundDraftState.Phase.REVIEW)) {
+                unboundDraft.current()?.phase == UnboundDraftState.Phase.REVIEW ||
+                unboundDraft.current()?.phase == UnboundDraftState.Phase.TRANSLATING)) {
             idleRenderOutcome = IdleRenderOutcome.HIDDEN_BY_POLICY_OR_REVIEW
             return
         }
@@ -2756,7 +2900,10 @@ class KoScribeService : AccessibilityService() {
             }
         }
         val resultDraft = if (expanded && startupExperiment == StartupExperiment.REVIEW)
-            unboundDraft.current()?.takeIf { it.phase != UnboundDraftState.Phase.REVIEW }
+            unboundDraft.current()?.takeIf {
+                it.phase == UnboundDraftState.Phase.READY ||
+                    it.phase == UnboundDraftState.Phase.UNCERTAIN
+            }
             else null
         var resultDragHandle: Button? = null
         if (resultDraft != null) {
@@ -2819,12 +2966,13 @@ class KoScribeService : AccessibilityService() {
                 else holder
             controls.addView(caption(if (BuildConfig.SPEECH_INPUT) "KoScribe · speech input" else "KoScribe · sample only", true))
             controls.addView(caption(status))
-            if (BuildConfig.SPEECH_INPUT)
+            if (BuildConfig.SPEECH_INPUT && !BuildConfig.TRANSLATION_INPUT)
                 controls.addView(caption("EN speech now. Korean translation arrives in the next phase."))
             val modeRow = if (unboundArm())
                 LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
                 else null
-            for (mode in if (BuildConfig.SPEECH_INPUT) listOf(OutputMode.ENGLISH) else OutputMode.entries) {
+            for (mode in if (BuildConfig.SPEECH_INPUT && !BuildConfig.TRANSLATION_INPUT)
+                    listOf(OutputMode.ENGLISH) else OutputMode.entries) {
                 val button = action(mode.label) { startMode(mode) }
                 if (modeRow != null)
                     modeRow.addView(button, LinearLayout.LayoutParams(0, -2, 1f))

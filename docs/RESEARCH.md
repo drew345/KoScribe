@@ -289,7 +289,7 @@ are separate; do not assume a Codex `ultra` option is an API parameter.
 | Independent review | `gpt-6-astra`, `xhigh` | User requested; session availability confirmed. |
 | Planner | Astra / Ultra | User requested; current runtime setting not independently inspected. |
 | Korean text translation | `gpt-6-luna`, `xhigh` | User selected after name verification; account access pending. |
-| Cloud transcription | `gpt-transcribe` | OpenAI cloud provider selected; current documented baseline, account access pending. |
+| Cloud transcription | `gpt-transcribe` | Deliberate on-phone speech tests passed on Oct24-25; see DEVICE_TESTS. |
 
 Standard published text rates per million tokens: GPT-5.6 Luna $0.20 input /
 $1.20 output; GPT-6 Luna $0.10 input / $0.50 output. These are list rates, not a
@@ -304,9 +304,32 @@ Extra High should be evaluated for both quality and interactive latency.
 - [GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna)
 - [File transcription](https://developers.openai.com/api/docs/guides/speech-to-text)
 
-No authenticated OpenAI model list or inference call was made. Account-specific
-model access and billing remain unverified. No API key was found in the current
-process; no credential from another project was read or copied.
+At initial planning, no authenticated model list or inference call had been made.
+Andrew subsequently saved a dedicated key privately on his phone and actual
+transcription passed. Translation account access and measured cost remain
+unverified. No credential from another project was read or copied.
+
+### Phase3 API verification (2026-10-25)
+
+Reopened official [GPT-6 Luna documentation](https://developers.openai.com/api/docs/models/gpt-6-luna):
+the selected gpt-6-luna/xhigh supports Responses and structured output. Standard
+list rates are $0.10/M input, $0.01/M cached input and $0.50/M output. Use actual
+returned usage for a labelled estimate; reasoning counts within output once.
+
+The [text guide](https://developers.openai.com/api/docs/guides/text) and
+[structured-output guide](https://developers.openai.com/api/docs/guides/structured-outputs)
+support a typed `text.format` schema and parsing message/output_text alongside
+reasoning items. Refusal and incomplete responses need explicit handling.
+The [reasoning guide](https://developers.openai.com/api/docs/guides/reasoning)
+confirms the generated-token ceiling includes reasoning and visible output.
+The first candidate uses8192 tokens; quality/latency and any incomplete result
+must be measured rather than silently changing the selected effort or retrying.
+
+[Data controls](https://developers.openai.com/api/docs/guides/your-data) distinguish
+application-state storage from provider retention. Set store=false, omit tools,
+conversation and background processing. Standard Responses abuse-monitoring
+retention may be up to30 days; no zero-retention claim follows from local RAM-only
+handling or store=false. See PHASE3 for the implementation/acceptance contract.
 
 ## Focused-node confirmation investigation (2026-10-24)
 

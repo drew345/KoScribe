@@ -1595,3 +1595,37 @@ or automation was started. Phase3 implementation remains next, with the selected
 gpt-6-luna/xhigh, same saved key, editable English confirmation before translation,
 fresh guarded destination capture only on Insert and default/release disabled.
 No new real-conversation insertion authorization follows from this acceptance.
+
+### October25 Phase3 translation candidate: source/local gates PASS, phone pending
+
+Andrew explicitly resumed Phase3. Two Sol6/xhigh agents implemented client and
+UI/state changes; independent Astra/xhigh review cleared the final source.
+Explicit REVIEW/SPEECH=true/TRANSLATION=true/VISUAL=false candidate built,
+all64 units passed (zero failed/skipped), lint0errors/42warnings, APK signature
+verified. Warnings are static UI/localization/tool-version warnings, not a
+device-behavior pass. Ordinary debug and release restored/verified OFF/false.
+
+Saved `app/build/translation/TRANSLATION-v1.apk`, SHA-256
+`810D9564F5D169E69E08C5617FE5F14FCE94189AE71280C9252FFC8CEEB4BF18`.
+Reviewed client SHA E30D7BF8F34E0E17672DDFE3AB5344C6E9205D3BEE80F126BC049601B7AE6025;
+service DB03C6C7077B851B43B694E4E7DE86E0477ACC8C406DF54B649453F498A0F858;
+review UI B7A11635CE625DF5F041A40899B44397916FB178EFE84D46A469D26631DB98D1;
+draft state BCA51C682BFA6B64E441FA07665CE7F9723315EEE870766C75AC2152494408F1.
+
+Andrew connected/unlocked and approved debugging. Preinstall v5 process14122
+was responsive/idle: proof2, draftNONE, captures/commits0, cleanupfalse, microphone
+stopped, SwiftKey selected, unlocked. In-place install succeeded, preserving data.
+First updated service process11530 diagnostic timed out; no recording/API action
+started. Owned manual Test message launcher completed. Verify service readiness
+before first user recording; do not infer a cause from this startup timeout.
+
+One later readiness check of the same process11530 responded normally: REVIEW,
+NOT_CAPTURED, proof0, translation0/0/0/0, draftNONE, captures/commits0,
+confirmationNONE/cleanupfalse, mic inactive. No restart/toggle occurred. Andrew
+was asked for the first 요 flow, editing two to three blue notebooks before
+Confirm & translate and one Insert in the owned empty field. User/device result
+pending; the readiness recheck does not diagnose the initial timeout.
+
+First planned phone gate is one real 요 translation/guarded insertion, then a
+distinct 반말 case, followed by translation cancellation/error recovery and
+user-reviewed quality/latency/usage. No new real-app insertion trial is authorized.

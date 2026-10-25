@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.text.InputType
@@ -26,12 +27,32 @@ class ReviewActivity : Activity() {
                 it.finish()
             }
         }
+
+        fun finishReadyDraft(id: String): Boolean {
+            val activity = active.get()?.takeIf { it.draftId == id && !it.isFinishing }
+                ?: return false
+            activity.handedOff = true
+            activity.finish()
+            return true
+        }
+
+        fun translationFailed(id: String, message: String): Boolean {
+            val activity = active.get()?.takeIf { it.draftId == id && !it.isFinishing }
+                ?: return false
+            activity.setProcessing(false)
+            activity.confirmButton.text = "Translate"
+            activity.feedback.text = message
+            return true
+        }
     }
 
     private val owner = Any()
     private var draftId = ""
     private var handedOff = false
     private lateinit var feedback: TextView
+    private lateinit var editor: EditText
+    private lateinit var instructions: TextView
+    private lateinit var confirmButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,6 +61,8 @@ class ReviewActivity : Activity() {
             KoScribeService.active()?.bindDraftReview(draftId, owner) else null
         if (draft == null) { finish(); return }
         active = WeakReference(this)
+        val translationReview = BuildConfig.TRANSLATION_INPUT &&
+            draft.source == UnboundDraftState.Source.SPEECH && draft.mode != OutputMode.ENGLISH
 
         if (!VisualTestMode.enabled) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
@@ -52,10 +75,19 @@ class ReviewActivity : Activity() {
         content.addView(caption(if (VisualTestMode.enabled)
             "VISUAL TEST · KoScribe English review" else "KoScribe · English review", true))
         content.addView(caption("Selected mode: ${draft.mode.label}"))
-        content.addView(caption(if (BuildConfig.SPEECH_INPUT)
-            "Edit the English transcript, then confirm. Korean translation arrives in the next phase."
-            else "Fixed sample; no speech recognition ran. Edit English, then confirm."))
-        val editor = EditText(this).apply {
+        if (translationReview)
+            content.addView(action("Cancel") { cancel() }.apply { id = R.id.review_cancel })
+        instructions = caption(when {
+            translationReview ->
+                "Edit English, then confirm. Only confirmed English is sent to OpenAI for translation."
+            BuildConfig.SPEECH_INPUT && !BuildConfig.TRANSLATION_INPUT ->
+                "Edit the English transcript, then confirm. Korean translation arrives in the next phase."
+            BuildConfig.SPEECH_INPUT ->
+                "Edit the English transcript, then confirm. EN remains English."
+            else -> "Fixed sample; no speech recognition ran. Edit English, then confirm."
+        })
+        content.addView(instructions)
+        editor = EditText(this).apply {
             id = R.id.review_english
             setText(draft.english)
             minLines = 3
@@ -67,7 +99,8 @@ class ReviewActivity : Activity() {
         content.addView(editor, LinearLayout.LayoutParams(-1, dp(150)))
         feedback = caption("")
         content.addView(feedback)
-        content.addView(action("Confirm English") {
+        confirmButton = action(if (translationReview)
+            "Confirm & translate" else "Confirm English") {
             val service = KoScribeService.active()
             service?.updateDraftEnglish(draftId, owner, editor.text.toString())
             when (service?.confirmDraftReview(draftId, owner)) {
@@ -75,13 +108,22 @@ class ReviewActivity : Activity() {
                     handedOff = true
                     finish()
                 }
+                UnboundDraftState.Confirm.TRANSLATING -> setProcessing(true)
+                UnboundDraftState.Confirm.TRANSLATION_ERROR -> {
+                    confirmButton.text = "Translate"
+                    feedback.text = "Translation could not start. Edit English or tap Translate."
+                }
                 UnboundDraftState.Confirm.EMPTY -> feedback.text = "Enter English before confirming."
+                UnboundDraftState.Confirm.TOO_LONG ->
+                    feedback.text = "English exceeds 512 characters. Shorten it before translating."
                 UnboundDraftState.Confirm.EDITED_KOREAN_SAMPLE ->
                     feedback.text = "Phase 1 cannot translate edits. Restore the exact sample or choose EN in a new recording."
                 else -> { feedback.text = "Review ended. Start again from the bubble."; finish() }
             }
-        }.apply { id = R.id.review_confirm })
-        content.addView(action("Cancel") { cancel() }.apply { id = R.id.review_cancel })
+        }.apply { id = R.id.review_confirm }
+        content.addView(confirmButton)
+        if (!translationReview)
+            content.addView(action("Cancel") { cancel() }.apply { id = R.id.review_cancel })
         setContentView(insetScroll(content))
         editor.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
@@ -96,6 +138,15 @@ class ReviewActivity : Activity() {
                 (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
                     .showSoftInput(editor, InputMethodManager.SHOW_IMPLICIT)
         }
+    }
+
+    private fun setProcessing(processing: Boolean) {
+        editor.isEnabled = !processing
+        editor.visibility = if (processing) View.GONE else View.VISIBLE
+        instructions.visibility = if (processing) View.GONE else View.VISIBLE
+        confirmButton.isEnabled = !processing
+        confirmButton.visibility = if (processing) View.GONE else View.VISIBLE
+        if (processing) feedback.text = "Translating to the selected mode… Cancel is available above."
     }
 
     private fun cancel() {

@@ -253,6 +253,15 @@ accepted it. Phase3 translation is next after Andrew's requested stop. Broader
 lifecycle/geometry, processing Cancel, latency/cost and original morning readiness
 cause remain unverified. See [Phase 2](docs/PHASE2.md) and PROGRESS.
 
+Andrew explicitly resumed Phase3 on October25. Implement a separate opt-in
+translation flag on the secure speech REVIEW path. Confirmed English in 요/반말
+uses gpt-6-luna/xhigh; EN and API-free samples retain their existing paths.
+Keep review open with cancellable processing, then hand only a valid completed
+translation to the existing compact result/guarded insertion flow. Source review,
+unit/build checks precede the first deliberate device translation. Quality,
+latency/cost and device behavior remain acceptance gates, not assumed outcomes.
+See [Phase3](docs/PHASE3.md).
+
 | Phase | Scope | Gate before advancing |
 | --- | --- | --- |
 | 0: Planning | Settle UX, credentials, models, speech provider, installation and latency goals. | Andrew approves implementation plan. |

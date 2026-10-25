@@ -21,6 +21,14 @@ require(speechInput == "true" || speechInput == "false") {
 require(speechInput != "true" || (startupExperimentArm == "REVIEW" && visualTest == "false")) {
     "koscribeSpeech requires secure REVIEW and koscribeVisualTest=false"
 }
+val translationInput = providers.gradleProperty("koscribeTranslation").orElse("false").get()
+require(translationInput == "true" || translationInput == "false") {
+    "koscribeTranslation must be true or false"
+}
+require(translationInput != "true" ||
+    (speechInput == "true" && startupExperimentArm == "REVIEW" && visualTest == "false")) {
+    "koscribeTranslation requires speech input, secure REVIEW, and koscribeVisualTest=false"
+}
 
 android {
     namespace = "com.koscribe.prototype"
@@ -41,11 +49,13 @@ android {
             buildConfigField("String", "STARTUP_EXPERIMENT_ARM", "\"$startupExperimentArm\"")
             buildConfigField("boolean", "VISUAL_TEST", visualTest)
             buildConfigField("boolean", "SPEECH_INPUT", speechInput)
+            buildConfigField("boolean", "TRANSLATION_INPUT", translationInput)
         }
         getByName("release") {
             buildConfigField("String", "STARTUP_EXPERIMENT_ARM", "\"OFF\"")
             buildConfigField("boolean", "VISUAL_TEST", "false")
             buildConfigField("boolean", "SPEECH_INPUT", "false")
+            buildConfigField("boolean", "TRANSLATION_INPUT", "false")
         }
     }
 

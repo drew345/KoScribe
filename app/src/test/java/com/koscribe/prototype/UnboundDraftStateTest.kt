@@ -48,4 +48,65 @@ class UnboundDraftStateTest {
         assertFalse(state.edit("new", "retry"))
         assertEquals(UnboundDraftState.Confirm.STALE, state.confirm("new"))
     }
+
+    @Test fun editedSpeechKeepsSelectedKoreanModeUntilExplicitTranslation() {
+        val state = UnboundDraftState { "speech" }
+        val draft = state.beginSpeech(OutputMode.POLITE, "Arrive at ten.")!!
+        assertEquals(OutputMode.POLITE, draft.mode)
+        assertEquals(UnboundDraftState.Source.SPEECH, draft.source)
+        assertNull(draft.result)
+        assertTrue(state.edit(draft.id, "Please arrive at eleven."))
+        assertEquals(UnboundDraftState.Confirm.TRANSLATING, state.confirm(draft.id))
+        assertEquals("Please arrive at eleven.", state.current()?.english)
+        assertEquals(UnboundDraftState.Phase.TRANSLATING, state.current()?.phase)
+        assertNull(state.current()?.result)
+        assertFalse(state.translationSucceeded(draft.id, 2, "열한 시에 와 주세요."))
+        assertTrue(state.translationSucceeded(draft.id, 1, "열한 시에 와 주세요."))
+        assertEquals("열한 시에 와 주세요.", state.current()?.result)
+    }
+
+    @Test fun actualSpeechIdenticalToSampleNeverUsesCannedKorean() {
+        val state = UnboundDraftState { "speech" }
+        state.beginSpeech(OutputMode.CASUAL, OutputMode.SAMPLE_ENGLISH)
+        assertEquals(UnboundDraftState.Confirm.TRANSLATING, state.confirm("speech"))
+        assertNull(state.current()?.result)
+        assertEquals(UnboundDraftState.Phase.TRANSLATING, state.current()?.phase)
+    }
+
+    @Test fun failedTranslationNeedsExplicitRetryAndRejectsOldResult() {
+        val state = UnboundDraftState { "speech" }
+        state.beginSpeech(OutputMode.CASUAL, "I cannot go.")
+        assertEquals(UnboundDraftState.Confirm.TRANSLATING, state.confirm("speech"))
+        assertEquals(UnboundDraftState.Confirm.STALE, state.confirm("speech"))
+        assertFalse(state.edit("speech", "Do not change while processing"))
+        assertTrue(state.translationFailed("speech", 1))
+        assertFalse(state.translationSucceeded("speech", 1, "못 가."))
+        assertTrue(state.edit("speech", "I cannot go today."))
+        assertEquals(UnboundDraftState.Confirm.TRANSLATING, state.confirm("speech"))
+        assertEquals(2, state.current()?.translationAttempt)
+        assertFalse(state.translationSucceeded("speech", 1, "못 가."))
+        assertTrue(state.translationSucceeded("speech", 2, "오늘은 못 가."))
+        assertFalse(state.translationFailed("speech", 2))
+        assertTrue(state.markAttempted("speech"))
+        assertFalse(state.translationSucceeded("speech", 2, "중복"))
+        assertEquals(UnboundDraftState.Confirm.STALE, state.confirm("speech"))
+    }
+
+    @Test fun cancelAndBoundsCannotCreateOrRearmResult() {
+        val ids = ArrayDeque(listOf("old", "new"))
+        val state = UnboundDraftState { ids.removeFirst() }
+        state.beginSpeech(OutputMode.POLITE, "Hello")
+        assertTrue(state.edit("old", "x".repeat(513)))
+        assertEquals(UnboundDraftState.Confirm.TOO_LONG, state.confirm("old"))
+        assertNull(state.current()?.result)
+        assertTrue(state.edit("old", "Hello"))
+        assertEquals(UnboundDraftState.Confirm.TRANSLATING, state.confirm("old"))
+        assertFalse(state.translationSucceeded("old", 1, "가".repeat(513)))
+        assertFalse(state.translationSucceeded("old", 1, "첫째\u2028둘째"))
+        assertTrue(state.end("old"))
+        state.beginSpeech(OutputMode.POLITE, "Fresh")
+        assertFalse(state.translationSucceeded("old", 1, "안녕하세요."))
+        assertEquals(UnboundDraftState.Phase.REVIEW, state.current()?.phase)
+        assertNull(state.current()?.result)
+    }
 }

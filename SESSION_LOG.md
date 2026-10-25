@@ -679,3 +679,26 @@
   gpt-6-luna/xhigh translation and the existing credential/insertion contracts.
   No new real-app insertion scope is granted. Preserve unresolved morning
   lifecycle cause and later processing-Cancel/geometry/quality/cost/latency limits.
+
+## 2026-10-25 — Phase3 explicitly resumed
+
+- Andrew asked to continue with 요/반말 Korean translation, keeping safety checks
+  and requesting the phone only when needed. Clean baseline619f132; preserve v5.
+- Official docs reverified gpt-6-luna/xhigh, Responses structured output and
+  retention limitations. Account access awaits deliberate on-phone translation;
+  no key read/extraction/change or paid request by the agent.
+- Sol6/xhigh client and UI/state agents implement separate file scopes; Astra/xhigh
+  independently reviews. New opt-in translation flag, default/release disabled,
+  confirmed-English-only requests and unchanged destination/commit safety contract.
+  Absolute180s draft lifetime remains; translation90s deadline is subordinate.
+- Candidate source cleared by Astra/xhigh. All64 unit tests passed, lint0errors/
+  42warnings, signature verified. Saved TRANSLATION-v1.apk (SHA810D9564); ordinary
+  debug and release restored/verified OFF/visualfalse/speechfalse/translationfalse.
+  Andrew connected/unlocked and approved debugging. Own v5 idle baseline verified;
+  installing the candidate as an in-place update. No API call or key read/change.
+  Phone translation access/quality/latency/cancellation/recovery remain untested.
+- In-place installation succeeded. First new service dump timed out; one later
+  check of the same process11530 responded idle with all new counters0, draftNONE,
+  stopped mic and cleanupfalse. No restart/toggle needed; cause is unestablished.
+  Owned Test message opened. Asked for first deliberate 요 translation, changing
+  two to three blue notebooks in English review, then one Insert. Result pending.

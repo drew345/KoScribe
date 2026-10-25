@@ -4,13 +4,26 @@ Updated: 2026-10-25 (Asia/Seoul).
 
 ## Current state
 
-STOPPED at Andrew's request on October25. Bounded Phase2 gate PASSED and
-Astra/xhigh accepted the combined evidence. No tests, builds, recording or
-background work remain running. Phase3 implementation has not started.
-Next session: implement the agreed Korean translation after confirmed English,
-using gpt-6-luna/xhigh, same on-phone credential and guarded explicit Insert.
-Verify current official API details/account access without reading the saved key;
-use Sol6/xhigh coding and independent Astra/xhigh review. Preserve the v5 baseline.
+Andrew resumed on October25 from clean checkpoint619f132 and explicitly started
+Phase3 요/반말 translation. Bounded Phase2 remains accepted; saved secure v5 is
+preserved. Two Sol6/xhigh agents implemented the client and UI/state flow;
+independent Astra/xhigh source review is CLEAR. Root owns build/device/docs/Git.
+Current official documentation verifies gpt-6-luna/xhigh and Responses structured
+output; translation account access remains unverified. Preserve the live key.
+See docs/PHASE3.md for the candidate contract and acceptance plan. Candidate build,
+all64 unit tests and signature passed; lint has zero errors/42 warnings. Saved
+`app/build/translation/TRANSLATION-v1.apk`, SHA-256
+`810D9564F5D169E69E08C5617FE5F14FCE94189AE71280C9252FFC8CEEB4BF18`.
+Explicit flags REVIEW/SPEECH=true/TRANSLATION=true/VISUAL=false. Ordinary debug
+and release flags were restored/verified OFF/false. Andrew connected/unlocked the
+phone and approved debugging. In-place installation succeeded. The first new
+service dump timed out; one later check of the same process11530 was responsive,
+with all translation/proof/capture/commit counters0, draftNONE, cleanupfalse and
+microphone stopped. No restart/toggle was needed. SwiftKey is unchanged. The owned
+Test message screen is open; Andrew was asked for the first deliberate 요 test,
+editing two to three blue notebooks before translation and one Insert. Await his
+result and own counters. This is followed
+by distinct 반말, cancellation/error recovery and measured quality/latency/usage.
 
 Andrew resumed work on October 25 from the clean night checkpoint0b0889a.
 USB debugging was initially unauthorized; Andrew approved it and the
@@ -334,7 +347,9 @@ remains foreground after instrumentation cleanup.
 Verify live readiness next session. Fixture cleanup may return
 to a real app; never assume the foreground is still synthetic.
 
-Installed product: `app/build/speech-input/SPEECH-idle-diagnostics-v5.apk`,
+Installed product: `app/build/translation/TRANSLATION-v1.apk`,
+SHA-256 `810D9564F5D169E69E08C5617FE5F14FCE94189AE71280C9252FFC8CEEB4BF18`.
+Saved Phase2 baseline: `app/build/speech-input/SPEECH-idle-diagnostics-v5.apk`,
 SHA-256 `5579B7FAE962CD93B97B14720C8431565268E04944C4E7B0BDFD9B2F15A62147`.
 Previous controls/Cancel baseline remains saved as SPEECH-controls-v4.apk,
 SHA-256 `524133623674E42B4BE8E5745C92BAD85A649D1C46AD46EF9181441858461F05`.
@@ -349,8 +364,8 @@ SHA-256: `2782686D4D4BAA5E878CDF1B22950F5EBFA0D3C6098AF4E239A892791B505B0C`.
 This adds opt-in credential/missing-key tests, preserving prior scoped methods.
 Older smoke/product artifacts remain under their recorded ignored build folders.
 Ordinary `app/build/outputs/apk/debug/app-debug.apk` has been rebuilt as OFF with
-VISUAL_TEST=false and SPEECH_INPUT=false. Release flags are also disabled.
-Do not substitute ordinary output for the saved secure speech artifact.
+VISUAL_TEST=false, SPEECH_INPUT=false and TRANSLATION_INPUT=false. Release flags
+are also disabled. Do not substitute ordinary output for the saved test artifact.
 Prior diagnostic, refresh-only, and earlier smoke APKs are retained in ignored
 build folders. Detailed source review hashes are in DEVICE_TESTS.
 
@@ -383,8 +398,8 @@ night checkpoint. Current October25 idle diagnostics/readiness are tracked above
    Cancel also passed on controls v4. Do not repeat those gates without new evidence.
    No API keys in chat or shell; no unattended audio upload, fake-key/deletion
    or missing-key reruns. Offline failure and fresh online recovery passed on v5;
-   the bounded Phase2 gate is accepted. Resume with Phase3 confirmed-English
-   translation after this requested stop. Keep the saved key intact. Broader
+   the bounded Phase2 gate is accepted. Phase3 confirmed-English translation is
+   now implemented/reviewed and entering owned-editor testing. Keep the key intact. Broader
    reliability remains a later phase; the original morning readiness cause is open.
 3. For broader daily-use reliability, extend selected/caret/navigation and
    composition coverage, small-height/large-font/rotation/split-screen, and

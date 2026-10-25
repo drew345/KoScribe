@@ -29,6 +29,11 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   not yet implemented. Preserve the live key, explicit debug/default-OFF boundary
   and existing insertion rules. Broader lifecycle and original readiness cause
   remain open; this grants no new real-app insertion trial.
+- On2026-10-25 Andrew resumed and explicitly authorized starting Phase3 Korean
+  translation with 요/반말, retaining the safety checks. Use the existing live
+  on-phone key and gpt-6-luna/xhigh; no secret extraction or credential changes.
+  Build/review before requesting USB. Start device acceptance in the owned test
+  editor; no previously consumed real-app insertion scope is reopened.
 - Andrew subsequently authorized continued scoped KakaoTalk self-chat
   diagnostics using recording -> Stop -> Cancel, without inserting or sending.
   This scope permits repeat non-inserting diagnostics as needed; do not ask

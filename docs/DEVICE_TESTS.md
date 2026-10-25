@@ -1551,3 +1551,25 @@ user-visible recovery is reported, but sustained READY was not sampled. Reissued
 the controlled offline procedure with explicit Quick Settings closure; stop if
 Ko is absent, otherwise one deliberate EN recording/Stop and terminal error report.
 No failed API attempt has occurred yet at this handoff.
+
+### October25 controlled offline error PASS on diagnostic v5
+
+Andrew left Wi-Fi and mobile data off, returned fully to Test message, observed
+the restored cursor and Ko, and deliberately recorded the instructed sentence.
+After one Stop he reported "Transcription failed: network." The existing cursor
+made an extra field tap unnecessary; this flow did not capture any destination.
+
+Own proof0->1; RESELECT_CANCELLED, draftNONE, captures/commits0,
+confirmationNONE/cleanupfalse. Trace: MODE_SELECTED_ENGLISH,
+MIC_READ_POSITIVE_UNSILENCED, STOP_ENTRY, ENDED_SPEECH_NETWORK. AppOps confirms
+microphone ended4.858s; SwiftKey remains selected. Cached idle refresh44 reports
+READY, IME visible, unlocked, wantedtrue/suppressedfalse, attached/shown host;
+render7VISIBLE. No content/key read, screenshot, insertion or sending.
+
+Astra/xhigh independently accepted the offline evidence. Root then asked Andrew
+to restore normal connectivity and make a fresh recording with a different fixed
+sentence, verify correct English review and tap review Cancel. The new sentence
+helps distinguish fresh recovery from stale output. Await user correctness and
+unchanged-field report plus proof increment/Stop/REVIEW_CANCELLED, no draft,
+cleanupfalse, zero destination/commit counts and stopped mic. Original morning
+timeout/missing-bubble cause remains unknown; this is not a lifecycle-fix claim.

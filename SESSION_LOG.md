@@ -661,3 +661,10 @@
   application, so do not claim a measured sustained READY state. Reissued offline
   instructions with explicit Quick Settings closure and stop-if-bubble-missing.
   Await exact terminal error before asking him to restore connectivity.
+- Offline test PASSED on v5: user reported transcription network failure after
+  deliberate recording/Stop. Own proof0->1, RESELECT_CANCELLED with terminal
+  SPEECH_NETWORK, draftNONE/captures0/commits0/cleanupfalse; mic ended4.858s,
+  SwiftKey unchanged. Cached visibility READY/IME visible/host shown/renderVISIBLE.
+  Astra accepted this evidence. Asked Andrew to restore normal connectivity and
+  record a distinct fresh sentence, check review, then review Cancel. Pending
+  user report and own counters; no earlier readiness root-cause fix is inferred.

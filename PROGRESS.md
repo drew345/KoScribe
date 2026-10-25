@@ -12,26 +12,31 @@ without force-stop, uninstall, data clearing or key access. Own MainActivity
 reopened; after a second user off/on toggle, a fresh process responded normally.
 Idle baseline: NOT_CAPTURED, proof/captures/commits0, draftNONE/cleanupfalse,
 mic stopped, SwiftKey selected. Timeout cause is unknown; retain this lifecycle
-incident as a limitation, not a diagnosed/fixed code bug. No code/build changes.
+incident as a limitation, not a diagnosed/fixed code bug. That recovery involved
+no code/build changes; the later diagnostic update is described below.
 
 The offline trial could not start: with Wi-Fi/mobile data off, SwiftKey and Wispr
 appeared but Ko did not. One manual keyboard hide/reopen also left Ko absent.
 Own service remains responsive/idle with proof/captures/commits0 and microphone
 inactive; no recording or API request started. Andrew was told to restore normal
 connectivity. Source review finds no network dependency in idle visibility, but
-current diagnostics cannot distinguish a visibility refusal from failed layout.
+v4 diagnostics could not distinguish a visibility refusal from failed layout.
 Sol/xhigh added cached, content-free visibility/render reason diagnostics;
 Astra/xhigh cleared the corrected source. Build/signature, all53 units and lint
 (zero errors/37 warnings) passed. Installed secure diagnostic v5 with app data
 preserved; ordinary/release outputs restored OFF/visualfalse/SPEECHfalse.
 First v5 snapshot: FOCUSED_APP_COUNT, inputStarts1, no suppression/host/render,
-zero recording/capture/commit counts. System window metadata currently reports
+zero recording/capture/commit counts. At that point system window metadata reported
 a focused TYPE_SYSTEM window; this explains this snapshot, not necessarily the
 earlier symptom. Andrew now reports Ko appeared after returning to Test message.
-Own counters remain0/mic inactive; the subsequent cached snapshot again has
-FOCUSED_APP_COUNT, so sustained READY is not claimed. Sent the controlled offline
-procedure again, explicitly closing Quick Settings before using the field. Await
-his error report with connectivity kept off; if Ko is absent, stop before EN.
+The controlled offline test now PASSED on v5: user reported the network error;
+own proof0->1, RESELECT_CANCELLED and RESELECT_ENDED_SPEECH_NETWORK, draftNONE,
+captures/commits0, cleanupfalse; microphone ended4.858s. SwiftKey unchanged.
+The new cached snapshot is READY/IME visible with the bubble attached and shown,
+renderVISIBLE. This verifies current offline visibility, not an original-cause fix.
+Astra/xhigh accepted the offline evidence. Andrew may now restore connectivity;
+asked for one fresh, distinct English sentence -> correct review -> review Cancel,
+unchanged field and no insertion. Await his report and own cleanup verification.
 Do not repeat service restarts or weaken eligibility checks. Keep the saved key
 intact. The controlled offline/fresh-online pair remains the pending bounded
 Phase 2 gate; do not repeat earlier successful tests.
@@ -48,7 +53,7 @@ first real EN transcription -> review -> Cancel and real speech -> SwiftKey edit
 -> guarded insertion/dismissal tests now passed. The clipped Stop fix also passed
 manual visibility and active-recording Cancel on controls v4: both buttons fully
 visible, no review or text change, microphone stopped. Korean translation remains
-unimplemented; Phase 2's controlled network failure/recovery check is pending.
+unimplemented; Phase 2's offline failure passed and fresh online recovery is pending.
 
 Andrew's newly approved one-attempt Kakao trial PASSED and is now complete.
 He reported the exact expected Korean sample appeared and remained unsent,

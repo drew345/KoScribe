@@ -9,7 +9,7 @@ Phase3 요/반말 translation. Bounded Phase2 remains accepted; saved secure v5 
 preserved. Two Sol6/xhigh agents implemented the client and UI/state flow;
 independent Astra/xhigh source review is CLEAR. Root owns build/device/docs/Git.
 Current official documentation verifies gpt-6-luna/xhigh and Responses structured
-output; translation account access remains unverified. Preserve the live key.
+output; first actual translation now verifies account access. Preserve the live key.
 See docs/PHASE3.md for the candidate contract and acceptance plan. Candidate build,
 all64 unit tests and signature passed; lint has zero errors/42 warnings. Saved
 `app/build/translation/TRANSLATION-v1.apk`, SHA-256
@@ -19,11 +19,32 @@ and release flags were restored/verified OFF/false. Andrew connected/unlocked th
 phone and approved debugging. In-place installation succeeded. The first new
 service dump timed out; one later check of the same process11530 was responsive,
 with all translation/proof/capture/commit counters0, draftNONE, cleanupfalse and
-microphone stopped. No restart/toggle was needed. SwiftKey is unchanged. The owned
-Test message screen is open; Andrew was asked for the first deliberate 요 test,
-editing two to three blue notebooks before translation and one Insert. Await his
-result and own counters. This is followed
-by distinct 반말, cancellation/error recovery and measured quality/latency/usage.
+microphone stopped. No restart/toggle was needed. SwiftKey is unchanged.
+First deliberate 요 test PASSED in the owned Test message screen: Andrew reported correct Korean after editing
+two to three blue notebooks. Same process11530: proof1, translation1/1/0/0,
+capture1/commit1/CONFIRMED, REVIEW_COMPLETED, draftNONE/cleanupfalse, hostgone and
+suppressed. Mic stopped, SwiftKey unchanged. Stop-to-review-created1761ms;
+translation job-to-callback3034ms; usage input194/cached0/output105/reasoning77.
+User reported Confirm & translate below the visible screen with SwiftKey and
+no Korean visible before Insert. Sol fixed pinned review actions; Astra cleared
+the final source. Andrew then questioned whether a preview was useful and
+preferred exploring a single Translate & insert action. The unshipped preview
+patch was reverted; service/insertion logic is unchanged. Andrew initially chose
+translation tests first, then said he is reconsidering the priority because the
+field/cursor is already selected when the bubble appears. Do not treat that
+priority as settled. Root explained that visibility does not retain/verify the
+original destination through recording/review. A future one-button
+path needs verified intended-destination return and manual fallback; it cannot
+simply call Insert on whatever field appears. The button fix (useful for either
+direction) passed build/all64 units/signature, lint0errors/36warnings. ReviewActivity
+SHA9F05E2C2; saved and installed `app/build/translation/TRANSLATION-actions-v2.apk`,
+SHA-256 `EEE3459902AFF0AE7F15B230D661C5E527AF4BA339ECF6507216761BD78FEEA8`.
+Default/release flags restored/verified OFF/false; in-place install preserves data.
+New process16745 responds idle: proof/translation/capture/commit counters0,
+draftNONE/cleanupfalse, stopped mic and SwiftKey unchanged. No new recording.
+Actual SwiftKey review-button visibility is pending. Distinct 반말/action visibility is ready as
+the next test if translation-first proceeds. Translation cancellation/error recovery,
+반말 and broader quality remain; no automatic insertion is implemented.
 
 Andrew resumed work on October 25 from the clean night checkpoint0b0889a.
 USB debugging was initially unauthorized; Andrew approved it and the
@@ -114,8 +135,9 @@ builds/tests/operates the phone. Speech is opt-in debug `koscribeSpeech=true`,
 requiring REVIEW and visualfalse; release and ordinary defaults remain OFF.
 The saved sample baseline is preserved. Andrew confirmed private on-phone key
 entry and DeveloperStuff backup on October 24. No key value was inspected;
-the first user-triggered gpt-transcribe result succeeded. Translation model access,
-latency/cost measurements and broader speech quality remain unverified.
+the first user-triggered gpt-transcribe result succeeded. The first actual Korean
+translation subsequently verified model access and yielded one timing/usage
+sample (current state above); broader speech/translation quality remains unverified.
 
 EN recording -> explicit Stop -> OpenAI gpt-transcribe -> editable English ->
 Confirm -> unchanged guarded Insert/Copy. Korean modes are disabled in this
@@ -347,7 +369,9 @@ remains foreground after instrumentation cleanup.
 Verify live readiness next session. Fixture cleanup may return
 to a real app; never assume the foreground is still synthetic.
 
-Installed product: `app/build/translation/TRANSLATION-v1.apk`,
+Installed product: `app/build/translation/TRANSLATION-actions-v2.apk`,
+SHA-256 `EEE3459902AFF0AE7F15B230D661C5E527AF4BA339ECF6507216761BD78FEEA8`.
+Saved first-translation baseline: `app/build/translation/TRANSLATION-v1.apk`,
 SHA-256 `810D9564F5D169E69E08C5617FE5F14FCE94189AE71280C9252FFC8CEEB4BF18`.
 Saved Phase2 baseline: `app/build/speech-input/SPEECH-idle-diagnostics-v5.apk`,
 SHA-256 `5579B7FAE962CD93B97B14720C8431565268E04944C4E7B0BDFD9B2F15A62147`.
@@ -409,8 +433,8 @@ night checkpoint. Current October25 idle diagnostics/readiness are tracked above
    editable English -> 요/반말 -> Copy & close -> manual paste fallback. Do not
    spend indefinitely on integration without measured user benefit.
 5. Phase3 needs user-reviewed meaning/tone in both Korean forms and measured
-   latency/cost. Model remains gpt-6-luna/xhigh; account translation access is
-   unverified. Private key/DeveloperStuff backup are confirmed. Preserve that
+   latency/cost. Model remains gpt-6-luna/xhigh; first translation verified account
+   access and yielded one timing/usage sample. Key/DeveloperStuff backup are confirmed. Preserve that
    credential. Improve recording-state prominence in the later UI phase.
 
 Earlier RESELECT synthetic gates proved keyboard-based visibility, dragging,
@@ -431,8 +455,8 @@ they are not full current-build real-app acceptance. See DEVICE_TESTS for histor
 - Dismiss bubble after Copy or confirmed insertion until a new keyboard cycle.
 - Personal on-phone key entry with Keystore-backed encryption, no key in Git/APK/
   logs. Translation choice gpt-6-luna/xhigh; OpenAI transcription baseline recorded
-  in RESEARCH. Translation account access and broader quality/latency/cost remain
-  unverified; actual transcription access and the scoped speech checks passed.
+  in RESEARCH. First translation access and one edited 요 case passed; broader
+  quality/latency/cost remain open. Scoped speech checks passed.
 - Final icon, permissions/battery/reboot UX, signing and distribution remain later.
 
 ## Repository and tools

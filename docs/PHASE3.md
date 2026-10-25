@@ -16,7 +16,9 @@ PROGRESS owns the latest source, build and test status.
   screenshots or audio enters the translation request. EN skips translation.
 - Keep secure review visible while translating, with editing/duplicate confirmation
   disabled and Cancel reachable. Success closes review into the existing compact
-  result control; no required second preview. Error preserves English for editing
+  result control; no required second preview/confirmation. Andrew questioned
+  whether Confirm & translate could also insert; that needs a separate verified
+  destination-return design. Current insertion remains explicit. Error preserves English for editing
   and explicit new confirmation. No automatic retry or model substitution.
 - Cancel, pause/background, lock, credential change, service interruption and
   expiry end the job/draft. A stale callback must never publish into a cancelled,
@@ -52,7 +54,7 @@ Official documentation verified October25:
 
 - [GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna): xhigh,
   Responses and structured outputs supported. Account access is not established
-  by documentation; verify with Andrew's first deliberate phone translation.
+  by documentation; Andrew's first deliberate phone translation subsequently passed.
 - [Text generation](https://developers.openai.com/api/docs/guides/text) and
   [structured outputs](https://developers.openai.com/api/docs/guides/structured-outputs):
   response output can include reasoning and messages; parse typed items and reject

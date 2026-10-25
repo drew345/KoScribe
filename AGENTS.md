@@ -34,6 +34,11 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   on-phone key and gpt-6-luna/xhigh; no secret extraction or credential changes.
   Build/review before requesting USB. Start device acceptance in the owned test
   editor; no previously consumed real-app insertion scope is reopened.
+- After the first real 요 translation passed, Andrew considered finishing Korean
+  tests before streamlining insertion, then reopened that priority decision.
+  Keep explicit Insert until a new flow is agreed and reviewed.
+  A future Translate & insert path must verify the intended destination and
+  fall back to manual selection on uncertainty; do not merely auto-call Insert.
 - Andrew subsequently authorized continued scoped KakaoTalk self-chat
   diagnostics using recording -> Stop -> Cancel, without inserting or sending.
   This scope permits repeat non-inserting diagnostics as needed; do not ask

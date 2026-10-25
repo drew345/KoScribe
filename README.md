@@ -21,7 +21,10 @@ recording/review/Cancel passed on October25. Broader daily-use reliability remai
 untested, including the cause of a morning service-readiness incident. The
 [Phase 3 candidate](docs/PHASE3.md) adds confirmed-English translation to 요 or
 반말 using the same saved key. Independent source review and all 64 unit tests
-passed; model access, Korean quality and phone behavior still need device evidence.
+passed. The first real 요 translation of edited English and guarded insertion
+passed in the test editor, verifying account access. A reviewed button-layout
+update is installed; its visibility with SwiftKey and the 반말 trial are pending. Broader
+quality and reliability remain unverified.
 The [Phase 1 sample build](docs/PHASE1.md) remains available
 without an API key; ordinary and release builds default to OFF. See
 [PROGRESS](PROGRESS.md) for the current installed build and next action.
@@ -92,7 +95,7 @@ workflow; the fallback is an accepted product direction, not yet implemented.
 - User enters their own API key on the phone; protect it locally and keep it
   outside Git and the APK. No backend is selected for the first version.
 - Translation model: GPT-6 Luna with Extra High reasoning (`gpt-6-luna`,
-  `xhigh`), subject to account access and quality/latency testing.
+  `xhigh`). First account-access test passed; broader quality/latency testing continues.
 - Speech recognition: OpenAI cloud transcription first, using the currently
   recommended `gpt-transcribe` recorded-audio workflow. Some extra processing
   time is acceptable; measure it rather than assuming a fixed latency target.

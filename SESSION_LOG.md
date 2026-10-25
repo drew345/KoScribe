@@ -702,3 +702,23 @@
   stopped mic and cleanupfalse. No restart/toggle needed; cause is unestablished.
   Owned Test message opened. Asked for first deliberate 요 translation, changing
   two to three blue notebooks in English review, then one Insert. Result pending.
+- First actual 요/edit/Insert PASSED per Andrew and same-process counters:
+  translation1/1/0/0, capture1/commit1 CONFIRMED, draftNONE/cleanupfalse and
+  dismissed/suppressed host. Mic stopped, SwiftKey unchanged. Stop-to-review-created
+  1761ms; translation job-to-callback3034ms; usage194/0/105/77. This verifies account
+  access and one edited-message meaning case, not the complete quality gate.
+- Andrew reported Confirm & translate below the screen with SwiftKey. Sol6/xhigh
+  implements pinned accessible actions; Astra/xhigh reviews. He then questioned
+  whether a Korean preview was useful and asked about one Translate & insert
+  action. Unshipped preview patch reverted; service unchanged. Root explained
+  explicit destination intent. Andrew initially chose translation checks first,
+  then reconsidered because the intended cursor precedes bubble visibility.
+  Priority remains under discussion; no automatic insertion change. Pinned-button
+  fix is independently cleared because it helps either direction.
+- Button-layout v2 built, all64 units passed, lint0errors/36warnings, signature
+  verified. Saved/installed TRANSLATION-actions-v2.apk (SHAEEE34599) in-place after
+  idle/mic check; default/release flags restored/verified OFF/false. Only
+  ReviewActivity code changed: bounded secure review with pinned primary/Cancel,
+  scrolling English content. Actual SwiftKey layout check remains pending.
+  New process16745 responsive/idle, all counters0/draftNONE/cleanupfalse, mic
+  stopped and SwiftKey unchanged. Await priority clarification; no new test begun.

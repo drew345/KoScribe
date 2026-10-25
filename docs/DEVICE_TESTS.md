@@ -1629,3 +1629,49 @@ pending; the readiness recheck does not diagnose the initial timeout.
 First planned phone gate is one real 요 translation/guarded insertion, then a
 distinct 반말 case, followed by translation cancellation/error recovery and
 user-reviewed quality/latency/usage. No new real-app insertion trial is authorized.
+
+### October25 first actual 요 translation/edit/Insert PASS; UI follow-up
+
+Andrew reported the instructed edited message produced proper Korean in Test
+message. Exact generated wording was not collected. Same process11530: proof1;
+translation requests/success/errors/cancels1/1/0/0; capture1/commit1; CONFIRMED,
+REVIEW_COMPLETED and REVIEW_ENDED_INSERT_CONFIRMED; draftNONE/cleanupfalse.
+Idle suppressiontrue and host absent corroborate dismissal. AppOps confirms mic
+ended5.301s; SwiftKey unchanged. One paid deliberate translation succeeded using
+the previously saved key; no credential read/change or new real-app trial.
+
+Stop-to-review-created1761ms includes cleanup/ASR/callback through draft creation,
+not review rendering. Translation job-to-accepted-callback3034ms includes key
+lookup/network/parsing, not visible result rendering or user selection/insertion.
+Both use awake uptime. Usage input194/cached0/output105/reasoning77. At the verified
+standard list rates the translation-only estimate is USD0.0000719; reasoning is
+already included in output, and this excludes transcription/unobserved failed usage.
+This is one sample, not a latency/cost distribution or spending cap.
+
+User found Confirm & translate below the viewport with SwiftKey and no Korean
+visible before Insert. Sol6/xhigh implements pinned primary/Cancel actions, with
+Astra/xhigh review. Andrew then questioned the preview and asked about one
+Translate & insert action; the unshipped preview patch was reverted. Insertion
+logic is unchanged. Andrew initially chose translation checks first, then
+reopened that priority decision. A future single-action flow needs
+verified intended-destination return and a safe manual fallback. No such flow
+is implemented or device-tested. The distinct 반말 case can also test pinned actions.
+
+### October25 pinned review actions v2: source/local PASS, phone layout pending
+
+Only ReviewActivity code changed. Astra/xhigh cleared SHA-256
+`9F05E2C29556BCF7CD56E18AB21399BCF7F7496276E6FAF23EFA3F23C4FE8081`.
+Secure bounded review window, pinned primary/Cancel row and independently
+scrolling English area; owner/cancellation/processing and service/insertion
+logic unchanged. No Korean preview patch remains.
+
+Build/all64 units/signature passed; lint0errors/36warnings. Saved and installed
+`app/build/translation/TRANSLATION-actions-v2.apk`, SHA-256
+`EEE3459902AFF0AE7F15B230D661C5E527AF4BA339ECF6507216761BD78FEEA8`.
+Ordinary debug/release flags restored/verified OFF/false. Before in-place update,
+v1 remained terminally completed with same counters, draftNONE and stopped mic.
+No recording/API action was initiated for this UI update. Actual action visibility
+with SwiftKey remains a manual check; do not claim a phone-layout pass yet.
+New process16745 responded immediately: NOT_CAPTURED, all proof/translation/
+capture/commit counters0, draftNONE/cleanupfalse, microphone inactive, SwiftKey
+unchanged. Cached bubble READY/visible. No new recording or translation was run.

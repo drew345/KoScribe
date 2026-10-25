@@ -288,7 +288,7 @@ are separate; do not assume a Codex `ultra` option is an API parameter.
 | Coding subagents | `gpt-6-sol`, `xhigh` | User requested; session availability confirmed. |
 | Independent review | `gpt-6-astra`, `xhigh` | User requested; session availability confirmed. |
 | Planner | Astra / Ultra | User requested; current runtime setting not independently inspected. |
-| Korean text translation | `gpt-6-luna`, `xhigh` | User selected after name verification; account access pending. |
+| Korean text translation | `gpt-6-luna`, `xhigh` | User selected after name verification; first deliberate phone translation passed October25. |
 | Cloud transcription | `gpt-transcribe` | Deliberate on-phone speech tests passed on Oct24-25; see DEVICE_TESTS. |
 
 Standard published text rates per million tokens: GPT-5.6 Luna $0.20 input /
@@ -306,8 +306,9 @@ Extra High should be evaluated for both quality and interactive latency.
 
 At initial planning, no authenticated model list or inference call had been made.
 Andrew subsequently saved a dedicated key privately on his phone and actual
-transcription passed. Translation account access and measured cost remain
-unverified. No credential from another project was read or copied.
+transcription passed. First deliberate translation subsequently passed October25,
+verifying model access and returning one timing/usage sample (DEVICE_TESTS).
+No credential from another project was read or copied.
 
 ### Phase3 API verification (2026-10-25)
 

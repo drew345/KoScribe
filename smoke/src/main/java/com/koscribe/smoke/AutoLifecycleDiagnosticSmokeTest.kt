@@ -356,9 +356,9 @@ class AutoLifecycleDiagnosticSmokeTest {
         }
         if (focused.size > 1) throw AssertionError("MULTIPLE_FOCUSED_APPLICATIONS")
         val window = focused.singleOrNull() ?: return null
-        val packageName = window.getRoot(0)?.packageName?.toString()
+        val packageName = window.getRoot(0)?.packageName?.toString() ?: return null
         if (packageName != fixture && packageName != product)
-            throw AssertionError("FOREIGN_FOCUSED_APPLICATION")
+            failKnownForeignFocus()
         return window.takeIf { packageName == owner }
     }
 
@@ -382,13 +382,19 @@ class AutoLifecycleDiagnosticSmokeTest {
             return when (app.getRoot(0)?.packageName?.toString()) {
                 fixture -> "FIXTURE"
                 product -> "PRODUCT"
-                else -> throw AssertionError("FOREIGN_FOCUSED_APPLICATION")
+                null -> "ROOT_UNAVAILABLE"
+                else -> failKnownForeignFocus()
             }
         }
         if (focused.any { it.type != AccessibilityWindowInfo.TYPE_INPUT_METHOD &&
                 it.type != AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY })
             throw AssertionError("FOREIGN_FOCUSED_WINDOW_TYPE")
         return "NONE"
+    }
+
+    private fun failKnownForeignFocus(): Nothing {
+        report("focus_interrupt", "KNOWN_FOREIGN_APPLICATION")
+        throw AssertionError("FOREIGN_FOCUSED_APPLICATION")
     }
 
     private fun sampleStage(stage: String, original: Original) {

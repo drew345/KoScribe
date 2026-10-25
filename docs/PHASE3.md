@@ -142,3 +142,22 @@ field and cancel fallback cases; then deliberate actual Korean flow. Preserve
 existing text, SwiftKey, one-attempt and never-Send rules. Broader custom-app
 semantic rebinding cannot be proved by view identity alone and is not covered
 by the earlier manual insertion passes. Record measured limitations honestly.
+
+### Stopped October25: unimplemented paired-occlusion proposal
+
+The Cancel-only fixture trace proved the same original window/root/node and
+direct editor instance survive one removal/addition during our review. A future
+candidate could accept one exact original REMOVED event only after synchronous
+full attestation of the known own review window/root/editor/owner. This proof may
+precede the existing g+1 input callback; full review/confirmation still requires it.
+Accept one exact original ADDED event only during explicitly authorized return.
+If metadata is absent, wait only within the existing nonextending2s return bound;
+known conflicting window/root/node/focus stays terminal. Require a completed pair
+and exact original identity before starting any transaction, plus existing g+2,
+both fresh snapshot checks, content/selection invalidation and one-attempt rules.
+The no-removal path remains separate. This is a proposal, not reviewed final code
+or an automatic-insertion pass. Service/policy agents made no implementation edits.
+
+Andrew stopped for token reset and reconsidered manual Translate→Insert with a
+Korean preview as a possible useful alternative. No preview was added. Resume
+with a brief priority choice; preserve the restored working manual translation v2.

@@ -776,3 +776,24 @@
   (0 errors/3 warnings) and installed as smoke-lifecycle-v3 SHA7631FD3D. Product
   unchanged. Phone was asleep before execution; requested unlock. No lifecycle
   run has begun, no new write/API action. The pending test is Cancel-only.
+- Saved lifecycle harness/pending test as5503668. Andrew unlocked; one run reached
+  review/Cancel but stopped at FOREIGN_FOCUSED_APPLICATION before return evidence.
+  Direct original Activity/editor/token survived review attached/empty/caret0,
+  all lifecycle deltas0; accessibility original absent. Own review identity stable
+  before Cancel. No writes; mic555ms stopped. Found test helper conflates missing
+  root metadata with foreign package; correct that distinction before interpreting
+  failure. No product guard change or insertion pass.
+- Corrected lifecycle test CB282F6F independently cleared, smoke build/signature/
+  lint passed, installed SHAD2A1FB5D. Same Cancel-only trace PASS: exact original
+  accessibility and direct owned identity survived, unchanged empty/caret0 and
+  lifecycle deltas0 at natural return and300ms settled; exactly one removed2/
+  added1 pair. No writes; mic497ms stopped, SwiftKey unchanged. Proceed with a
+  reviewed explicit paired occlusion protocol, retaining final destination and
+  one-attempt safeguards. Automatic insertion remains unproven.
+- Andrew requested wrap-up for token reset. Stopped all agents before any paired
+  occlusion implementation; only a proposal remains. He raised Korean preview
+  plus manual Insert as a possible alternative, not a settled UI change. Restored
+  secure manual speech/translation v2 (SHAEEE34599) in-place, preserving key/data.
+  PID27092 responsive and idle: all new counters0, draftNONE/cleanupfalse, mic off,
+  SwiftKey unchanged. No further tests or feature work running. Save/push this
+  checkpoint and resume with a short priority discussion after reset.

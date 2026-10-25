@@ -4,6 +4,17 @@ Updated: 2026-10-25 (Asia/Seoul).
 
 ## Current state
 
+**Stopped at Andrew's request for token reset.** No agent, build or phone test
+remains running. Restored saved manual speech/translation v2 in-place; key/data
+preserved. PID27092 responds idle with proof/translation/capture/commit counters0,
+draftNONE/cleanupfalse and microphone stopped; SwiftKey unchanged. Automatic
+insertion is still unproven. Its code remains default-OFF and its diagnostic APKs
+are saved. The paired occlusion correction was discussed but no code was written.
+Andrew may accept manual Translate→Insert, or prefer seeing Korean before Insert;
+record this as an option, not a settled UI decision. On resume, summarize these
+choices before investing further in automatic continuity. See the proposal in
+docs/PHASE3.md and measured lifecycle evidence in docs/DEVICE_TESTS.md.
+
 Andrew now explicitly authorized the one-button Translate & insert experiment,
 with manual fallback when original field/cursor cannot be verified. He accepted
 test mode first. Root uses AstraUltra architecture analysis, Sol6/xhigh policy
@@ -46,11 +57,24 @@ through review/Cancel/return, checking whether original window/root/node identit
 survives. Product guards stay unchanged. No automatic insertion has passed yet.
 Checkpoint d9364ba is pushed to verified private origin/main. Dedicated lifecycle
 test C6214251 is independently cleared, smoke build/signature/lint0 errors passed,
-and smoke-lifecycle-v3 installed (SHA7631FD3D). Product v4 is unchanged. Before
-running it, phone check found screenOFF/showingtrue and mic stopped. Requested
-wake/unlock; no lifecycle run has started. Next exact case:
-AutoLifecycleDiagnosticSmokeTest#originalWindowReviewCancelReturnIsObservedWithoutInsertion
-with autoLifecycleReady=true. Do not substitute a full instrumentation suite.
+and smoke-lifecycle-v3 installed (SHA7631FD3D). Product v4 is unchanged. Andrew
+unlocked the phone; the lifecycle run reached review and Cancel, then stopped at
+FOREIGN_FOCUSED_APPLICATION before return evidence. During review the exact direct
+Activity/editor/token stayed attached/empty/caret0 with all lifecycle deltas0,
+while original accessibility window/root/node were absent. Same review owner
+passed pre-Cancel checks. No writes; PID16450 proof2/intent2/fallback2, draftNONE,
+mic555ms stopped. Harness currently conflates null root/package metadata with
+foreign application. Test-only correction will distinguish bounded not-ready
+from an explicit foreign package; this suspected cause is not yet measured.
+Corrected smoke CB282F6F built/signed/installed as smoke-lifecycle-v4 (SHAD2A1FB5D).
+The same Cancel-only lifecycle case now PASSED: original accessibility window/
+root/node and direct Activity/editor/token returned identically, empty/caret0,
+create/attach/detach deltas0, at first return and300ms settled. One exact REMOVED2
+and ADDED1 pair observed; return192ms after Cancel (observer timing). Product
+PID16450 proof3/intent3/fallback3, no attempts/captures/commits, draftNONE/cleanupfalse,
+mic497ms stopped, SwiftKey unchanged. This supports a narrow paired occlusion
+protocol, not automatic insertion acceptance. AstraUltra's proposal is documented;
+Sol service/policy agents stopped without implementing it at Andrew's request.
 Older v2 baseline details follow; prior priority uncertainty is superseded.
 
 Andrew resumed on October25 from clean checkpoint619f132 and explicitly started
@@ -419,11 +443,14 @@ remains foreground after instrumentation cleanup.
 Verify live readiness next session. Fixture cleanup may return
 to a real app; never assume the foreground is still synthetic.
 
-Installed product: `app/build/automatic-insert/AUTO-window-diag-v4.apk`,
-SHA-256 `79F9B730216D9C99B8EEA4B27E37D7D5C9E32EEDC4BC7A03989FA73CE21E7A3D`.
-REVIEW/AUTO=true; speech/translation/visual=false. Keep live key intact.
-Saved manual speech/translation baseline: `app/build/translation/TRANSLATION-actions-v2.apk`,
+Installed product (restored at stop): `app/build/translation/TRANSLATION-actions-v2.apk`,
 SHA-256 `EEE3459902AFF0AE7F15B230D661C5E527AF4BA339ECF6507216761BD78FEEA8`.
+Secure REVIEW, real speech/translation enabled, manual Insert, no automatic flow.
+Keep live key intact. Saved automatic diagnostic candidate:
+`app/build/automatic-insert/AUTO-window-diag-v4.apk`, SHA-256
+`79F9B730216D9C99B8EEA4B27E37D7D5C9E32EEDC4BC7A03989FA73CE21E7A3D`.
+That candidate is REVIEW/AUTO=true and speech/translation/visual=false; it is
+not currently installed and must not be confused with the working speech build.
 Saved first-translation baseline: `app/build/translation/TRANSLATION-v1.apk`,
 SHA-256 `810D9564F5D169E69E08C5617FE5F14FCE94189AE71280C9252FFC8CEEB4BF18`.
 Saved Phase2 baseline: `app/build/speech-input/SPEECH-idle-diagnostics-v5.apk`,
@@ -436,8 +463,8 @@ Phase 1 rollback: `app/build/composed-confirmation/REVIEW-secure.apk`,
 SHA-256 `3AA18446275E46E3712D5232EC8D02DC4AEF0D3C1D88D7CE7CAECE6080DF99DD`.
 Earlier seven-pass product remains saved at app/build/confirmation-refresh/REVIEW.apk
 with SHA-256 `2B00BE44077579BBD92D3D6A8D7FCED7E7391E17B05F56B5D1652444F4AD4D9E`.
-Installed smoke: `app/build/automatic-insert/smoke-lifecycle-v3.apk` (ignored).
-SHA-256 `7631FD3D7E4CB8213749F1D05F142B93A3692123F6AABF4C6687F0DE896E64C3`.
+Installed smoke: `app/build/automatic-insert/smoke-lifecycle-v4.apk` (ignored).
+SHA-256 `D2A1FB5D2D989030806A31FEB5C585F75080382A37B51295A5AD3F4360AE0BE3`.
 New automatic tests are exact opt-in/API-free; never run the whole suite or any
 earlier credential/missing-key methods against the saved live key.
 Older smoke/product artifacts remain under their recorded ignored build folders.
@@ -462,12 +489,13 @@ night checkpoint. Current October25 idle diagnostics/readiness are tracked above
 
 ## Next work and gates
 
-Current immediate step: await requested phone unlock, then one non-inserting owned-fixture review/Cancel/return
-trace to establish whether the original identity survives review occlusion.
-Do not exempt removal without a reviewed paired transition protocol and evidence.
-After automatic empty insertion actually passes,
-run middle preservation and negative/cancel cases individually, then deliberate
-live Korean tests. External apps retain manual Insert; no new real-app trial.
+Current immediate step is to resume with Andrew after token reset, using the
+restored manual build. Choose whether to add a Korean preview before manual
+Insert or continue the one-button experiment; no new UI decision is settled.
+If continuing automatic work, implement/review the proposed paired occlusion
+state before the empty automatic test, retaining exact final original proofs.
+Only after it passes, run middle preservation and negative/cancel cases separately,
+then deliberate live Korean tests. No new real-app trial is authorized.
 
 1. Preserve both manual passes. The shorter instruction is conditional on the
    intended field/caret already being restored. Current-build preservation,

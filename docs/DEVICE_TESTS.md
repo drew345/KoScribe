@@ -1802,3 +1802,55 @@ Smoke build/signature/lint passed (0 errors/3 warnings). Saved/installed
 Product v4 remains unchanged. Pre-run phone check: screenOFF/showingtrue,
 microphone stopped; requested unlock and did not start instrumentation.
 Pending exact method: `originalWindowReviewCancelReturnIsObservedWithoutInsertion`.
+
+Andrew then unlocked. First lifecycle run failed after3.621s with
+FOREIGN_FOCUSED_APPLICATION in the post-Cancel return wait. Baseline/recording
+original window/root/node identities matched; uniqueId absent on both and empty
+accessibility caret unknown, while direct owned editor proved caret0. In review,
+original accessibility window/root/node were absent, but direct Activity/editor/
+nonnull token stayed identical, attached, empty and caret0 with create/attach/
+detach deltas0. Pre-Cancel own review window/root/editor matched. No return
+classification was produced. Product PID16450 proof1→2/intent1→2/fallback1→2,
+no captures/attempts/commits, draftNONE/cleanupfalse, mic ended555ms.
+
+The product readiness wait did succeed in this run: ENTRY_READY after24ms,
+remote review focused, then original REMOVED still terminally rejected. Test
+inspection found `uniqueFocusedApp` treats null root/package as foreign; this
+is a diagnostic ambiguity, not proof the failure was missing metadata. A later
+package-only snapshot showed launcher after runner cleanup, which cannot identify
+the failure-time app. Correct only the test's null/foreign distinction, retaining
+strict rejection of explicit foreign packages and no post-Cancel actions.
+
+### October25 corrected Cancel lifecycle: PASS, original identity survives
+
+Test-only correction CB282F6F independently cleared. Smoke build/lint/signature
+passed; saved/installed `app/build/automatic-insert/smoke-lifecycle-v4.apk`,
+SHA-256 `D2A1FB5D2D989030806A31FEB5C585F75080382A37B51295A5AD3F4360AE0BE3`.
+Product unchanged. Same exact Cancel-only case PASSED in4.01s. Original remote
+window/root/node/refreshed identity/resource/class/input type returned identical;
+uniqueId absent both times, node empty caret unknown but direct owned editor
+proved0/0. Direct Activity/editor/nonnull token stayed identical and attached,
+text remained empty, lifecycle create/attach/detach deltas0. Same results at
+first natural return and300ms settled, without refocus/reseed.
+
+Original-window listener observed one REMOVED mask2 and one ADDED mask1, preceded
+by ACTIVE|FOCUSED mask96. Receipt times from baseline:899/996/1462ms respectively;
+removed callback arrived145ms before observer's full review proof. These are
+callback receipt and polling observations, not exact occurrence/order proof in
+the product service. Stop-to-observed-review392ms, Cancel-to-observed-return192ms.
+No stage/event overflow and no explicit foreign app reported. This does not prove
+what caused the previous helper's error.
+
+PID16450 proof2→3/intent2→3/fallback2→3; captures/attempts/commits0, draftNONE,
+cleanupfalse, mic ended497ms, SwiftKey unchanged. Product still correctly ends
+auto on original REMOVED; full input-generation continuity after that fallback
+is not measured by this observer. Next candidate may recognize one authenticated
+own-review occlusion/return pair while retaining exact original final proofs,
+content/input invalidations and one-attempt safeguards. No automatic pass yet.
+
+At Andrew's requested stop, restored `TRANSLATION-actions-v2.apk` (SHAEEE34599)
+in-place; saved automatic v4 and lifecycle v4 artifacts remain available.
+New product PID27092 responds idle: proof/translation/capture/commit counters0,
+draftNONE/cleanupfalse, microphone inactive and SwiftKey unchanged. No pending
+recording or test. This installation restores the tested manual workflow; no new
+translation or insertion test was run. Paired occlusion remains unimplemented.

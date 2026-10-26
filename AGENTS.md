@@ -189,6 +189,11 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
 
 ## Memory maintenance
 
+Keep later feature ideas and deferred acceptance work in
+`CHANGES_PROPOSED_FOR_LATER.md`, linked from README/PROGRESS. Update that standing
+list when decisions change; SESSION_LOG alone is not the backlog. A proposed
+item does not reopen deferred implementation or consumed real-app test scope.
+
 Update current state and a brief dated session entry after meaningful work.
 Label proposals, user decisions, documentation findings, and measured device
 results distinctly. Use Asia/Seoul dates for session notes.

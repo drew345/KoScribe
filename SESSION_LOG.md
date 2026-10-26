@@ -860,3 +860,18 @@
   installation. Cause remains open; passing instrumentation obtained idle state
   internally. No broad lifecycle investigation undertaken for this cosmetic task.
   Next: user visual/daily-use feedback; Korean tone/latency acceptance remains open.
+
+## 2026-10-26 — Standing later changes list and notification reference
+
+- Andrew will try the MVP and report immediate fixes. Created the separate
+  CHANGES_PROPOSED_FOR_LATER.md list, with deferred automatic insertion, UI/review
+  options, readiness/recovery, Karrot compatibility, broader resilience, launcher
+  fallback and personal distribution; acceptance work is separately identified.
+- Preserved his supplied original notification JPEG under docs/references and
+  linked/described it in the list. Upper truncated card appears to be Android's
+  overlay notice; lower dictation-ready notice is documented by Wispr as ongoing
+  background status. Official Android/Wispr sources rechecked. The image does
+  not establish an automatic-insertion fix or active microphone capture.
+- Linked the backlog from README/PROGRESS and added its maintenance rule to
+  AGENTS. Documentation/reference-only work: no app, permissions, credential,
+  build, installation or phone actions. Current MVP remains installed.

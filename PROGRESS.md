@@ -4,6 +4,12 @@ Updated: 2026-10-26 (Asia/Seoul).
 
 ## Current state
 
+Andrew is now trying the installed MVP and will bring immediate fixes back as
+needed. Later proposals and unfinished acceptance work are tracked in
+[Changes proposed for later](CHANGES_PROPOSED_FOR_LATER.md), including the supplied
+Wispr notification image and its documented/inferred meaning. No new runtime
+work or phone tests are started by that list.
+
 **Selected stylized K installed and phone-tested; live speech/translation enabled.**
 Andrew selected the middle concept, Spoken K. Service 95ECC800 retains the
 56×48 dp native Button/tap/drag behavior and uses the selected original graphite

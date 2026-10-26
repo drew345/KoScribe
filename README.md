@@ -121,6 +121,8 @@ an alternative architecture for later.
 - [AGENTS.md](AGENTS.md): durable work rules and constraints.
 - [IMPLEMENTATION.md](IMPLEMENTATION.md): architecture proposals and phase gates.
 - [PROGRESS.md](PROGRESS.md): current status, unresolved decisions, next action.
+- [Changes proposed for later](CHANGES_PROPOSED_FOR_LATER.md): standing improvement
+  list, remaining acceptance work, and the Wispr notification reference.
 - [SESSION_LOG.md](SESSION_LOG.md): concise work history.
 - [Research](docs/RESEARCH.md): dated official sources and limitations.
 - [Device acceptance](docs/DEVICE_TESTS.md): measured results and pending checks.

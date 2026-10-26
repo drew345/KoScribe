@@ -35,10 +35,20 @@ The abandoned click-rearm candidate passed owned tests but failed Andrew's manua
 Karrot reuse check, motivating the selected persistent-Ko behavior. Its temporary
 sample/live APKs remain ignored artifacts only. Do not reinstall them as current.
 Automatic insertion stays false throughout. No automatic continuity work.
-Andrew next requested an original designed icon replacing plain Ko, with gray
-and slightly translucent appearance, using Wispr Flow only as a reference. Public
-Android examples/help were located; no icon change is implemented yet. Restore
-voice was explicitly prioritized and is now verified.
+Andrew requested an original designed icon replacing plain Ko, with gray and
+slightly translucent appearance, using Wispr Flow only as a reference. Three
+independent Image Gen concept previews were displayed on October26. Authoritative
+display order: 1 Quiet Wave (three rounded bars), 2 Spoken K (geometric monogram),
+3 Speak Mark (speech outline/microphone). Gray body target approximately80% opaque,
+solid graphite symbol; current native button already supports alpha. Selection
+is pending; no app/icon/phone changes were made for these previews.
+Preview directory: C:/AI/Codex/Home/generated_images/01a1670a-c995-7e61-a259-10116da03c7f/.
+Files in displayed order:
+1. exec-9533e2a9-44dc-42fb-af22-9291ec90c49e.png
+2. exec-ce2b2ee8-8a66-439e-b732-7d96bbf06a19.png
+3. exec-5667b9c3-98ee-494d-b712-f71d0ca9908c.png
+These are preview-only references outside the repo. Copy the selected asset into
+the workspace if used; do not guess a different option if its reference is lost.
 
 October25 checkpoint (historical): restored manual v2, PID27092 idle and mic off.
 Automatic insertion remained unproven/default-OFF. Paired occlusion is documented
@@ -523,8 +533,9 @@ night checkpoint. Current October25 idle diagnostics/readiness are tracked above
 ## Next work and gates
 
 Current work is complete for bubble reuse/live restore and bounded Karrot
-diagnosis. Next: choose an original gray/translucent icon direction when Andrew
-wants to proceed. Karrot uses Copy & close/manual Paste. Automatic insertion and
+diagnosis. Next: await Andrew's choice among the three displayed icon concepts,
+then implement/refine the chosen visual using the requested agent roles.
+Karrot uses Copy & close/manual Paste. Automatic insertion and
 the paired-occlusion proposal are deferred; Korean preview remains optional.
 No new real-app Insert trial is authorized.
 

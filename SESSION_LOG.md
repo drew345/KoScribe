@@ -835,3 +835,8 @@
 - Andrew requested future original icon design, gray and slightly transparent,
   using Wispr Flow as a visual reference rather than copying its mark. Public
   Android examples/help located; no icon implementation or design selection yet.
+- Generated three independent floating-button concept previews with built-in
+  Image Gen: displayed1 Quiet Wave,2 Spoken K,3 Speak Mark. Light gray translucent
+  body/opaque graphite symbol; current56x48dp component is the size target.
+  Exact preview paths/mapping are in PROGRESS. Await user selection; no app source,
+  installation, credential or phone-state changes in this design turn.

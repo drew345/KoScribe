@@ -875,3 +875,10 @@
 - Linked the backlog from README/PROGRESS and added its maintenance rule to
   AGENTS. Documentation/reference-only work: no app, permissions, credential,
   build, installation or phone actions. Current MVP remains installed.
+
+## 2026-10-26 — Deferred custom vocabulary
+
+- Andrew reported missed recognition of “Dangun pay” and “Twosome cafe”. Added
+  custom vocabulary/correction rules as item 10 in CHANGES_PROPOSED_FOR_LATER.md,
+  preserving his spellings and leaving canonical output/misheard forms open.
+- Documentation only; current transcription, translation and phone build unchanged.

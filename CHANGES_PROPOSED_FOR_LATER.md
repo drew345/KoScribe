@@ -68,6 +68,16 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    Protect the existing key and signing material; keep secrets outside Git and
    the APK, with confirmed DeveloperStuff backup for irreplaceable credentials.
 
+10. **Custom vocabulary and correction rules for dictation.** Requested by
+    Andrew after English transcription missed Korean app/brand and coffee-shop
+    names during MVP use. First examples, preserved exactly as he supplied them:
+    **Dangun pay** and **Twosome cafe**. Later evaluate a personal vocabulary list,
+    pronunciation aliases and explicit corrections, with corrected English still
+    available for review before translation. Preferred English/Korean spellings
+    and the actual misrecognized forms have not been specified; confirm those
+    when implementing rather than inventing replacement mappings. Deferred;
+    no transcription or replacement behavior has changed.
+
 ## Remaining acceptance work
 
 - **Korean meaning and tone in both forms:** requests, apologies, questions,

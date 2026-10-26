@@ -10,6 +10,10 @@ needed. Later proposals and unfinished acceptance work are tracked in
 Wispr notification image and its documented/inferred meaning. No new runtime
 work or phone tests are started by that list.
 
+Latest MVP feedback: English transcription missed “Dangun pay” and “Twosome cafe”.
+Custom vocabulary/correction rules are recorded as deferred item 10 in that list;
+the user's exact example spellings are retained pending future implementation.
+
 **Selected stylized K installed and phone-tested; live speech/translation enabled.**
 Andrew selected the middle concept, Spoken K. Service 95ECC800 retains the
 56×48 dp native Button/tap/drag behavior and uses the selected original graphite

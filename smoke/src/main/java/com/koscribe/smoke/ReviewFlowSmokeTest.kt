@@ -83,7 +83,7 @@ class ReviewFlowSmokeTest {
         // The product's own deadline and mic owner also terminate an interrupted capture.
     }
 
-    @Test fun editedEnglishCopyClosesAndReappearsAfterImeCycle() {
+    @Test fun editedEnglishCopyClosesResultAndRetainsKoThroughImeCycle() {
         only("reviewCopyReady")
         val original = "Keep synthetic draft."
         val edited = "Edited English for synthetic copy."
@@ -96,7 +96,7 @@ class ReviewFlowSmokeTest {
         assertTrue("DESTINATION_CAPTURED_BEFORE_INSERT", state().captures == before.captures)
         clickOwnId("ready_copy")
         sessionAttempted = false
-        await("COPY_DID_NOT_DISMISS") { (!visibleOwnUi()).takeIf { it } }
+        await("COPY_RESULT_DID_NOT_CLOSE") { collapsedKoAvailable().takeIf { it } }
         assertFixtureText(R.id.local_test_editor, original)
         assertTrue("COPY_CAPTURED_OR_COMMITTED", state().captures == before.captures &&
             state().commits == before.commits && state().phase == "NONE" &&
@@ -109,7 +109,7 @@ class ReviewFlowSmokeTest {
             clip?.itemCount == 1 && ownClipDescription(clip.description))
         // Only after the owned label, MIME, sensitivity, and foreground checks.
         assertTrue("OWN_SYNTHETIC_CLIP_MISMATCH", clip!!.getItemAt(0).text?.toString() == edited)
-        assertTrue("COPY_REOPENED_IN_SAME_IME_SESSION", imeVisible() && !visibleOwnUi())
+        assertTrue("COPY_KO_NOT_AVAILABLE_IN_SAME_IME_SESSION", imeVisible() && collapsedKoAvailable())
         focusFixture(R.id.local_test_editor, showIme = false)
         await("IME_HIDE_NOT_OBSERVED") { (!imeVisible()).takeIf { it } }
         focusFixture(R.id.local_test_editor, showIme = true)
@@ -156,7 +156,9 @@ class ReviewFlowSmokeTest {
         when (terminal.confirmation) {
             "CONFIRMED" -> {
                 sessionAttempted = false
-                assertTrue("CONFIRMED_INSERT_DID_NOT_DISMISS", !visibleOwnUi())
+                await("CONFIRMED_INSERT_RESULT_DID_NOT_CLOSE") {
+                    collapsedKoAvailable().takeIf { it }
+                }
                 assertTrue("CONFIRMED_INSERT_EXPOSED_RETRY", ownId("ready_insert") == null)
                 SystemClock.sleep(500)
                 assertFixtureText(R.id.local_test_editor, edited)
@@ -389,12 +391,12 @@ class ReviewFlowSmokeTest {
                 it.phase == "NONE" && it.confirmation == "CONFIRMED" && !it.cleanup
         } }
         sessionAttempted = false
-        assertTrue("BUBBLE_NOT_DISMISSED_AFTER_INSERT", !visibleOwnUi())
+        await("RESULT_PANEL_NOT_CLOSED_AFTER_INSERT") { collapsedKoAvailable().takeIf { it } }
         assertTrue("SWIFTKEY_NOT_VISIBLE_AFTER_INSERT", imeVisible() && selectedSwiftKey())
         SystemClock.sleep(500)
         assertFixtureText(editorId, expected)
-        assertTrue("INSERT_RETRIED_OR_REOPENED", state().commits == before.commits + 1 &&
-            ownId("ready_insert") == null && !visibleOwnUi())
+        assertTrue("INSERT_RETRIED_OR_RESULT_REOPENED", state().commits == before.commits + 1 &&
+            collapsedKoAvailable())
     }
 
     private fun startReview(mode: String, before: State) {
@@ -834,7 +836,13 @@ class ReviewFlowSmokeTest {
         assertTrue("SYNTHETIC_FIXTURE_TEXT_CHANGED", fixtureText(editor) == expected)
     }
 
-    private fun visibleOwnUi(): Boolean = nodes(product).any { it.isVisibleToUser }
+    private fun collapsedKoAvailable(): Boolean = ownButton("Ko") != null &&
+        ownId("ready_insert") == null && ownId("ready_copy") == null &&
+        ownId("ready_cancel") == null && ownId("review_english") == null &&
+        ownId("review_confirm") == null && ownId("review_cancel") == null &&
+        ownButton("EN") == null && ownButton("요") == null &&
+        ownButton("반말") == null && ownButton("Stop") == null &&
+        ownButton("Close") == null && ownButton("Cancel") == null
 
     private fun nodes(requested: String): List<AccessibilityNodeInfo> {
         if (requested != product && requested != fixture) throw AssertionError("PACKAGE_NOT_ALLOWED")

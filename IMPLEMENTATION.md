@@ -5,6 +5,18 @@ Planning baseline: 2026-10-23. Andrew authorized Phase 1 implementation on
 
 ## Confirmed product choices
 
+October26 priority: defer the automatic Translate & insert/paired-occlusion
+experiment. Andrew selected the MVP with explicit manual Insert plus Copy & close.
+Fix same-editor reuse after completion without requiring SwiftKey to close.
+After the click-rearm candidate failed Karrot, Andrew selected keeping collapsed
+Ko available while SwiftKey is open; close the result panel on completion.
+This uses normal idle visibility only, with no destination or insertion eligibility.
+Preserve explicit Hide semantics and
+active recording/review ownership. Diagnose Karrot's existing refusal code before
+any compatibility change; use Copy & close for unsupported editors rather than
+spending indefinitely on programmatic insertion. Earlier automatic plans below
+remain deferred proposals/history.
+
 Use the three-mode bubble flow in `README.md`. Every message initially gets an
 editable English transcript review after Stop. Translate only confirmed English;
 EN skips translation. Andrew subsequently selected a separate destination step:

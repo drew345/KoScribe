@@ -23,20 +23,19 @@ untested, including the cause of a morning service-readiness incident. The
 반말 using the same saved key. Independent source review and all 64 unit tests
 passed. The first real 요 translation of edited English and guarded insertion
 passed in the test editor, verifying account access. A reviewed button-layout
-update is installed; its visibility with SwiftKey and the 반말 trial are pending. Broader
-quality and reliability remain unverified.
+update is included in the current MVP; the distinct 반말 trial and broader quality
+and reliability checks remain pending.
 The [Phase 1 sample build](docs/PHASE1.md) remains available
 without an API key; ordinary and release builds default to OFF. See
 [PROGRESS](PROGRESS.md) for the current installed build and next action.
 
 ## Agreed interaction
 
-The steps below describe the tested manual-insertion baseline. Andrew has now
-authorized testing a one-button **Translate & insert** path: automatically insert
-only if the original field, cursor and nearby text can still be verified, otherwise
-show manual Insert. The reviewed experiment is implemented under a default-OFF
-debug flag and starts in the owned test editor; device acceptance is pending.
-Other apps retain the manual baseline.
+The MVP keeps manual **Insert** plus **Copy & close**. Andrew deferred the
+one-button automatic Translate & insert experiment on October26. Its default-OFF
+code is saved for later. Current work fixes repeat bubble use in the same editor
+and investigates Karrot compatibility. Copy & close supports normal manual Paste
+when an app's editor cannot be verified for Insert.
 
 1. Tap an editable text field to show the keyboard and the floating bubble,
    then tap the bubble. The idle bubble stays hidden outside editing. Drag it
@@ -55,8 +54,10 @@ Other apps retain the manual baseline.
    **Insert** in the floating box. KoScribe captures and checks that destination
    afresh before insertion. EN skips translation. If the check fails, keep the result for an
    explicit new destination attempt; never silently retarget or retry a commit.
-6. After successful insertion or explicit Copy, dismiss the bubble for that
-   interaction. Review/edit in the destination app and press Send yourself.
+6. After successful insertion or explicit Copy, close the result panel. Keep the small collapsed Ko bubble
+   available while SwiftKey remains open so another message can begin. Hide it
+   when the keyboard closes or when you explicitly choose Hide. Review/edit in
+   the destination app and press Send yourself.
 
 Each message requires an explicit mode choice. No hidden gesture determines
 politeness. There is no 습니다 output mode. The English review is editable text,
@@ -81,6 +82,12 @@ choose 요 or 반말 to translate, then tap Copy & close. He manually long-press
 the intended message field and pastes. A separate Close control is also useful.
 The bubble/direct-insertion design must demonstrate a benefit over that simpler
 workflow; the fallback is an accepted product direction, not yet implemented.
+
+The current bubble already supports Copy & close. A focused-editor metadata check
+found Karrot's input lacks the accessibility properties required by guarded Insert,
+so use Copy & close and normal Paste there. Real speech→review→Copy and continued
+bubble availability passed in Karrot on October26. Launcher-only operation remains
+an alternative architecture for later.
 
 ## Initial device and apps
 

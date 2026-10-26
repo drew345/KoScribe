@@ -2613,10 +2613,8 @@ class KoScribeService : AccessibilityService() {
         experimentPhase = if (completed) "REVIEW_COMPLETED" else "REVIEW_CANCELLED"
         note("REVIEW_ENDED_$reason")
         if (completed) {
-            idleBubblePolicy.hideUntilNextImeCycle()
-            idleBubbleVisible = false
             expanded = false
-            renderBubble()
+            refreshIdleBubble(forceRender = true)
         } else {
             expanded = false
             status = if (reason == "DEADLINE") "Review expired." else "Review cancelled."
@@ -3091,6 +3089,8 @@ class KoScribeService : AccessibilityService() {
                 "This Phase 1 Insert test supports up to 512 characters. Use Copy & close."
             "RESULT_NOT_SINGLE_LINE" ->
                 "This Phase 1 Insert test accepts one line. Use Copy & close for line breaks."
+            "NODE_EDITOR_MISMATCH" ->
+                "Could not verify this editor. Use Copy & close, then paste with your keyboard."
             else -> "Could not verify a safe destination. Tap the intended text field and try Insert, or Copy."
         }
         compactResultNotice = status

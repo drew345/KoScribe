@@ -492,3 +492,13 @@ domains from cloud and transfer rules, retain allowBackup=false and legacy rules
 The [Keystore AES-GCM example](https://developer.android.com/reference/android/security/keystore/KeyGenParameterSpec)
 supports generating the AES encryption key inside AndroidKeyStore. Device storage
 and backup configuration need review/tests; hardware backing is not assumed.
+
+## Floating icon reference — 2026-10-26
+
+Andrew requested an original designed symbol replacing plain Ko, with a gray,
+slightly translucent bubble; do not copy Wispr Flow's mark. Public visual reference:
+[Wispr Flow Android](https://wisprflow.ai/android). Its current
+[bubble troubleshooting guide](https://docs.wisprflow.ai/articles/5002934560-Troubleshooting-the-Flow-Bar-%28Desktop%29-and-Flow-Bubble-%28Android%29)
+documents a Flow Bubble Opacity setting. Our collapsed button already uses a
+custom drawable, so gray/alpha styling is an ordinary appearance change; exact
+symbol/opacity remain to be chosen. No visual change is installed yet.

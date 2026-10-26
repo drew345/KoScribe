@@ -1854,3 +1854,45 @@ New product PID27092 responds idle: proof/translation/capture/commit counters0,
 draftNONE/cleanupfalse, microphone inactive and SwiftKey unchanged. No pending
 recording or test. This installation restores the tested manual workflow; no new
 translation or insertion test was run. Paired occlusion remains unimplemented.
+
+### October26 MVP: persistent collapsed Ko and Karrot Copy recovery PASS
+
+Andrew deferred automatic insertion, retained manual Insert plus Copy & close,
+and selected keeping collapsed Ko available after completion with SwiftKey open.
+The earlier click-rearm candidate passed owned cases but failed manual Karrot
+reuse (READY/IMEvisible but suppressed); that approach was removed entirely.
+
+Karrot read-only metadata probe CD953608: matching root/node package and window,
+but node focused0/editable0/inputType0, no resource, visible/enabled1/password0.
+No text, hint, description, history traversal, UI action, clipboard or API call.
+Retained own process27092 contained NODE_EDITOR_MISMATCH refusals (no app labels).
+This supports Copy & close for Karrot rather than weakening Insert safeguards;
+no custom adapter or new real-app Insert trial was attempted.
+
+Final service AF6DC0A4 independently Astra/xhigh reviewed. Only completion UI
+refresh and NODE_EDITOR_MISMATCH recovery wording changed; policy/tests/XML
+match the prior baseline. All78 unit tests pass; app lint0 errors/35 warnings.
+Owned tests A81140F3, with older manual expectations A025576C, independently
+reviewed and compiled; smoke lint0 errors/3 warnings. Both exact cases passed:
+`confirmedInsertKeepsCollapsedKoAvailable` (6s) and
+`copyAndCloseKeepsCollapsedKoAvailable` (6.267s). They observe IME from before
+completion through Ko/mode panel/Close, no editor retap/keyboard cycle, no result
+panel, unchanged text/caret, and no extra recording/write. Sample PID18564 ended
+proof2/capture1/commit1/COPIED, draftNONE/cleanupfalse, collapsed Ko shown;
+microphone ended444ms. No API call. Older full manual cases were not rerun.
+
+Saved API-free product `app/build/mvp-reuse/REVIEW-persistent-ko-v3.apk`, SHA-256
+`628BC24A13C7640F782D97B7F2E9D3B7C6FFDE599441803AE998CE43567CFEB9`;
+smoke `app/build/mvp-reuse/smoke-persistent-ko-v3.apk`, SHA-256
+`C8D062B538D15CFDFBA7DCA82FE353368735E06A1D321D604B9D6B9FCD77A83B`.
+
+Real speech/translation product built/linted/signed and installed in-place:
+`app/build/mvp-reuse/TRANSLATION-persistent-ko-v3.apk`, SHA-256
+`EA8D45E03B1B5818BAAE9CC6E887873659AB229470BCE499830D0D744F3D0A39`.
+Secure REVIEW, SPEECH/TRANSLATION=true, AUTO/VISUAL=false. Ordinary/release outputs
+restored and verified OFF/allfalse. Key/data intact. Andrew's Karrot actual
+EN speech→review→Confirm→Copy & close PASSED; words matched and Ko stayed visible.
+PID22101 proof1/COPIED, draftNONE/cleanupfalse, capture/commit0, automatic intent
+counts0, bubble READY/IMEvisible/wanted/shown/suppressionfalse, mic ended4.716s.
+Stop-to-review-created1824ms includes cleanup/ASR/callback, not render time.
+No new Korean translation trial, Paste, real-app Insert, Send or history inspection.

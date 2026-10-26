@@ -1,19 +1,49 @@
 # Current progress
 
-Updated: 2026-10-25 (Asia/Seoul).
+Updated: 2026-10-26 (Asia/Seoul).
 
 ## Current state
 
-**Stopped at Andrew's request for token reset.** No agent, build or phone test
-remains running. Restored saved manual speech/translation v2 in-place; key/data
-preserved. PID27092 responds idle with proof/translation/capture/commit counters0,
-draftNONE/cleanupfalse and microphone stopped; SwiftKey unchanged. Automatic
-insertion is still unproven. Its code remains default-OFF and its diagnostic APKs
-are saved. The paired occlusion correction was discussed but no code was written.
-Andrew may accept manual Translate→Insert, or prefer seeing Korean before Insert;
-record this as an option, not a settled UI decision. On resume, summarize these
-choices before investing further in automatic continuity. See the proposal in
-docs/PHASE3.md and measured lifecycle evidence in docs/DEVICE_TESTS.md.
+**MVP bubble fix implemented, reviewed and phone-tested; live voice restored.**
+Andrew explicitly selected manual Insert plus Copy & close and deferred automatic
+insertion. Completion now closes only the result panel and keeps collapsed Ko
+available while SwiftKey is open. Explicit Hide/keyboard visibility and all Insert
+safeguards remain. Final service AF6DC0A4 has only completion-collapse and clearer
+Copy recovery wording changes; no click-rearm policy/event subscription remains.
+Astra/xhigh source/test review CLEAR; build/all78 units/signatures/lint0 errors
+passed. Both owned Insert-once and Copy cases passed with continuous SwiftKey,
+collapsed Ko and mode-panel reuse, without another recording/write/keyboard cycle.
+
+Installed real speech/translation MVP: TRANSLATION-persistent-ko-v3 SHA EA8D45E0,
+PID22101. Andrew's actual speech→EN review→Copy & close Karrot check PASSED:
+words matched and Ko stayed available. Own proof1/COPIED, draftNONE/cleanupfalse,
+capture/commit0, automatic=false, speech/translation=true, stopped mic4.716s,
+idle READY/IMEvisible/wanted/shown and suppressionfalse corroborate the report.
+No new Karrot Insert or Send occurred. Key/data preserved. Default debug/release
+outputs restored/verified OFF/allfalse. Phone actions are finished.
+
+Karrot bounded diagnosis is complete for this MVP. Before updating, saved manual
+process27092 retained NODE_EDITOR_MISMATCH refusals, followed later by successful
+EN insertion in an unattributed app. User prepared empty Karrot/SwiftKey; exact
+metadata-only probe found matching root/node package+window, but focused=false,
+editable=false,inputType0/resource absent. No text/history/UI action was read or
+performed. This is incompatible with current guarded Insert. Keep Karrot on
+Copy & close/manual Paste; do not weaken Insert or start a custom adapter now.
+New refusal wording points to that recovery. Key/data untouched.
+
+The abandoned click-rearm candidate passed owned tests but failed Andrew's manual
+Karrot reuse check, motivating the selected persistent-Ko behavior. Its temporary
+sample/live APKs remain ignored artifacts only. Do not reinstall them as current.
+Automatic insertion stays false throughout. No automatic continuity work.
+Andrew next requested an original designed icon replacing plain Ko, with gray
+and slightly translucent appearance, using Wispr Flow only as a reference. Public
+Android examples/help were located; no icon change is implemented yet. Restore
+voice was explicitly prioritized and is now verified.
+
+October25 checkpoint (historical): restored manual v2, PID27092 idle and mic off.
+Automatic insertion remained unproven/default-OFF. Paired occlusion is documented
+as a proposal, with no code written. A Korean preview remains optional and is not
+part of the two current requested fixes. Earlier evidence follows.
 
 Andrew now explicitly authorized the one-button Translate & insert experiment,
 with manual fallback when original field/cursor cannot be verified. He accepted
@@ -443,10 +473,13 @@ remains foreground after instrumentation cleanup.
 Verify live readiness next session. Fixture cleanup may return
 to a real app; never assume the foreground is still synthetic.
 
-Installed product (restored at stop): `app/build/translation/TRANSLATION-actions-v2.apk`,
-SHA-256 `EEE3459902AFF0AE7F15B230D661C5E527AF4BA339ECF6507216761BD78FEEA8`.
-Secure REVIEW, real speech/translation enabled, manual Insert, no automatic flow.
-Keep live key intact. Saved automatic diagnostic candidate:
+Installed MVP product: `app/build/mvp-reuse/TRANSLATION-persistent-ko-v3.apk`,
+SHA-256 `EA8D45E03B1B5818BAAE9CC6E887873659AB229470BCE499830D0D744F3D0A39`.
+Secure REVIEW, real speech/translation enabled, manual Insert, AUTO_INSERT=false.
+Keep live key intact. Saved pre-MVP manual rollback:
+`app/build/translation/TRANSLATION-actions-v2.apk`, SHA-256
+`EEE3459902AFF0AE7F15B230D661C5E527AF4BA339ECF6507216761BD78FEEA8`.
+Saved automatic diagnostic candidate:
 `app/build/automatic-insert/AUTO-window-diag-v4.apk`, SHA-256
 `79F9B730216D9C99B8EEA4B27E37D7D5C9E32EEDC4BC7A03989FA73CE21E7A3D`.
 That candidate is REVIEW/AUTO=true and speech/translation/visual=false; it is
@@ -463,8 +496,8 @@ Phase 1 rollback: `app/build/composed-confirmation/REVIEW-secure.apk`,
 SHA-256 `3AA18446275E46E3712D5232EC8D02DC4AEF0D3C1D88D7CE7CAECE6080DF99DD`.
 Earlier seven-pass product remains saved at app/build/confirmation-refresh/REVIEW.apk
 with SHA-256 `2B00BE44077579BBD92D3D6A8D7FCED7E7391E17B05F56B5D1652444F4AD4D9E`.
-Installed smoke: `app/build/automatic-insert/smoke-lifecycle-v4.apk` (ignored).
-SHA-256 `D2A1FB5D2D989030806A31FEB5C585F75080382A37B51295A5AD3F4360AE0BE3`.
+Installed smoke: `app/build/mvp-reuse/smoke-persistent-ko-v3.apk` (ignored).
+SHA-256 `C8D062B538D15CFDFBA7DCA82FE353368735E06A1D321D604B9D6B9FCD77A83B`.
 New automatic tests are exact opt-in/API-free; never run the whole suite or any
 earlier credential/missing-key methods against the saved live key.
 Older smoke/product artifacts remain under their recorded ignored build folders.
@@ -489,13 +522,11 @@ night checkpoint. Current October25 idle diagnostics/readiness are tracked above
 
 ## Next work and gates
 
-Current immediate step is to resume with Andrew after token reset, using the
-restored manual build. Choose whether to add a Korean preview before manual
-Insert or continue the one-button experiment; no new UI decision is settled.
-If continuing automatic work, implement/review the proposed paired occlusion
-state before the empty automatic test, retaining exact final original proofs.
-Only after it passes, run middle preservation and negative/cancel cases separately,
-then deliberate live Korean tests. No new real-app trial is authorized.
+Current work is complete for bubble reuse/live restore and bounded Karrot
+diagnosis. Next: choose an original gray/translucent icon direction when Andrew
+wants to proceed. Karrot uses Copy & close/manual Paste. Automatic insertion and
+the paired-occlusion proposal are deferred; Korean preview remains optional.
+No new real-app Insert trial is authorized.
 
 1. Preserve both manual passes. The shorter instruction is conditional on the
    intended field/caret already being restored. Current-build preservation,

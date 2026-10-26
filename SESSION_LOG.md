@@ -797,3 +797,41 @@
   PID27092 responsive and idle: all new counters0, draftNONE/cleanupfalse, mic off,
   SwiftKey unchanged. No further tests or feature work running. Save/push this
   checkpoint and resume with a short priority discussion after reset.
+
+## 2026-10-26 — MVP priority and repeat-use fix
+
+- Andrew deferred difficult automatic insertion work. Explicitly selected manual
+  Insert plus Copy & close. Requests same-editor bubble reuse and Karrot refusal
+  diagnosis; no Korean preview change requested in this scope.
+- Source identifies completion/Hide suppression clearing only on keyboard absence,
+  with no subscribed editor-click event. Sol/xhigh prepares UI-only completion
+  rearm, scoped sample tests, and independent Astra/xhigh review; AstraUltra plan
+  check accepted. No automatic-destination/paired-occlusion work.
+- ADB initially has no device. Requested connect/unlock to read any retained own
+  Karrot refusal diagnostic before update. Cause unmeasured; do not speculate or
+  remove guards based solely on a visible cursor. Preserve live credential.
+- Read retained process27092 diagnostics before update: repeated NODE_EDITOR_MISMATCH
+  refusals followed by later successful EN insertion (trace has no app attribution).
+  Prepared Karrot metadata-only probe found same root/node package/window but
+  focused0/editable0/inputType0, no resource. No content/history/action read.
+  Keep Karrot on Copy & close/manual Paste rather than a new adapter.
+- Fresh-click rearm candidate independently reviewed,81 units passed, both owned
+  Insert/Copy cases passed without keyboard cycle. Manual Karrot Copy completed
+  but Ko did not return; process32050 remained READY/IMEvisible/suppressedtrue.
+  Andrew explicitly selected keeping collapsed Ko available with the keyboard,
+  closing only the result panel. Sol revises that simpler completion behavior;
+  no automatic insertion or guard relaxation. Pending new review/build/device gate.
+- Final persistent-Ko source AF6DC0A4 independently cleared; prior click policy,
+  XML subscription and extra unit tests removed. All78 units passed; app/smoke
+  lint0 errors (35/3 warnings), signatures verified. Updated only older REVIEW
+  completion UI expectations; their full cases were not rerun. New owned Insert
+  and Copy cases both passed with continuous SwiftKey/no extra write or recording.
+- Installed real speech/translation MVP EA8D45E0 in-place; automatic=false,
+  key/data preserved. Andrew's real EN speech/review/Copy Karrot test passed and
+  Ko stayed available. PID22101 proof1/COPIED, draftNONE/cleanupfalse/capture0/
+  commit0, mic4.716s stopped, bubble READY/shown. Default/release outputs OFF.
+  No real-app Insert/Send. User's intervening sample-sentence report was caused
+  by the temporary API-free test build; actual voice is restored and verified.
+- Andrew requested future original icon design, gray and slightly transparent,
+  using Wispr Flow as a visual reference rather than copying its mark. Public
+  Android examples/help located; no icon implementation or design selection yet.

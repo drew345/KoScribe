@@ -9,6 +9,20 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
 
 ## Work authorization and model roles
 
+- On2026-10-26 Andrew deferred the difficult automatic Translate & insert work
+  and prioritized an MVP. Keep manual Insert plus Copy & close (explicitly
+  selected); do not resume paired-occlusion/automatic-destination work. Fix the
+  bubble failing to return after completion when he taps the same editor with
+  SwiftKey still open. After the tap-rearm candidate failed his Karrot check,
+  Andrew explicitly chose to keep the small collapsed Ko bubble available while
+  SwiftKey is open after Copy/confirmed Insert; close only the result panel.
+  This supersedes the earlier completion-hide requirement; explicit Hide remains.
+  Investigate Karrot's manual insertion refusal from the
+  existing own diagnostic code before any compatibility change. His suggestion
+  that verification may be unnecessary is not a measured failure cause. Keep
+  preservation, no-Send and no-retry-after-uncertainty safeguards; Copy & close
+  is the agreed recovery for unsupported editors. Use bounded focused-editor
+  diagnostics, not conversation history or another speculative Insert attempt.
 - Andrew authorized Phase 1 implementation on 2026-10-23. Build and review
   the API-free feasibility prototype; do not advance beyond its device-test
   gate without the required results. Later phases remain gated.

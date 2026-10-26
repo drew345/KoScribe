@@ -1,4 +1,5 @@
 <resources>
+    <item name="collapsed_bubble" type="id" />
     <item name="local_test_editor" type="id" />
     <item name="review_english" type="id" />
     <item name="review_confirm" type="id" />

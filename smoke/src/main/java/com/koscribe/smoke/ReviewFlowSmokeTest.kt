@@ -812,7 +812,9 @@ class ReviewFlowSmokeTest {
         val matches = nodes(product).filter {
             it.className?.toString() == "android.widget.Button" && it.isEnabled &&
                 it.isClickable && it.isVisibleToUser &&
-                it.text?.toString()?.equals(label, ignoreCase = true) == true
+                (it.text?.toString()?.equals(label, ignoreCase = true) == true ||
+                    (label == "Ko" && (it.viewIdResourceName == "$product:id/collapsed_bubble" ||
+                        it.contentDescription?.toString() == "Open KoScribe")))
         }
         if (matches.size > 1) throw AssertionError("AMBIGUOUS_OWN_BUTTON_$label")
         return matches.singleOrNull()

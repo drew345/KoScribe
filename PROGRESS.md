@@ -4,7 +4,28 @@ Updated: 2026-10-26 (Asia/Seoul).
 
 ## Current state
 
-**MVP bubble fix implemented, reviewed and phone-tested; live voice restored.**
+**Selected stylized K installed and phone-tested; live speech/translation enabled.**
+Andrew selected the middle concept, Spoken K. Service 95ECC800 retains the
+56×48 dp native Button/tap/drag behavior and uses the selected original graphite
+mark on an 80% opaque light gray body. Source/foreground asset and independent
+Astra/xhigh review are recorded in docs/design/floating-button and DEVICE_TESTS.
+Build/all 78 units/signatures passed; app/smoke lint 0 errors (34/4 warnings).
+Installed `app/build/floating-k/TRANSLATION-stylized-k-v1.apk`, SHA BAA162DD,
+PID22160: secure REVIEW, speech/translation=true, automatic/visual=false.
+Normal voice was never replaced by a sample build in this icon update; key/data
+preserved. Default debug/release outputs restored and verified OFF/allfalse.
+
+Focused owned-fixture icon test PASSED in 4.510s: open modes, Close, drag and restore,
+empty editor/SwiftKey maintained and proof/capture/commit counters unchanged at 0.
+Only the installed drawable was rendered/exported for visual QA; no screen image,
+recording, API call, clipboard operation or insertion. Initial case-sensitive
+test failed finding Close; corrected helper 3EDA81BC independently reviewed.
+Standalone service dumps intermittently time out (also before icon update);
+this cause remains undiagnosed, not fixed by the matcher correction. The passing
+test read idle draftNONE/counters0 internally; final AppOps still shows only the
+prior stopped 4.716s recording. SwiftKey unchanged. Phone work is finished.
+
+**Earlier October26 MVP acceptance remains the behavior baseline.**
 Andrew explicitly selected manual Insert plus Copy & close and deferred automatic
 insertion. Completion now closes only the result panel and keeps collapsed Ko
 available while SwiftKey is open. Explicit Hide/keyboard visibility and all Insert
@@ -14,8 +35,8 @@ Astra/xhigh source/test review CLEAR; build/all78 units/signatures/lint0 errors
 passed. Both owned Insert-once and Copy cases passed with continuous SwiftKey,
 collapsed Ko and mode-panel reuse, without another recording/write/keyboard cycle.
 
-Installed real speech/translation MVP: TRANSLATION-persistent-ko-v3 SHA EA8D45E0,
-PID22101. Andrew's actual speech→EN review→Copy & close Karrot check PASSED:
+Previous real speech/translation MVP: TRANSLATION-persistent-ko-v3 SHA EA8D45E0,
+PID22101 (superseded by the icon update above). Andrew's actual speech→EN review→Copy & close Karrot check PASSED:
 words matched and Ko stayed available. Own proof1/COPIED, draftNONE/cleanupfalse,
 capture/commit0, automatic=false, speech/translation=true, stopped mic4.716s,
 idle READY/IMEvisible/wanted/shown and suppressionfalse corroborate the report.
@@ -35,20 +56,10 @@ The abandoned click-rearm candidate passed owned tests but failed Andrew's manua
 Karrot reuse check, motivating the selected persistent-Ko behavior. Its temporary
 sample/live APKs remain ignored artifacts only. Do not reinstall them as current.
 Automatic insertion stays false throughout. No automatic continuity work.
-Andrew requested an original designed icon replacing plain Ko, with gray and
-slightly translucent appearance, using Wispr Flow only as a reference. Three
-independent Image Gen concept previews were displayed on October26. Authoritative
-display order: 1 Quiet Wave (three rounded bars), 2 Spoken K (geometric monogram),
-3 Speak Mark (speech outline/microphone). Gray body target approximately80% opaque,
-solid graphite symbol; current native button already supports alpha. Selection
-is pending; no app/icon/phone changes were made for these previews.
-Preview directory: C:/AI/Codex/Home/generated_images/01a1670a-c995-7e61-a259-10116da03c7f/.
-Files in displayed order:
-1. exec-9533e2a9-44dc-42fb-af22-9291ec90c49e.png
-2. exec-ce2b2ee8-8a66-439e-b732-7d96bbf06a19.png
-3. exec-5667b9c3-98ee-494d-b712-f71d0ca9908c.png
-These are preview-only references outside the repo. Copy the selected asset into
-the workspace if used; do not guess a different option if its reference is lost.
+Selected artwork/provenance is now saved in `docs/design/floating-button/`;
+native foreground is `app/src/main/res/drawable-nodpi/ko_spoken_k.png`.
+The three previews and display order remain recorded in the October26 session
+history; Spoken K is the selected design, not a pending decision.
 
 October25 checkpoint (historical): restored manual v2, PID27092 idle and mic off.
 Automatic insertion remained unproven/default-OFF. Paired occlusion is documented
@@ -532,9 +543,10 @@ night checkpoint. Current October25 idle diagnostics/readiness are tracked above
 
 ## Next work and gates
 
-Current work is complete for bubble reuse/live restore and bounded Karrot
-diagnosis. Next: await Andrew's choice among the three displayed icon concepts,
-then implement/refine the chosen visual using the requested agent roles.
+Current work is complete for the selected K installation, bubble reuse/live
+restore and bounded Karrot diagnosis. Await Andrew's visual/daily-use feedback.
+The next planned product acceptance is Korean meaning/tone in both forms and
+latency/cost, under separately prepared owned-editor tests.
 Karrot uses Copy & close/manual Paste. Automatic insertion and
 the paired-occlusion proposal are deferred; Korean preview remains optional.
 No new real-app Insert trial is authorized.
@@ -583,12 +595,14 @@ they are not full current-build real-app acceptance. See DEVICE_TESTS for histor
   a fresh guarded capture.
 - Preserve existing text; one commit maximum; ambiguous attempt stays terminal.
   Keep SwiftKey; no replacement keyboard or automatic Send/Enter.
-- Dismiss bubble after Copy or confirmed insertion until a new keyboard cycle.
+- Close only the result panel after Copy or confirmed insertion; keep the small
+  K bubble available while SwiftKey is open. Explicit Hide remains.
 - Personal on-phone key entry with Keystore-backed encryption, no key in Git/APK/
   logs. Translation choice gpt-6-luna/xhigh; OpenAI transcription baseline recorded
   in RESEARCH. First translation access and one edited 요 case passed; broader
   quality/latency/cost remain open. Scoped speech checks passed.
-- Final icon, permissions/battery/reboot UX, signing and distribution remain later.
+- Floating icon is the selected Spoken K with translucent light gray body.
+  Broader UI, permissions/battery/reboot UX, signing and distribution remain later.
 
 ## Repository and tools
 

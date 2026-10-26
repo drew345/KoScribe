@@ -3948,16 +3948,12 @@ class KoScribeService : AccessibilityService() {
             }
         } else {
             val pill = Button(this).apply {
-                text = "Ko"
-                isAllCaps = false
-                textSize = 14f
-                setTextColor(Color.WHITE)
+                id = R.id.collapsed_bubble
+                text = ""
+                contentDescription = getString(R.string.collapsed_bubble_description)
                 setPadding(0, 0, 0, 0)
                 backgroundTintList = null
-                background = GradientDrawable().apply {
-                    setColor(0xDD263449.toInt())
-                    cornerRadius = dp(24).toFloat()
-                }
+                background = getDrawable(R.drawable.collapsed_bubble)
                 stateListAnimator = null
                 elevation = 0f
                 setOnClickListener { expanded = true; renderBubble() }

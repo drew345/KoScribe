@@ -1896,3 +1896,37 @@ PID22101 proof1/COPIED, draftNONE/cleanupfalse, capture/commit0, automatic inten
 counts0, bubble READY/IMEvisible/wanted/shown/suppressionfalse, mic ended4.716s.
 Stop-to-review-created1824ms includes cleanup/ASR/callback, not render time.
 No new Korean translation trial, Paste, real-app Insert, Send or history inspection.
+
+### October26 selected Spoken K: installed, focused UI PASS
+
+Andrew selected displayed concept2, Spoken K, and requested installation. Sol/xhigh
+implemented service95ECC800/drawable761E9E53/foregroundB0CAC4CF; independent
+Astra/xhigh source review CLEAR. Native56×48dp Button and tap/drag behavior remain,
+with opaque graphite K on80% opaque light gray. Accessible label: Open KoScribe.
+Original selected reference/provenance is in docs/design/floating-button.
+
+Explicit live REVIEW build/all78 unit tests/signatures passed; app lint0errors/
+34warnings, smoke0errors/4warnings. Saved and installed in-place:
+`app/build/floating-k/TRANSLATION-stylized-k-v1.apk`, SHA-256
+`BAA162DDA0FEA3438B3811EC0BBC5376081F8FE09EA248261E8F799DB454FF26`.
+PID22160 reports speech/translation=true, auto=false, draftNONE/counters0 after
+update. VISUAL=false; FLAG_SECURE unchanged. Key/data preserved, no sample APK
+installed. Default debug/release outputs restored/verified OFF/allfalse.
+
+Exact opt-in `FloatingIconSmokeTest#floatingIconOpensClosesAndDragsWithoutRecording`
+first failed MODE_CHOICES_NOT_VISIBLE. New helper used exact case while native
+buttons can expose capitals; existing helpers ignored case. One-helper correction
+3EDA81BC independently reviewed CLEAR. Saved signed smoke-v2 SHA-256
+`2678329A589FF74E67CB32C50D6BB1966ED94C4C9B6A2756300DED33ACC1F851`.
+Corrected case PASSED4.510s: unique accessible Button, open3modes/Close, horizontal
+drag and restore, empty owned editor and SwiftKey maintained. DraftNONE and
+proof/capture/commit counters unchanged0 at each stage. No mode selection,
+microphone capture, API call, clipboard use, insertion, or real-app interaction.
+
+Installed drawable alone rendered to an own-fixture BitmapCanvas and exported
+for root visual QA: clear selected K, light gray body, transparent corners. This
+is not a screen capture and contains no phone/app content. Render stays ignored
+under app/build. Standalone service dumps intermittently time out before and
+after update; cause unmeasured, no claim the matcher fixes it. Passing instrumented
+case obtained its own state internally. Final AppOps shows only prior stopped
+4.716s audio, SwiftKey unchanged. No broad reliability acceptance implied.

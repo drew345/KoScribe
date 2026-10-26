@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#CCDADDE1" />
+            <corners android:radius="24dp" />
+        </shape>
+    </item>
+    <item
+        android:drawable="@drawable/ko_spoken_k"
+        android:gravity="center"
+        android:bottom="4dp"
+        android:width="42dp"
+        android:height="42dp" />
+</layer-list>

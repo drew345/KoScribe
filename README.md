@@ -33,8 +33,9 @@ without an API key; ordinary and release builds default to OFF. See
 
 The MVP keeps manual **Insert** plus **Copy & close**. Andrew deferred the
 one-button automatic Translate & insert experiment on October26. Its default-OFF
-code is saved for later. Current work fixes repeat bubble use in the same editor
-and investigates Karrot compatibility. Copy & close supports normal manual Paste
+code is saved for later. Repeat bubble use in the same editor is phone-tested.
+The floating button uses the selected [Spoken K design](docs/design/floating-button/README.md)
+with a light gray, slightly translucent body. Copy & close supports normal manual Paste
 when an app's editor cannot be verified for Insert.
 
 1. Tap an editable text field to show the keyboard and the floating bubble,
@@ -54,7 +55,7 @@ when an app's editor cannot be verified for Insert.
    **Insert** in the floating box. KoScribe captures and checks that destination
    afresh before insertion. EN skips translation. If the check fails, keep the result for an
    explicit new destination attempt; never silently retarget or retry a commit.
-6. After successful insertion or explicit Copy, close the result panel. Keep the small collapsed Ko bubble
+6. After successful insertion or explicit Copy, close the result panel. Keep the small collapsed K bubble
    available while SwiftKey remains open so another message can begin. Hide it
    when the keyboard closes or when you explicitly choose Hide. Review/edit in
    the destination app and press Send yourself.
@@ -62,9 +63,9 @@ when an app's editor cannot be verified for Insert.
 Each message requires an explicit mode choice. No hidden gesture determines
 politeness. There is no 습니다 output mode. The English review is editable text,
 not an image; there is no required second preview of the Korean result. Cancel,
-error recovery, the final bubble icon, and the supporting settings screen still
-need detailed design. Contextual visibility, dragging, and remembered position
-are the current priority before further capabilities.
+error recovery and the supporting settings screen still need detailed design.
+Contextual visibility, dragging, remembered position, and the selected floating
+icon have bounded phone-test evidence; broader reliability remains open.
 
 The separate destination-selection step was chosen after the A35 startup
 diagnostics on 2026-10-23. Recording/review does not depend on an earlier editor

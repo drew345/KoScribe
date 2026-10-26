@@ -840,3 +840,23 @@
   body/opaque graphite symbol; current56x48dp component is the size target.
   Exact preview paths/mapping are in PROGRESS. Await user selection; no app source,
   installation, credential or phone-state changes in this design turn.
+
+## 2026-10-26 — Selected Spoken K installed
+
+- Andrew selected the middle concept and authorized installation. Preserved the
+  actual original mark through Image Gen foreground extraction; selected source
+  and provenance are saved in docs/design/floating-button. Native gray body is
+  80% opaque; 56×48 dp Button/tap/drag/position and all processing guards unchanged.
+- Sol/xhigh implementation95ECC800 and focused smoke independently reviewed by
+  Astra/xhigh. All78 units pass; app/smoke lint0errors (34/4 warnings), signatures
+  verified. Saved/installed live speech/translation APK BAA162DD in-place, PID22160;
+  no temporary sample build or credential change. Default/release outputs OFF.
+- First icon test failed MODE_CHOICES_NOT_VISIBLE; case-insensitive label helper
+  correction3EDA81BC independently cleared. Corrected icon-only case PASSED4.510s:
+  open/Close, drag/restore, unchanged empty fixture and work counters0. Drawable-only
+  native render visually checked; screenshot protection stayed enabled. No new
+  speech/API/Copy/Insert/Send. SwiftKey unchanged, prior mic4.716s remains stopped.
+- Standalone own-service dumps time out intermittently, including before icon
+  installation. Cause remains open; passing instrumentation obtained idle state
+  internally. No broad lifecycle investigation undertaken for this cosmetic task.
+  Next: user visual/daily-use feedback; Korean tone/latency acceptance remains open.

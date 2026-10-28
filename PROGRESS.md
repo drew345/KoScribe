@@ -1,6 +1,6 @@
 # Current progress
 
-Updated: 2026-10-26 (Asia/Seoul).
+Updated: 2026-10-28 (Asia/Seoul).
 
 ## Current state
 
@@ -10,7 +10,9 @@ needed. Later proposals and unfinished acceptance work are tracked in
 Wispr notification image and its documented/inferred meaning. No new runtime
 work or phone tests are started by that list.
 
-Latest MVP feedback: English transcription missed “Dangun pay” and “Twosome cafe”.
+Latest MVP feedback: KoScribe would not paste into Instagram comments, although
+Instagram DMs work. Cause and ordinary clipboard Paste are unverified; recorded
+for later in the compatibility item. Earlier feedback: English transcription missed “Dangun pay” and “Twosome cafe”.
 Custom vocabulary/correction rules are recorded as deferred item 10 in that list;
 the user's exact example spellings are retained pending future implementation.
 

@@ -882,3 +882,9 @@
   custom vocabulary/correction rules as item 10 in CHANGES_PROPOSED_FOR_LATER.md,
   preserving his spellings and leaving canonical output/misheard forms open.
 - Documentation only; current transcription, translation and phone build unchanged.
+
+## 2026-10-28 — Instagram comments feedback
+
+- Andrew reports KoScribe would not paste into Instagram comments, while DMs
+  work. Added this to the deferred editor-compatibility item; the failure cause
+  and ordinary clipboard Paste behavior remain unverified. Documentation only.

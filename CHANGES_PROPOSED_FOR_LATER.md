@@ -1,6 +1,6 @@
 # Changes proposed for later
 
-Updated: 2026-10-26 (Asia/Seoul).
+Updated: 2026-10-28 (Asia/Seoul).
 
 Andrew is trying the current MVP and will report anything needing an immediate
 fix. This is the standing list of later improvements and unfinished acceptance
@@ -44,12 +44,17 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    screenshot below as a reference; persistent notifications are not a selected
    KoScribe feature.
 
-6. **Better compatibility with unsupported editors, especially Karrot.** The
+6. **Better compatibility with unsupported editors, including Karrot and Instagram comments.** The
    current metadata probe found that Karrot does not expose the focused/editable
    field information guarded Insert requires. Keep Copy & close followed by
    normal Paste as the MVP route. Any future integration needs preservation and
    destination evidence; a blinking cursor alone is not sufficient reason to
    remove the safeguards.
+
+   On 2026-10-28 Andrew reported that KoScribe would not paste text into
+   Instagram comments, while Instagram DMs work. The precise failure and whether
+   ordinary clipboard Paste works in comments are unverified. Investigate later;
+   retain the current safeguards and existing DM evidence.
 
 7. **Broader layout and interruption resilience.** Test large fonts, small usable
    screen heights, rotation/split-screen, keyboard and app switching, calls,

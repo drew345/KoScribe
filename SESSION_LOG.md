@@ -962,3 +962,19 @@
 - ADB disconnected before any candidate install. The last verified installed
   app remains regular BAA162DD with saved key/data; no new phone probe or
   insertion occurred. Andrew was asked to reconnect before the diagnostic.
+
+## 2026-10-29 — REA and Wispr Flow public-source assessment
+
+- Andrew redirected the next investigation to MORLUTO's REA and asked whether
+  reverse engineering Wispr Flow could help KoScribe. Read the official REA
+  repository, Android analysis guide, skill and responsible-use guidance; also
+  checked Wispr's current terms, Play listing and Android setup guide. No REA
+  setup, APK acquisition/decompilation, traffic capture or phone action occurred.
+- REA supports static Android APK manifest/class/method inspection, with a JDK
+  and headless JADX; static output would not prove live behavior. Wispr's terms
+  restrict decompilation/reverse engineering aimed at proprietary code and
+  algorithms, so APK decompilation is not the next action without a permitted
+  scope. Wispr publicly says it uses the accessibility input connection and
+  falls back to clipboard when insertion fails. Its ongoing notification is
+  documented for background service operation, not as an insertion mechanism.
+  Sources and practical comparison are in docs/RESEARCH.md.

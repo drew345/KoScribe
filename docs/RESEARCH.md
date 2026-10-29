@@ -502,3 +502,36 @@ slightly translucent bubble; do not copy Wispr Flow's mark. Public visual refere
 documents a Flow Bubble Opacity setting. Our collapsed button already uses a
 custom drawable, so gray/alpha styling is an ordinary appearance change; exact
 symbol/opacity remain to be chosen. No visual change is installed yet.
+
+## REA and Wispr Flow comparison — 2026-10-29
+
+Andrew proposed evaluating [MORLUTO's REA](https://github.com/morluto/rea) to
+learn from Wispr Flow's Android app. REA's
+[Android guide](https://github.com/morluto/rea/blob/main/docs/android-analysis.md)
+describes static APK manifest/class/method analysis via headless JADX. Such
+analysis can reveal client declarations and code candidates, but does not by
+itself establish runtime editor behavior or server-side implementation. REA was
+not installed or run against Wispr Flow in this research pass.
+
+[Wispr Flow's terms](https://wisprflow.ai/terms-of-service) restrict taking apart,
+decompiling or reverse engineering its service to access source code, algorithms
+or other intellectual property. REA's own
+[responsible-use guidance](https://github.com/morluto/rea/blob/main/DISCLAIMER.md)
+does not grant rights to a target. Do not decompile Wispr's APK as a shortcut
+without establishing a permitted scope. This is a source/terms observation, not
+a legal conclusion about any jurisdiction's interoperability exceptions.
+
+Useful public evidence is already available: Wispr's
+[Play listing](https://play.google.com/store/apps/details?id=com.wispr.flowapp)
+says its Accessibility Service detects text-field focus and keyboard visibility,
+then inserts through the accessibility input connection without replacing the
+keyboard. Its [Android setup guide](https://docs.wisprflow.ai/articles/8858845757)
+says that insertion can fail, in which case it copies text and offers a Copy
+control for manual Paste. The same guide documents a required ongoing
+`Voice dictation is ready` notification for its background service and Samsung
+battery settings for service survival. These are vendor descriptions, not
+measured behavior on Andrew's A35 or evidence that notifications enable direct
+insertion. They support comparing KoScribe's existing input-connection/clipboard
+path and background readiness against specific observed app cases. A useful
+next black-box check is whether Wispr itself inserts directly into Karrot's
+composer or falls back to clipboard, using only an unsent test draft.

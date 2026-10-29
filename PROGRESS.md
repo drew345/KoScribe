@@ -2,6 +2,16 @@
 
 Updated: 2026-10-29 (Asia/Seoul).
 
+Andrew has paused phone reconnection and asked whether MORLUTO's REA can help
+study Wispr Flow. Public-source review is recorded in docs/RESEARCH.md: REA can
+statically inspect Android APKs, but Wispr's terms restrict decompilation to
+access its proprietary code/algorithms. No REA installation or Wispr APK access
+occurred. Wispr's public Play listing identifies the accessibility input
+connection, and its setup guide acknowledges clipboard fallback when insertion
+fails. Continue with public/observable comparison before considering any APK
+analysis. The no-read Karrot candidate remains saved but uninstalled; the
+regular BAA162DD build is the last verified phone installation.
+
 ## Current state
 
 On 2026-10-29 Andrew requested work on Karrot/Instagram editor compatibility,

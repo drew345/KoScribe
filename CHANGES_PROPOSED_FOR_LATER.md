@@ -42,7 +42,8 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    existing accessibility-overlay architecture with alternatives only when
    measured reliability or interaction benefits justify them. Keep the Wispr
    screenshot below as a reference; persistent notifications are not a selected
-   KoScribe feature.
+   KoScribe feature. Wispr's public setup guide attributes its ongoing notice
+   to background operation, not to the insertion method (see docs/RESEARCH.md).
 
 6. **Better compatibility with unsupported editors, including Karrot and Instagram comments.** The
    current metadata probe found that Karrot does not expose the focused/editable
@@ -61,6 +62,10 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    that the floating Insert first refused destination verification, then worked
    after he tapped the comment field again. The cause remains unverified. Preserve
    this successful reselect behavior while investigating reliability.
+
+   Wispr's public Android documentation says its own insertion can fail and
+   then falls back to clipboard. Compare Wispr's actual behavior in Karrot with
+   an unsent draft before assuming it has a general solution for this editor.
 
 7. **Broader layout and interruption resilience.** Test large fonts, small usable
    screen heights, rotation/split-screen, keyboard and app switching, calls,

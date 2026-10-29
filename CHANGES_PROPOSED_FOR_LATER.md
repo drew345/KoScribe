@@ -1,6 +1,6 @@
 # Changes proposed for later
 
-Updated: 2026-10-28 (Asia/Seoul).
+Updated: 2026-10-29 (Asia/Seoul).
 
 Andrew is trying the current MVP and will report anything needing an immediate
 fix. This is the standing list of later improvements and unfinished acceptance
@@ -51,10 +51,16 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    destination evidence; a blinking cursor alone is not sufficient reason to
    remove the safeguards.
 
+   On 2026-10-29 Andrew tried Insert into an empty Karrot chat and then tapped
+   the field and tried again. Both were refused; KoScribe's own counters show no
+   commit. Same-node metadata remained focused=0, editable=0 and input type zero
+   even after a refresh. An independently safe alternative needs investigation.
+
    On 2026-10-28 Andrew reported that KoScribe would not paste text into
-   Instagram comments, while Instagram DMs work. The precise failure and whether
-   ordinary clipboard Paste works in comments are unverified. Investigate later;
-   retain the current safeguards and existing DM evidence.
+   Instagram comments, while Instagram DMs work. On October 29 he clarified
+   that the floating Insert first refused destination verification, then worked
+   after he tapped the comment field again. The cause remains unverified. Preserve
+   this successful reselect behavior while investigating reliability.
 
 7. **Broader layout and interruption resilience.** Test large fonts, small usable
    screen heights, rotation/split-screen, keyboard and app switching, calls,

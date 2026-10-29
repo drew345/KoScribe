@@ -16,11 +16,14 @@ import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.graphics.drawable.GradientDrawable
 import android.os.Handler
+import android.os.Build
 import android.os.Looper
 import android.os.IBinder
 import android.os.PersistableBundle
+import android.os.Process
 import android.os.PowerManager
 import android.os.SystemClock
+import android.os.UserHandle
 import android.text.InputType
 import android.text.Spanned
 import android.view.Gravity
@@ -43,6 +46,8 @@ import java.io.PrintWriter
 import java.lang.ref.WeakReference
 import java.security.MessageDigest
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 class KoScribeService : AccessibilityService() {
     companion object {
@@ -53,6 +58,20 @@ class KoScribeService : AccessibilityService() {
     private val guard = SessionGuard()
     private val startupExperiment = StartupExperiment.configured
     private val main = Handler(Looper.getMainLooper())
+    private val karrotProbeBusy = AtomicBoolean(false)
+    private data class KarrotProbeToken(val active: AtomicBoolean, val deadlineUptimeMs: Long)
+    private val karrotProbeToken = AtomicReference<KarrotProbeToken?>(null)
+    private val karrotProbeStatus = AtomicReference("KARROT_SERVICE_METADATA_V1 NO_REQUEST")
+    private class KarrotEmptyToken(val deadlineUptimeMs: Long) {
+        val active = AtomicBoolean(true)
+        val workerStarted = AtomicBoolean(false)
+        val workerReturned = AtomicBoolean(false)
+        var screenReceiver: BroadcastReceiver? = null
+    }
+    private val karrotEmptyToken = AtomicReference<KarrotEmptyToken?>(null)
+    private val karrotEmptyStatus = AtomicReference("KARROT_EMPTY_CONNECTION_V1 NO_REQUEST")
+    // Main-thread only. It invalidates a diagnostic sample without touching insertion state.
+    private var karrotProbeMutationEpoch = 0
     private lateinit var windowManager: WindowManager
     private var bubble: LinearLayout? = null
     private var bubbleParams: WindowManager.LayoutParams? = null
@@ -848,6 +867,8 @@ class KoScribeService : AccessibilityService() {
             "Unbound recording proof count: $unboundRecordingProofCount\n" +
             "Draft phase: ${unboundDraft.current()?.phase?.name ?: "NONE"}\n" +
             "Auto insert enabled: ${BuildConfig.AUTO_INSERT}\n" +
+            "Karrot service probe enabled: ${BuildConfig.KARROT_SERVICE_PROBE}\n" +
+            "Karrot empty connection probe enabled: ${BuildConfig.KARROT_EMPTY_CONNECTION_PROBE}\n" +
             "Speech input enabled: ${BuildConfig.SPEECH_INPUT}\n" +
             "Translation input enabled: ${BuildConfig.TRANSLATION_INPUT}\n" +
             "Original intent phase: ${autoDestination?.policy?.phase?.name ?: autoLastPhase}\n" +
@@ -875,7 +896,559 @@ class KoScribeService : AccessibilityService() {
     }
 
     override fun dump(fd: FileDescriptor, writer: PrintWriter, args: Array<out String>) {
+        if (args.size == 1 && args[0] == "--karrot-editor-probe-metadata-once") {
+            writer.println(karrotServiceProbeOnce())
+            return
+        }
+        if (args.size == 1 && args[0] == "--karrot-editor-probe-metadata-status") {
+            if (!BuildConfig.DEBUG || !BuildConfig.KARROT_SERVICE_PROBE ||
+                startupExperiment != StartupExperiment.REVIEW || VisualTestMode.enabled) {
+                writer.println("KARROT_SERVICE_METADATA_V1 DISABLED")
+                return
+            }
+            karrotProbeToken.get()?.let { token ->
+                if (SystemClock.uptimeMillis() >= token.deadlineUptimeMs)
+                    karrotProbeComplete(token, "TIMED_OUT")
+            }
+            writer.println(karrotProbeStatus.get())
+            return
+        }
+        if (args.size == 1 && args[0] == "--karrot-empty-connection-probe-once") {
+            writer.println(karrotEmptyConnectionProbeOnce())
+            return
+        }
+        if (args.size == 1 && args[0] == "--karrot-empty-connection-probe-status") {
+            if (!karrotEmptyProbeEnabled()) {
+                writer.println("KARROT_EMPTY_CONNECTION_V1 DISABLED")
+                return
+            }
+            karrotEmptyToken.get()?.let { token ->
+                if (SystemClock.uptimeMillis() >= token.deadlineUptimeMs)
+                    karrotEmptyComplete(token, "TIMEOUT")
+            }
+            writer.println(karrotEmptyStatus.get())
+            return
+        }
         writer.println(diagnostics())
+    }
+
+    private data class KarrotProbeMetadata(
+        val focused: Boolean, val editable: Boolean, val enabled: Boolean,
+        val visible: Boolean, val password: Boolean, val resourcePresent: Boolean,
+        val type: String, val selection: String
+    ) {
+        fun code(): String = "F${focused.b()}E${editable.b()}N${enabled.b()}" +
+            "V${visible.b()}P${password.b()}R${resourcePresent.b()}" +
+            "_TYPE_$type" + "_SEL_$selection"
+        private fun Boolean.b(): Int = if (this) 1 else 0
+    }
+
+    private data class KarrotProbeFrame(
+        val method: TrackingInputMethod, val info: EditorInfo, val generation: Int,
+        val mutationEpoch: Int, val windowId: Int, val root: AccessibilityNodeInfo,
+        val node: AccessibilityNodeInfo, val fieldId: Int, val inputType: Int,
+        val autofillId: android.view.autofill.AutofillId?, val before: KarrotProbeMetadata
+    )
+
+    private fun karrotProbeComplete(token: KarrotProbeToken, code: String) {
+        if (!token.active.compareAndSet(true, false)) return
+        karrotProbeStatus.set("KARROT_SERVICE_METADATA_V1 $code")
+        karrotProbeToken.compareAndSet(token, null)
+        karrotProbeBusy.set(false)
+    }
+
+    private fun karrotProbeLive(active: AtomicBoolean): Boolean {
+        val token = karrotProbeToken.get() ?: return false
+        if (token.active !== active || !active.get()) return false
+        if (SystemClock.uptimeMillis() >= token.deadlineUptimeMs) {
+            karrotProbeComplete(token, "TIMED_OUT")
+            return false
+        }
+        return true
+    }
+
+    /** Explicit debug dump only. It queues metadata reads and returns without waiting. */
+    private fun karrotServiceProbeOnce(): String {
+        val prefix = "KARROT_SERVICE_METADATA_V1 "
+        if (!BuildConfig.DEBUG || !BuildConfig.KARROT_SERVICE_PROBE ||
+            startupExperiment != StartupExperiment.REVIEW || VisualTestMode.enabled)
+            return prefix + "DISABLED"
+        if (!karrotProbeBusy.compareAndSet(false, true)) return prefix + "BUSY"
+        val token = KarrotProbeToken(AtomicBoolean(true), SystemClock.uptimeMillis() + 1500L)
+        karrotProbeToken.set(token)
+        karrotProbeStatus.set(prefix + "QUEUED")
+        val firstPass = Runnable {
+            if (!karrotProbeLive(token.active)) return@Runnable
+            val first = runCatching { karrotProbeFirst(token.active) }.getOrNull()
+            if (!karrotProbeLive(token.active)) return@Runnable
+            if (first == null) {
+                karrotProbeComplete(token, "PREFLIGHT_OR_READ_UNAVAILABLE")
+                return@Runnable
+            }
+            val frame = first.first
+            if (frame == null) {
+                karrotProbeComplete(token, first.second)
+                return@Runnable
+            }
+            val secondPass = Runnable {
+                if (karrotProbeLive(token.active)) {
+                    val code = runCatching { karrotProbeSecond(frame, token.active) }
+                        .getOrDefault("SECOND_READ_UNAVAILABLE")
+                    karrotProbeComplete(token, code)
+                }
+            }
+            if (!main.post(secondPass)) karrotProbeComplete(token, "POST_FAILED")
+        }
+        if (!main.post(firstPass)) karrotProbeComplete(token, "POST_FAILED")
+        if (!main.postDelayed({ karrotProbeComplete(token, "TIMED_OUT") }, 1500L))
+            karrotProbeComplete(token, "TIMER_FAILED")
+        return karrotProbeStatus.get()
+    }
+
+    private fun karrotProbeIdle(): Boolean = serviceConnected && pendingId == null &&
+        !reviewVisible && !returningToEditor && !ownTransition &&
+        unboundRecording.current() == null && unboundDraft.current() == null &&
+        speechJob == null && translationJob == null && freshDestination == null &&
+        postCommitProbe == null && autoDestination == null && overlayPanel == null &&
+        overlayCleanupPending == null
+
+    private fun karrotProbeType(type: Int): String = when {
+        type == 0 -> "ZERO"
+        safeInputType(type) -> "SAFE_TEXT"
+        type and InputType.TYPE_MASK_CLASS == InputType.TYPE_CLASS_TEXT -> "PROTECTED_TEXT"
+        else -> "OTHER"
+    }
+
+    private fun karrotProbeAutofillId(info: EditorInfo): android.view.autofill.AutofillId? =
+        if (Build.VERSION.SDK_INT >= 36) info.autofillId else null
+
+    private fun karrotProbeMetadata(node: AccessibilityNodeInfo): KarrotProbeMetadata {
+        val start = node.textSelectionStart
+        val end = node.textSelectionEnd
+        val selection = when {
+            start == -1 && end == -1 -> "UNKNOWN_PAIR"
+            start < 0 || end < 0 -> "INVALID"
+            start != end -> "RANGE"
+            start == 0 -> "COLLAPSED_ZERO"
+            else -> "COLLAPSED_OTHER"
+        }
+        return KarrotProbeMetadata(node.isFocused, node.isEditable, node.isEnabled,
+            node.isVisibleToUser, node.isPassword, !node.viewIdResourceName.isNullOrBlank(),
+            karrotProbeType(node.inputType), selection)
+    }
+
+    private fun karrotProbeFirst(active: AtomicBoolean): Pair<KarrotProbeFrame?, String> {
+        if (Process.myUserHandle() != UserHandle.getUserHandleForUid(Process.ROOT_UID))
+            return null to "WRONG_USER"
+        if (!karrotProbeIdle()) return null to "SERVICE_BUSY"
+        val interactive = (getSystemService(POWER_SERVICE) as? PowerManager)?.isInteractive == true
+        val unlocked = (getSystemService(KEYGUARD_SERVICE) as? KeyguardManager)
+            ?.isKeyguardLocked == false
+        if (!interactive || !unlocked) return null to "DEVICE_NOT_READY"
+        val method = inputMethod as? TrackingInputMethod ?: return null to "NO_INPUT_METHOD"
+        if (!method.currentInputStarted) return null to "INPUT_NOT_STARTED"
+        val info = method.currentInputEditorInfo ?: return null to "NO_EDITOR_INFO"
+        if (info.packageName != "com.towneers.www") return null to "EDITOR_PACKAGE_MISMATCH"
+        if (!safeInputType(info.inputType)) return null to "EDITOR_TYPE_UNSAFE"
+        if (method.currentInputConnection == null) return null to "NO_CONNECTION"
+        val startEpoch = karrotProbeMutationEpoch
+        val startGeneration = method.generation
+        val startFieldId = info.fieldId
+        val startInputType = info.inputType
+        val startAutofillId = karrotProbeAutofillId(info)
+        if (!karrotProbeLive(active)) return null to "TIMED_OUT"
+        val focused = windows.filter {
+            it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.isFocused
+        }
+        if (focused.size != 1) return null to "FOCUSED_WINDOW_NOT_UNIQUE"
+        val window = focused.single()
+        if (window.displayId != Display.DEFAULT_DISPLAY) return null to "WRONG_DISPLAY"
+        if (!karrotProbeLive(active)) return null to "TIMED_OUT"
+        val root = window.getRoot(0) ?: return null to "NO_ROOT"
+        if (root.windowId != window.id || root.packageName?.toString() != "com.towneers.www")
+            return null to "ROOT_OWNER_MISMATCH"
+        if (!karrotProbeLive(active)) return null to "TIMED_OUT"
+        if (!root.refresh()) return null to "ROOT_REFRESH_FAILED"
+        if (!karrotProbeLive(active)) return null to "TIMED_OUT"
+        if (root.windowId != window.id || root.packageName?.toString() != "com.towneers.www")
+            return null to "ROOT_OWNER_CHANGED"
+        if (!karrotProbeLive(active)) return null to "TIMED_OUT"
+        val node = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+            ?: return null to "NO_FOCUSED_INPUT_NODE"
+        if (node.windowId != window.id || node.packageName?.toString() != "com.towneers.www")
+            return null to "NODE_OWNER_MISMATCH"
+        if (!karrotProbeLive(active)) return null to "TIMED_OUT"
+        val before = karrotProbeMetadata(node)
+        if (!karrotProbeLive(active)) return null to "TIMED_OUT"
+        if (!node.refresh()) return null to "NODE_REFRESH_FAILED"
+        if (!karrotProbeLive(active)) return null to "TIMED_OUT"
+        if (node.windowId != window.id || node.packageName?.toString() != "com.towneers.www")
+            return null to "NODE_OWNER_CHANGED"
+        if (!karrotProbeLive(active)) return null to "TIMED_OUT"
+        val currentRoot = window.getRoot(0) ?: return null to "ROOT_LOST"
+        if (!karrotProbeLive(active)) return null to "TIMED_OUT"
+        if (currentRoot != root) return null to "ROOT_IDENTITY_CHANGED"
+        if (!currentRoot.refresh()) return null to "ROOT_IDENTITY_CHANGED"
+        if (!karrotProbeLive(active)) return null to "TIMED_OUT"
+        if (
+            currentRoot.windowId != window.id ||
+            currentRoot.packageName?.toString() != "com.towneers.www")
+            return null to "ROOT_IDENTITY_CHANGED"
+        if (!karrotProbeLive(active)) return null to "TIMED_OUT"
+        val currentNode = currentRoot.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+            ?: return null to "NODE_LOST"
+        if (!karrotProbeLive(active)) return null to "TIMED_OUT"
+        if (currentNode != node || currentNode.windowId != window.id ||
+            currentNode.packageName?.toString() != "com.towneers.www")
+            return null to "NODE_IDENTITY_CHANGED"
+        if (!karrotProbeLive(active) || karrotProbeMutationEpoch != startEpoch ||
+            !method.currentInputStarted || method.generation != startGeneration ||
+            method.currentInputEditorInfo !== info || method.currentInputConnection == null ||
+            info.fieldId != startFieldId || info.inputType != startInputType ||
+            karrotProbeAutofillId(info) != startAutofillId) return null to "INPUT_CHANGED"
+        return KarrotProbeFrame(method, info, startGeneration,
+            startEpoch, window.id, root, node, startFieldId, startInputType,
+            startAutofillId, before) to "OBSERVED"
+    }
+
+    private fun karrotProbeSecond(frame: KarrotProbeFrame, active: AtomicBoolean): String {
+        if (!karrotProbeLive(active)) return "TIMED_OUT"
+        if (karrotProbeMutationEpoch != frame.mutationEpoch || !karrotProbeIdle())
+            return "INTERRUPTED_BY_EVENT"
+        val method = frame.method
+        val info = method.currentInputEditorInfo ?: return "INPUT_CHANGED"
+        if (!method.currentInputStarted || method.generation != frame.generation ||
+            info !== frame.info || method.currentInputConnection == null ||
+            info.packageName != "com.towneers.www" ||
+            info.fieldId != frame.fieldId ||
+            karrotProbeAutofillId(info) != frame.autofillId ||
+            info.inputType != frame.inputType || !safeInputType(info.inputType))
+            return "INPUT_CHANGED"
+        if (!karrotProbeLive(active)) return "TIMED_OUT"
+        val focused = windows.filter {
+            it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.isFocused
+        }
+        if (focused.size != 1 || focused.single().id != frame.windowId ||
+            focused.single().displayId != Display.DEFAULT_DISPLAY)
+            return "WINDOW_CHANGED"
+        if (!karrotProbeLive(active)) return "TIMED_OUT"
+        val root = focused.single().getRoot(0) ?: return "ROOT_LOST"
+        if (!karrotProbeLive(active)) return "TIMED_OUT"
+        if (root != frame.root || !root.refresh() || root.windowId != frame.windowId ||
+            root.packageName?.toString() != "com.towneers.www") return "ROOT_CHANGED"
+        if (!karrotProbeLive(active)) return "TIMED_OUT"
+        val node = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) ?: return "NODE_LOST"
+        if (!karrotProbeLive(active)) return "TIMED_OUT"
+        if (node != frame.node || !node.refresh() || node.windowId != frame.windowId ||
+            node.packageName?.toString() != "com.towneers.www") return "NODE_CHANGED"
+        if (!karrotProbeLive(active) || karrotProbeMutationEpoch != frame.mutationEpoch ||
+            !method.currentInputStarted || method.generation != frame.generation ||
+            method.currentInputEditorInfo !== frame.info ||
+            method.currentInputConnection == null) return "INTERRUPTED_BY_EVENT"
+        val after = karrotProbeMetadata(node)
+        val interactive = (getSystemService(POWER_SERVICE) as? PowerManager)?.isInteractive == true
+        val unlocked = (getSystemService(KEYGUARD_SERVICE) as? KeyguardManager)
+            ?.isKeyguardLocked == false
+        if (!karrotProbeLive(active) || !karrotProbeIdle() || !interactive || !unlocked ||
+            karrotProbeMutationEpoch != frame.mutationEpoch ||
+            !method.currentInputStarted || method.generation != frame.generation ||
+            method.currentInputEditorInfo !== frame.info ||
+            method.currentInputConnection == null ||
+            frame.info.fieldId != frame.fieldId ||
+            frame.info.inputType != frame.inputType ||
+            karrotProbeAutofillId(frame.info) != frame.autofillId)
+            return "FINAL_STATE_CHANGED"
+        val field = if (frame.fieldId > 0) "PRESENT" else "ABSENT"
+        val autofill = when {
+            Build.VERSION.SDK_INT < 36 -> "UNAVAILABLE"
+            frame.autofillId != null -> "PRESENT"
+            else -> "ABSENT"
+        }
+        return "OBSERVED_NOT_INSERT_ELIGIBILITY INPUT_STABLE EDITOR_SAFE_TEXT FIELD_$field" +
+            " AUTOFILL_$autofill CONNECTION_PRESENT ROOT_SAME NODE_SAME" +
+            " BEFORE_${frame.before.code()} AFTER_${after.code()}"
+    }
+
+    private data class KarrotEmptyFrame(
+        val method: TrackingInputMethod, val info: EditorInfo,
+        val connection: InputMethod.AccessibilityInputConnection,
+        val generation: Int, val mutationEpoch: Int, val windowId: Int,
+        val root: AccessibilityNodeInfo, val node: AccessibilityNodeInfo,
+        val fieldId: Int, val inputType: Int,
+        val autofillId: android.view.autofill.AutofillId?
+    )
+
+    private fun karrotEmptyProbeEnabled(): Boolean = BuildConfig.DEBUG &&
+        BuildConfig.KARROT_EMPTY_CONNECTION_PROBE &&
+        startupExperiment == StartupExperiment.REVIEW && !VisualTestMode.enabled
+
+    private fun karrotEmptyRelease(token: KarrotEmptyToken) {
+        if (token.workerStarted.get() && !token.workerReturned.get()) return
+        if (karrotEmptyToken.compareAndSet(token, null)) karrotProbeBusy.set(false)
+    }
+
+    private fun karrotEmptyComplete(token: KarrotEmptyToken, code: String) {
+        if (!token.active.compareAndSet(true, false)) return
+        karrotEmptyStatus.set("KARROT_EMPTY_CONNECTION_V1 $code")
+        token.screenReceiver?.let { receiver ->
+            token.screenReceiver = null
+            main.post { runCatching { unregisterReceiver(receiver) } }
+        }
+        karrotEmptyRelease(token)
+    }
+
+    private fun karrotEmptyLive(token: KarrotEmptyToken): Boolean {
+        if (karrotEmptyToken.get() !== token || !token.active.get()) return false
+        if (SystemClock.uptimeMillis() >= token.deadlineUptimeMs) {
+            karrotEmptyComplete(token, "TIMEOUT")
+            return false
+        }
+        return true
+    }
+
+    /** Requires separate user consent before invocation; the command itself does not open UI. */
+    private fun karrotEmptyConnectionProbeOnce(): String {
+        val prefix = "KARROT_EMPTY_CONNECTION_V1 "
+        if (!karrotEmptyProbeEnabled()) return prefix + "DISABLED"
+        if (!karrotProbeBusy.compareAndSet(false, true)) return prefix + "BUSY"
+        val token = KarrotEmptyToken(SystemClock.uptimeMillis() + 3000L)
+        karrotEmptyToken.set(token)
+        karrotEmptyStatus.set(prefix + "QUEUED")
+        val firstPass = Runnable {
+            if (!karrotEmptyLive(token)) return@Runnable
+            val first = runCatching { karrotEmptyPreflight(token) }.getOrNull()
+            if (!karrotEmptyLive(token)) return@Runnable
+            if (first == null) {
+                karrotEmptyComplete(token, "PREFLIGHT_UNAVAILABLE")
+                return@Runnable
+            }
+            val frame = first.first
+            if (frame == null) {
+                karrotEmptyComplete(token, first.second)
+                return@Runnable
+            }
+            val receiver = object : BroadcastReceiver() {
+                override fun onReceive(context: Context, intent: Intent) {
+                    if (intent.action == Intent.ACTION_SCREEN_OFF)
+                        karrotEmptyComplete(token, "INTERRUPTED")
+                }
+            }
+            token.screenReceiver = receiver
+            if (runCatching {
+                    registerReceiver(receiver, IntentFilter(Intent.ACTION_SCREEN_OFF),
+                        Context.RECEIVER_NOT_EXPORTED)
+                }.isFailure) {
+                karrotEmptyComplete(token, "SCREEN_WATCH_UNAVAILABLE")
+                return@Runnable
+            }
+            // Let callbacks queued by preflight IPC run before any connection read.
+            if (!main.post {
+                    if (karrotEmptyLive(token)) {
+                        val continuity = runCatching { karrotEmptyContinuity(frame, token) }
+                            .getOrDefault("PREREAD_CHECK_UNAVAILABLE")
+                        if (continuity != "CONTINUITY_STABLE")
+                            karrotEmptyComplete(token, continuity)
+                        else if (!main.post {
+                                if (runCatching { karrotEmptyQuickStable(frame, token) }
+                                        .getOrDefault(false))
+                                    karrotEmptyStartWorker(frame, token)
+                                else karrotEmptyComplete(token, "PREREAD_CHANGED")
+                            }) karrotEmptyComplete(token, "POST_FAILED")
+                    }
+                }) karrotEmptyComplete(token, "POST_FAILED")
+        }
+        if (!main.post(firstPass)) karrotEmptyComplete(token, "POST_FAILED")
+        if (!main.postDelayed({ karrotEmptyComplete(token, "TIMEOUT") }, 3000L))
+            karrotEmptyComplete(token, "TIMER_UNAVAILABLE")
+        return karrotEmptyStatus.get()
+    }
+
+    private fun karrotEmptyStartWorker(frame: KarrotEmptyFrame, token: KarrotEmptyToken) {
+        if (!karrotEmptyLive(token)) return
+        val worker = runCatching { Thread({
+            val outcome = runCatching { karrotEmptyReadOnce(frame, token) }
+                .getOrDefault(KarrotEmptyReadPolicy.Result.UNAVAILABLE)
+            token.workerReturned.set(true)
+            if (karrotEmptyLive(token)) {
+                if (!main.post {
+                        if (karrotEmptyLive(token)) {
+                            val code = runCatching { karrotEmptyFinalize(frame, token, outcome) }
+                                .getOrDefault("FINAL_CHECK_UNAVAILABLE")
+                            karrotEmptyComplete(token, code)
+                        }
+                    }) karrotEmptyComplete(token, "POST_FAILED")
+            } else karrotEmptyRelease(token)
+        }, "KoScribe-karrot-empty-probe") }.getOrNull()
+        if (worker == null) {
+            karrotEmptyComplete(token, "WORKER_UNAVAILABLE")
+            return
+        }
+        token.workerStarted.set(true)
+        if (runCatching { worker.start() }.isFailure) {
+            token.workerStarted.set(false)
+            karrotEmptyComplete(token, "WORKER_UNAVAILABLE")
+        }
+    }
+
+    private fun karrotEmptyQuickStable(frame: KarrotEmptyFrame,
+        token: KarrotEmptyToken): Boolean {
+        if (!karrotEmptyLive(token) || karrotProbeMutationEpoch != frame.mutationEpoch ||
+            !karrotProbeIdle() || !karrotEmptyDeviceReady()) return false
+        val method = frame.method
+        val info = method.currentInputEditorInfo ?: return false
+        return method.currentInputStarted && method.generation == frame.generation &&
+            info === frame.info && info.packageName == "com.towneers.www" &&
+            info.fieldId == frame.fieldId && info.inputType == frame.inputType &&
+            karrotProbeAutofillId(info) == frame.autofillId &&
+            KarrotEmptyReadPolicy.permitsPreReadSelection(
+                info.initialSelStart, info.initialSelEnd) &&
+            frame.root.windowId == frame.windowId &&
+            frame.root.packageName?.toString() == "com.towneers.www" &&
+            frame.node.windowId == frame.windowId &&
+            frame.node.packageName?.toString() == "com.towneers.www" &&
+            karrotEmptyNodeSafe(frame.node)
+    }
+
+    private fun karrotEmptyDeviceReady(): Boolean =
+        (getSystemService(POWER_SERVICE) as? PowerManager)?.isInteractive == true &&
+            (getSystemService(KEYGUARD_SERVICE) as? KeyguardManager)?.isKeyguardLocked == false
+
+    private fun karrotEmptyNodeSafe(node: AccessibilityNodeInfo): Boolean =
+        node.isEnabled && node.isVisibleToUser && !node.isPassword &&
+            (node.inputType == 0 || safeInputType(node.inputType)) &&
+            KarrotEmptyReadPolicy.permitsPreReadSelection(
+                node.textSelectionStart, node.textSelectionEnd)
+
+    private fun karrotEmptyPreflight(token: KarrotEmptyToken): Pair<KarrotEmptyFrame?, String> {
+        if (Process.myUserHandle() != UserHandle.getUserHandleForUid(Process.ROOT_UID))
+            return null to "WRONG_USER"
+        if (!karrotProbeIdle() || !karrotEmptyDeviceReady()) return null to "SERVICE_NOT_READY"
+        val method = inputMethod as? TrackingInputMethod ?: return null to "NO_INPUT_METHOD"
+        if (!method.currentInputStarted) return null to "INPUT_NOT_STARTED"
+        val info = method.currentInputEditorInfo ?: return null to "NO_EDITOR_INFO"
+        if (info.packageName != "com.towneers.www" || !safeInputType(info.inputType))
+            return null to "EDITOR_UNSAFE_OR_OTHER"
+        if (!KarrotEmptyReadPolicy.permitsPreReadSelection(
+                info.initialSelStart, info.initialSelEnd)) return null to "INITIAL_SELECTION_INVALID"
+        val connection = method.currentInputConnection ?: return null to "NO_CONNECTION"
+        val generation = method.generation
+        val epoch = karrotProbeMutationEpoch
+        val fieldId = info.fieldId
+        val inputType = info.inputType
+        val autofillId = karrotProbeAutofillId(info)
+        if (!karrotEmptyLive(token)) return null to "TIMEOUT"
+        val focused = windows.filter {
+            it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.isFocused
+        }
+        if (focused.size != 1) return null to "FOCUSED_WINDOW_NOT_UNIQUE"
+        val window = focused.single()
+        if (window.displayId != Display.DEFAULT_DISPLAY) return null to "WRONG_DISPLAY"
+        if (!karrotEmptyLive(token)) return null to "TIMEOUT"
+        val root = window.getRoot(0) ?: return null to "NO_ROOT"
+        if (root.windowId != window.id || root.packageName?.toString() != "com.towneers.www")
+            return null to "ROOT_OWNER_MISMATCH"
+        if (!karrotEmptyLive(token)) return null to "TIMEOUT"
+        if (!root.refresh()) return null to "ROOT_REFRESH_FAILED"
+        if (root.windowId != window.id || root.packageName?.toString() != "com.towneers.www")
+            return null to "ROOT_OWNER_CHANGED"
+        if (!karrotEmptyLive(token)) return null to "TIMEOUT"
+        val node = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+            ?: return null to "NO_FOCUSED_INPUT_NODE"
+        if (node.windowId != window.id || node.packageName?.toString() != "com.towneers.www" ||
+            !karrotEmptyNodeSafe(node)) return null to "NODE_UNSAFE_OR_OTHER"
+        if (!karrotEmptyLive(token)) return null to "TIMEOUT"
+        if (!node.refresh()) return null to "NODE_REFRESH_FAILED"
+        if (node.windowId != window.id || node.packageName?.toString() != "com.towneers.www" ||
+            !karrotEmptyNodeSafe(node)) return null to "NODE_CHANGED_OR_UNSAFE"
+        if (!karrotEmptyLive(token)) return null to "TIMEOUT"
+        val currentRoot = window.getRoot(0) ?: return null to "ROOT_LOST"
+        if (currentRoot != root) return null to "ROOT_CHANGED"
+        if (!karrotEmptyLive(token)) return null to "TIMEOUT"
+        if (!currentRoot.refresh() || currentRoot.windowId != window.id ||
+            currentRoot.packageName?.toString() != "com.towneers.www") return null to "ROOT_CHANGED"
+        if (!karrotEmptyLive(token)) return null to "TIMEOUT"
+        val currentNode = currentRoot.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+            ?: return null to "NODE_LOST"
+        if (currentNode != node || currentNode.windowId != window.id ||
+            currentNode.packageName?.toString() != "com.towneers.www" ||
+            !karrotEmptyNodeSafe(currentNode)) return null to "NODE_CHANGED_OR_UNSAFE"
+        if (!karrotEmptyLive(token) || karrotProbeMutationEpoch != epoch ||
+            !karrotProbeIdle() || !karrotEmptyDeviceReady() ||
+            !method.currentInputStarted || method.generation != generation ||
+            method.currentInputEditorInfo !== info || info.packageName != "com.towneers.www" ||
+            info.fieldId != fieldId || info.inputType != inputType ||
+            karrotProbeAutofillId(info) != autofillId)
+            return null to "PREFLIGHT_CHANGED"
+        return KarrotEmptyFrame(method, info, connection, generation, epoch, window.id,
+            root, node, fieldId, inputType, autofillId) to "READY"
+    }
+
+    /** The only content read in this candidate. No payload or derived text leaves this stack. */
+    private fun karrotEmptyReadOnce(frame: KarrotEmptyFrame,
+        token: KarrotEmptyToken): KarrotEmptyReadPolicy.Result {
+        if (!karrotEmptyLive(token) || !karrotEmptyDeviceReady())
+            return KarrotEmptyReadPolicy.Result.UNAVAILABLE
+        if (!karrotEmptyLive(token)) return KarrotEmptyReadPolicy.Result.UNAVAILABLE
+        val surrounding = try {
+            frame.connection.getSurroundingText(1, 1, 0)
+        } catch (_: Exception) { null } ?: return KarrotEmptyReadPolicy.Result.UNAVAILABLE
+        if (!karrotEmptyLive(token)) return KarrotEmptyReadPolicy.Result.UNAVAILABLE
+        // Selected text can exceed the requested context size. Inspect length first and discard.
+        return KarrotEmptyReadPolicy.classifyPayloadLength(surrounding.text.length) {
+            KarrotEmptyReadPolicy.classifyEmptyResult(
+                surrounding.offset, surrounding.selectionStart, surrounding.selectionEnd)
+        }
+    }
+
+    private fun karrotEmptyContinuity(frame: KarrotEmptyFrame,
+        token: KarrotEmptyToken): String {
+        if (!karrotEmptyLive(token) || !karrotProbeIdle() || !karrotEmptyDeviceReady() ||
+            karrotProbeMutationEpoch != frame.mutationEpoch ||
+            Process.myUserHandle() != UserHandle.getUserHandleForUid(Process.ROOT_UID))
+            return "INTERRUPTED"
+        val method = frame.method
+        val info = method.currentInputEditorInfo ?: return "INPUT_CHANGED"
+        if (!method.currentInputStarted || method.generation != frame.generation ||
+            info !== frame.info || info.packageName != "com.towneers.www" ||
+            info.fieldId != frame.fieldId || info.inputType != frame.inputType ||
+            karrotProbeAutofillId(info) != frame.autofillId)
+            return "INPUT_CHANGED"
+        if (!karrotEmptyLive(token)) return "TIMEOUT"
+        val focused = windows.filter {
+            it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.isFocused
+        }
+        if (focused.size != 1 || focused.single().id != frame.windowId ||
+            focused.single().displayId != Display.DEFAULT_DISPLAY) return "WINDOW_CHANGED"
+        if (!karrotEmptyLive(token)) return "TIMEOUT"
+        val root = focused.single().getRoot(0) ?: return "ROOT_LOST"
+        if (root != frame.root) return "ROOT_CHANGED"
+        if (!karrotEmptyLive(token)) return "TIMEOUT"
+        if (!root.refresh() || root.windowId != frame.windowId ||
+            root.packageName?.toString() != "com.towneers.www") return "ROOT_CHANGED"
+        if (!karrotEmptyLive(token)) return "TIMEOUT"
+        val node = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) ?: return "NODE_LOST"
+        if (node != frame.node) return "NODE_CHANGED"
+        if (!karrotEmptyLive(token)) return "TIMEOUT"
+        if (!node.refresh() || node.windowId != frame.windowId ||
+            node.packageName?.toString() != "com.towneers.www" ||
+            !karrotEmptyNodeSafe(node)) return "NODE_CHANGED_OR_UNSAFE"
+        if (!karrotEmptyLive(token) || karrotProbeMutationEpoch != frame.mutationEpoch ||
+            !karrotProbeIdle() || !karrotEmptyDeviceReady() ||
+            !method.currentInputStarted || method.generation != frame.generation ||
+            method.currentInputEditorInfo !== frame.info ||
+            frame.info.fieldId != frame.fieldId || frame.info.inputType != frame.inputType ||
+            karrotProbeAutofillId(frame.info) != frame.autofillId)
+            return "FINAL_STATE_CHANGED"
+        return "CONTINUITY_STABLE"
+    }
+
+    private fun karrotEmptyFinalize(frame: KarrotEmptyFrame, token: KarrotEmptyToken,
+        outcome: KarrotEmptyReadPolicy.Result): String {
+        val continuity = karrotEmptyContinuity(frame, token)
+        if (continuity != "CONTINUITY_STABLE") return continuity
+        return if (outcome == KarrotEmptyReadPolicy.Result.REPORTED_EMPTY_AT_ZERO)
+            "REPORTED_EMPTY_AT_ZERO CONTINUITY_STABLE_NOT_INSERT_ELIGIBILITY"
+        else outcome.name
     }
 
     private inner class TrackingInputMethod(service: AccessibilityService) : InputMethod(service) {
@@ -884,6 +1457,8 @@ class KoScribeService : AccessibilityService() {
         private val composition = CompositionEvidence()
 
         override fun onStartInput(attribute: EditorInfo, restarting: Boolean) {
+            if (karrotProbeBusy.get()) karrotProbeMutationEpoch++
+            karrotEmptyToken.get()?.let { karrotEmptyComplete(it, "INTERRUPTED") }
             idleInputStartCount++
             if (startupExperiment == StartupExperiment.RESELECT) {
                 scheduleIdleBubbleRefresh(IdleRefreshReason.INPUT_STARTED)
@@ -908,6 +1483,8 @@ class KoScribeService : AccessibilityService() {
         }
 
         override fun onFinishInput() {
+            if (karrotProbeBusy.get()) karrotProbeMutationEpoch++
+            karrotEmptyToken.get()?.let { karrotEmptyComplete(it, "INTERRUPTED") }
             if (startupExperiment == StartupExperiment.RESELECT) {
                 if (unboundRecording.current() == null) {
                     idleBubbleVisible = false
@@ -946,6 +1523,8 @@ class KoScribeService : AccessibilityService() {
             oldSelStart: Int, oldSelEnd: Int, newSelStart: Int, newSelEnd: Int,
             candidatesStart: Int, candidatesEnd: Int
         ) {
+            if (karrotProbeBusy.get()) karrotProbeMutationEpoch++
+            karrotEmptyToken.get()?.let { karrotEmptyComplete(it, "INTERRUPTED") }
             if (startupExperiment == StartupExperiment.RESELECT) return
             if (startupExperiment == StartupExperiment.REVIEW) {
                 if (freshDestination == null)
@@ -1167,6 +1746,16 @@ class KoScribeService : AccessibilityService() {
     override fun onCreateInputMethod(): InputMethod = TrackingInputMethod(this)
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
+        if (karrotProbeBusy.get() && event.eventType in setOf(
+                AccessibilityEvent.TYPE_WINDOWS_CHANGED,
+                AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+                AccessibilityEvent.TYPE_VIEW_FOCUSED,
+                AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED,
+                AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED,
+                AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED)) {
+            karrotProbeMutationEpoch++
+            karrotEmptyToken.get()?.let { karrotEmptyComplete(it, "INTERRUPTED") }
+        }
         if (unboundArm()) {
             if (autoDestination != null) trackAutoEvent(event)
             postCommitProbe?.let { probe ->
@@ -1553,6 +2142,8 @@ class KoScribeService : AccessibilityService() {
     }.getOrDefault("LOCAL_CONTENT_UNKNOWN")
 
     override fun onInterrupt() {
+        if (karrotProbeBusy.get()) karrotProbeMutationEpoch++
+        karrotEmptyToken.get()?.let { karrotEmptyComplete(it, "INTERRUPTED") }
         speechKeyCheckGeneration++
         speechKeyCheckPending = false
         unboundRecording.current()?.id?.let { cancelUnboundRecording(it, "SERVICE_INTERRUPTED") }
@@ -1562,6 +2153,8 @@ class KoScribeService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        if (karrotProbeBusy.get()) karrotProbeMutationEpoch++
+        karrotEmptyToken.get()?.let { karrotEmptyComplete(it, "SERVICE_LOST") }
         serviceConnected = false
         speechKeyCheckGeneration++
         speechKeyCheckPending = false

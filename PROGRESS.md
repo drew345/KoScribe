@@ -1,8 +1,26 @@
 # Current progress
 
-Updated: 2026-10-28 (Asia/Seoul).
+Updated: 2026-10-29 (Asia/Seoul).
 
 ## Current state
+
+On 2026-10-29 Andrew requested work on Karrot/Instagram editor compatibility,
+then prioritized checking whether reselecting the Karrot field helps. He clarified
+that Instagram comments first refused verification, then succeeded after he tapped
+the field again; this is user-reported, not a new diagnostic attribution. Own
+process trace showed INPUT_NOT_STARTED followed by one confirmed commit, without
+an app identifier. Karrot same-node metadata was unchanged after refresh: focused
+and editable false, input type zero, matching package/window. Andrew's manual
+empty-field Insert was refused before writing, and refused again after he tapped
+the field. Draft cleared; no Karrot commits. A separately opted-in service probe
+found a stable input connection and safe text type, matching root/node, absent
+field ID, present autofill ID and unknown node selection; node focus/editable/type
+stayed invalid. That observation does not prove insertion eligibility. The tested
+live app BAA162DD was restored after the metadata test. A separately reviewed
+and tested empty-connection diagnostic 6C902906 is now temporarily installed
+with speech/translation enabled; Andrew approved one local read from a Karrot
+field he confirms empty. Await that readiness before triggering the read, then
+restore BAA162DD. This is diagnosis only; preserve insertion guards.
 
 Andrew is now trying the installed MVP and will bring immediate fixes back as
 needed. Later proposals and unfinished acceptance work are tracked in

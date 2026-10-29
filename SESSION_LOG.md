@@ -888,3 +888,39 @@
 - Andrew reports KoScribe would not paste into Instagram comments, while DMs
   work. Added this to the deferred editor-compatibility item; the failure cause
   and ordinary clipboard Paste behavior remain unverified. Documentation only.
+
+## 2026-10-29 — Editor compatibility investigation
+
+- Andrew prioritized Karrot and clarified that Instagram comment Insert initially
+  refused verification but succeeded after he re-tapped the field. Retained own
+  process 8903 shows INPUT_NOT_STARTED refusal and then one confirmed commit;
+  the trace has no app attribution. SwiftKey remains selected, speech/translation
+  enabled, automatic insertion disabled. No credential changes.
+- Sol/xhigh prepared opt-in metadata-only probes; Astra/xhigh reviewed them.
+  Smoke-only build and lint passed (0 errors, 4 warnings); signed helper APK
+  D5645EFE installed in place. Product APK and live key preserved. Initial Karrot
+  probe stopped on another focused package. After Andrew reselected Karrot's empty
+  field, the same-node refresh probe found identical before/after metadata:
+  matching package/window, focused=0, editable=0, enabled=1, visible=1,
+  password=0, resource absent, input type zero. No content/history inspected.
+- Andrew tried EN Insert in an empty Karrot chat, then tapped the field and tried
+  again. User reports repeated “Could not verify this editor.” Own trace records
+  three NODE_EDITOR_MISMATCH refusals, capture count 2→5 and commit count unchanged
+  at 1 (the pre-existing prior result). No Karrot write, Copy/Paste or Send.
+  Draft later cleared (NONE), cleanup false. User reports the result box is gone.
+- Astra/ultra evaluated a connection-led alternative. Sol/xhigh implemented a
+  debug-only, explicitly invoked metadata probe; Astra/xhigh cleared source,
+  78 units and lint (0 errors) passed. Live-speech diagnostic C72E5935 installed
+  in place; prepared Karrot field yielded INPUT_STABLE, safe text EditorInfo,
+  connection present, root/node stable, field ID absent, autofill ID present,
+  node focused/editable false, input type zero and selection unknown before/after.
+  This is not proof of Insert eligibility; no editor content was read and no
+  writes occurred. Restored live APK BAA162DD; service PID18134 reconnected,
+  speech and translation enabled, draft NONE, SwiftKey selected. Defaults OFF.
+- A separate explicit diagnostic was implemented by Sol/xhigh and independently
+  cleared by Astra/xhigh, with 81 unit tests and lint (0 errors) passing. Android
+  can return all selected text despite small context counts; unexpected text is
+  discarded locally and never logged or uploaded. Andrew approved one local read
+  of a field he confirms empty. Diagnostic APK 6C902906 is temporarily installed,
+  live speech/translation enabled; user needs a little time to prepare the field.
+  Await his explicit readiness before the one read; restore BAA162DD afterward.

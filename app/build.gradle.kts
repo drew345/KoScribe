@@ -36,6 +36,23 @@ require(autoInsert == "true" || autoInsert == "false") {
 require(autoInsert != "true" || (startupExperimentArm == "REVIEW" && visualTest == "false")) {
     "koscribeAutoInsert requires secure REVIEW and koscribeVisualTest=false"
 }
+val karrotServiceProbe = providers.gradleProperty("koscribeKarrotServiceProbe").orElse("false").get()
+require(karrotServiceProbe == "true" || karrotServiceProbe == "false") {
+    "koscribeKarrotServiceProbe must be true or false"
+}
+require(karrotServiceProbe != "true" ||
+    (startupExperimentArm == "REVIEW" && visualTest == "false")) {
+    "koscribeKarrotServiceProbe requires secure REVIEW and koscribeVisualTest=false"
+}
+val karrotEmptyConnectionProbe = providers.gradleProperty("koscribeKarrotEmptyConnectionProbe")
+    .orElse("false").get()
+require(karrotEmptyConnectionProbe == "true" || karrotEmptyConnectionProbe == "false") {
+    "koscribeKarrotEmptyConnectionProbe must be true or false"
+}
+require(karrotEmptyConnectionProbe != "true" ||
+    (startupExperimentArm == "REVIEW" && visualTest == "false")) {
+    "koscribeKarrotEmptyConnectionProbe requires secure REVIEW and koscribeVisualTest=false"
+}
 
 android {
     namespace = "com.koscribe.prototype"
@@ -58,6 +75,8 @@ android {
             buildConfigField("boolean", "SPEECH_INPUT", speechInput)
             buildConfigField("boolean", "TRANSLATION_INPUT", translationInput)
             buildConfigField("boolean", "AUTO_INSERT", autoInsert)
+            buildConfigField("boolean", "KARROT_SERVICE_PROBE", karrotServiceProbe)
+            buildConfigField("boolean", "KARROT_EMPTY_CONNECTION_PROBE", karrotEmptyConnectionProbe)
         }
         getByName("release") {
             buildConfigField("String", "STARTUP_EXPERIMENT_ARM", "\"OFF\"")
@@ -65,6 +84,8 @@ android {
             buildConfigField("boolean", "SPEECH_INPUT", "false")
             buildConfigField("boolean", "TRANSLATION_INPUT", "false")
             buildConfigField("boolean", "AUTO_INSERT", "false")
+            buildConfigField("boolean", "KARROT_SERVICE_PROBE", "false")
+            buildConfigField("boolean", "KARROT_EMPTY_CONNECTION_PROBE", "false")
         }
     }
 

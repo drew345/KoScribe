@@ -19,10 +19,14 @@ stayed invalid. That observation does not prove insertion eligibility. The teste
 live app BAA162DD was restored after the metadata test. A separately reviewed
 and tested empty-connection diagnostic 6C902906 was temporarily installed
 with speech/translation enabled; Andrew approved one local read from a Karrot
-field he confirms empty. He needed more time; USB is now disconnected. No read
-was triggered. The last known installed build is the diagnostic; reconnect and
-restore BAA162DD when appropriate, or run the approved one-shot read only after
-renewed readiness then restore BAA162DD. Preserve insertion guards.
+field he confirmed empty. USB later reconnected, and the one-shot request
+returned `INTERRUPTED`, without a usable cursor result. The categorical status
+does not establish whether the worker made its local read before interruption;
+do not retry under the one-read authorization. The regular live build BAA162DD
+was restored in place afterward; its service reports speech/translation true,
+automatic insertion false, no draft or pending overlay cleanup. SwiftKey remains
+selected. Karrot Insert remains unsupported on the measured path; preserve the
+insertion guards and offer Copy & close as recovery.
 
 Andrew is now trying the installed MVP and will bring immediate fixes back as
 needed. Later proposals and unfinished acceptance work are tracked in

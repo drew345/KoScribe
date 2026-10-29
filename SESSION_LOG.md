@@ -927,3 +927,19 @@
   Last known installed build remains the diagnostic. Reconnect and either restore
   BAA162DD or, after explicit empty-field readiness, run the already-approved
   one-shot read and then restore BAA162DD.
+
+## 2026-10-29 — Karrot one-shot diagnostic interrupted; regular app restored
+
+- Andrew reconnected the A35 and explicitly confirmed the intended Karrot field
+  was empty, with no selection, SwiftKey and cursor visible. ADB saw the A35 and
+  the diagnostic service reported `NO_REQUEST` before the sole approved trigger.
+  Its immediate response was `QUEUED`; the subsequent categorical status was
+  `INTERRUPTED`. No usable cursor finding was produced. Because input callbacks,
+  window/content events or screen off can all set this status, and the result
+  does not prove whether the worker had already read locally, do not run this
+  read again under the one-read approval. No insertion or Send was attempted.
+- Reinstalled the previously tested regular live APK BAA162DD with `adb install
+  -r`, preserving app data. The reconnected service PID11209 reported draft NONE,
+  speech/translation true, auto insertion false, cleanup false; SwiftKey remained
+  the selected IME. Karrot compatibility remains unresolved; do not weaken
+  existing safety guards based on this interrupted diagnostic.

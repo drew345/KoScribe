@@ -554,3 +554,18 @@ warns that a virtual editor can default to its container view's ID, so a
 present autofill ID is not independent proof of the exact Karrot field. A
 newly approved, bounded local connection read remains a prerequisite before
 implementing such a path; the 2026-10-29 no-read pass is not equivalent.
+
+That approved read later ran after a fresh empty Karrot composer was prepared.
+The connection returned an empty sample but reported `offset < 0`, classified
+`OFFSET_UNKNOWN`; the earlier attempt had refused at its initial-selection
+preflight without making a read. Android defines
+[EditorInfo.initialSelStart](https://developer.android.com/reference/android/view/inputmethod/EditorInfo#initialSelStart)
+as the selection at the time input begins, so the old text being deleted after
+input began is a possible explanation for the first refusal, not a measured
+value. Android's
+[SurroundingText.getOffset](https://developer.android.com/reference/android/view/inputmethod/SurroundingText#getOffset())
+explicitly uses -1 when the absolute offset is unknown. An empty returned
+snippet with unknown offset does not establish an absolute caret or safe
+destination. Further adapter design would have to use separate relative
+selection/context evidence and exact postcommit verification, initially in
+an owned fixture; no Karrot write is justified by this read alone.

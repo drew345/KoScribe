@@ -1026,3 +1026,31 @@
   the Android selected-text caveat, then install only if idle, ask Andrew to
   confirm a newly empty Karrot field, run once, and restore BAA162DD. No
   Karrot write trial is authorized by this diagnostic.
+
+## 2026-10-29 — Approved Karrot read returned unknown offset
+
+- Andrew expressly approved one new local `getSurroundingText(1,1,0)` read in
+  a field he confirmed completely empty, with the selected-text caveat. The
+  reviewed 5CFDBD64 diagnostic was installed over idle KoScribe (PID8046),
+  speech/translation true, auto false, draft NONE. Andrew noticed the old
+  unsent Wispr test text was still present; no read ran. He deleted it and
+  confirmed the empty field with SwiftKey/caret. First diagnostic trigger
+  refused `INITIAL_SELECTION_INVALID SOURCE=PREFLIGHT_FAILURE PHASE=PREFLIGHT
+  CALL=CALL_NOT_STARTED`; it did not call the content API.
+- Android documents EditorInfo initial selection as a value at input start.
+  It may have remained stale after text deletion, but the probe did not record
+  its numeric value, so this cause is an inference. The reviewed diagnostic
+  was reinstalled after the field was empty, and Andrew backed out/reopened the
+  chat and reconfirmed an empty field with SwiftKey/caret. Since no local read
+  had occurred, the same one-read approval remained available. The single
+  subsequent call returned `OFFSET_UNKNOWN SOURCE=NONE PHASE=FINAL_CHECK
+  CALL=CALL_RETURNED`. By KarrotEmptyReadPolicy, this category requires an
+  empty returned text sample and negative offset; no sample text or numeric
+  position was logged, retained or uploaded. No insertion, Copy/Paste or Send.
+- The approved read is now consumed. Android's `SurroundingText` contract says
+  offset -1 means unknown; the empty sample does not establish absolute caret
+  location or destination identity. Restored regular BAA162DD in place; service
+  PID11417 reports speech/translation true, auto false, draft NONE, cleanup
+  false, and SwiftKey selected. Karrot manual Insert remains unsupported under
+  current guards. Copy & close remains the recovery; do not authorize a Karrot
+  write from this result alone.

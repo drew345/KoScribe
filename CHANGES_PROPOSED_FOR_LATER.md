@@ -57,7 +57,10 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    commit. Same-node metadata remained focused=0, editable=0 and input type zero
    even after a refresh. A later no-read diagnostic reached the pre-read
    boundary with stable input/root/node metadata, but did not establish the
-   caret or safe insertion. An independently safe alternative needs investigation.
+   caret or safe insertion. A later approved single connection read returned
+   an empty sample with unknown absolute offset. An independently safe
+   alternative needs relative caret/context and postcommit evidence; no Karrot
+   write trial has been authorized.
 
    On 2026-10-28 Andrew reported that KoScribe would not paste text into
    Instagram comments, while Instagram DMs work. On October 29 he clarified

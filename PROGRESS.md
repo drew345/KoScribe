@@ -63,12 +63,22 @@ was consumed. Sol/xhigh added fixed interruption/phase/call-stage telemetry to
 the existing opt-in one-read diagnostic; Astra/xhigh reviewed it CLEAR after one
 attribution correction. All 90 unit tests and app lint pass. Signed candidate
 APK 5CFDBD64 is saved under app/build/editor-compat, with speech/translation
-true, automatic/no-read probes false and the one-read probe true. It has not
-been installed or triggered. A fresh explicit approval is needed before another
-local read of a user-confirmed empty Karrot field; unexpected selected text
-would be discarded locally and never logged/uploaded. Regular BAA162DD remains
-the verified installed build. Ordinary debug/release output flags remain
-OFF/all false. No Karrot insertion candidate is authorized or installed.
+true, automatic/no-read probes false and the one-read probe true. Andrew gave a
+fresh approval. The first run, after deleting the old Wispr test, refused
+`INITIAL_SELECTION_INVALID` at preflight with `CALL_NOT_STARTED`; no text read.
+Android documents EditorInfo's initial selection as the value when input began,
+so a stale starting value after deletion is plausible, not measured. After a
+fresh chat open, the sole actual read returned `OFFSET_UNKNOWN` with
+`CALL_RETURNED` and `SOURCE=NONE`: the returned sample was empty, but Android
+reported no absolute text offset. No text was logged/uploaded and no write or
+Send occurred. This consumes the approved local read. It does not establish
+the caret position or safe insertion; do not weaken Insert on this evidence.
+Regular BAA162DD was restored in place; service PID11417 reports speech and
+translation true, auto false, draft NONE, cleanup false, and SwiftKey remains
+selected. Ordinary debug/release output flags remain OFF/all false. A future
+Karrot-specific adapter would need relative caret/context and exact
+postcommit evidence despite an unknown offset, with owned-fixture tests before
+any separate real-app insertion approval. Copy & close remains the recovery.
 
 Andrew is now trying the installed MVP and will bring immediate fixes back as
 needed. Later proposals and unfinished acceptance work are tracked in

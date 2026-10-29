@@ -22,7 +22,9 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    the prominent recording label, timer or visual indicator; consider optional
    start/stop vibration or sound. The choice of feedback is still open. Stop and
    Cancel visibility was already fixed and phone-tested; broader menu polish
-   remains later work.
+   remains later work. A reviewed candidate now uses a prominent recording label,
+   decorative pulsing bars and elapsed timer; A35 visual acceptance is pending.
+   Optional vibration/sound and clearer processing feedback remain proposals.
 
 3. **Optional Korean preview before insertion.** Andrew considered seeing the
    Korean result useful, but also wants fewer steps. Explore showing it within

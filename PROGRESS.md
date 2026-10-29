@@ -2,6 +2,21 @@
 
 Updated: 2026-10-29 (Asia/Seoul).
 
+Recording visibility candidate: Sol/xhigh added a prominent mode-labelled
+recording banner, decorative pulsing bars and elapsed timer that start only
+after microphone proof and stop on all terminal paths. The long privacy sentence
+was removed from the compact panel; current privacy disclosure remains in the
+launcher. Astra/xhigh independently cleared the final source after a caption
+correction. All 90 unit tests, lint (0 errors) and debug assembly passed. A
+translation-enabled REVIEW APK is saved at
+`app/build/recording-indicator/TRANSLATION-recording-indicator-v1.apk` (SHA-256
+`D70CC7DFA09488D361F2D1DC642AD2D8530054FCCF49B8F0D37C5591AC154570`),
+signed by the same debug certificate as the installed build. Its flags are
+REVIEW/speech/translation true; automatic and Karrot probes false. **Not yet
+installed or phone-tested**; regular BAA162DD remains the last verified phone
+build. Next gate: inspect the recording animation, timer and fixed Stop/Cancel
+row on the A35's owned Test message screen, then Cancel without insertion.
+
 Andrew asked whether MORLUTO's REA can help study Wispr Flow. Public-source
 review is recorded in docs/RESEARCH.md: REA can
 statically inspect Android APKs, but Wispr's terms restrict decompilation to

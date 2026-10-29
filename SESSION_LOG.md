@@ -1054,3 +1054,21 @@
   false, and SwiftKey selected. Karrot manual Insert remains unsupported under
   current guards. Copy & close remains the recovery; do not authorize a Karrot
   write from this result alone.
+
+## 2026-10-29 — Recording visibility candidate reviewed
+
+- Andrew selected a recording indicator as the next small MVP improvement and
+  requested removal of the long privacy sentence from the panel. He prefers a
+  moving waveform or pulsing bars. Sol/xhigh added a prominent mode-labelled
+  recording banner, decorative animated bars, and elapsed timer, gated on
+  microphone proof. Stop, Cancel and all terminal paths stop the animation.
+- The panel disclosure was moved out of the cramped recording surface; the
+  launcher retains the audio-to-OpenAI/no-storage disclosure. Astra/xhigh found
+  that the launcher copy needed to distinguish speech-only and translation
+  builds. Sol fixed this, and Astra/xhigh cleared the final diff.
+- All 90 unit tests, lint with zero errors, default and translation-enabled
+  debug assemblies passed. The translation-enabled APK D70CC7DF is saved in
+  ignored `app/build/recording-indicator`; it matches the installed signing
+  certificate. It is not installed or phone-tested yet. Regular BAA162DD
+  remains the last verified phone build. Next: bounded visual recording/Cancel
+  check in the owned Test message editor, no insertion.

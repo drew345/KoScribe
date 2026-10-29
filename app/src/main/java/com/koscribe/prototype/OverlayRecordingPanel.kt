@@ -1,5 +1,7 @@
 package com.koscribe.prototype
 
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -12,12 +14,15 @@ import android.media.AudioRecordingConfiguration
 import android.media.MediaRecorder
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
+import android.view.Gravity
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import java.util.Arrays
+import java.util.Locale
 
 /** Debug-only panel inside the already expanded accessibility bubble. No new window is created. */
 internal class OverlayRecordingPanel(
@@ -52,8 +57,26 @@ internal class OverlayRecordingPanel(
     private val capturedWindowId = ownWindowId()
     private lateinit var card: LinearLayout
     private lateinit var status: TextView
+    private var recordingBanner: LinearLayout? = null
+    private var recordingTimer: TextView? = null
+    private var recordingStartedAtMs = 0L
+    private val recordingPulseAnimators = mutableListOf<ObjectAnimator>()
     private var speechActions: LinearLayout? = null
     private var stopAction: Button? = null
+    private val recordingTick = object : Runnable {
+        override fun run() {
+            if (stage != Stage.RECORDING) return
+            val elapsedSeconds = ((SystemClock.elapsedRealtime() - recordingStartedAtMs)
+                .coerceAtLeast(0L) / 1_000L)
+            val minutes = elapsedSeconds / 60L
+            val seconds = elapsedSeconds % 60L
+            recordingTimer?.apply {
+                text = String.format(Locale.US, "%02d:%02d", minutes, seconds)
+                contentDescription = "Elapsed recording time: $minutes minutes, $seconds seconds"
+            }
+            main.postDelayed(this, 1_000L)
+        }
+    }
     private val attachedListener = object : View.OnAttachStateChangeListener {
         override fun onViewAttachedToWindow(view: View) = Unit
         override fun onViewDetachedFromWindow(view: View) {
@@ -83,7 +106,6 @@ internal class OverlayRecordingPanel(
         }
         card.addView(label(if (speechMode) "KoScribe · speech input" else "KoScribe · sample only", true))
         card.addView(label("Selected mode: ${mode.label}", true))
-        if (speechMode) card.addView(label("Audio is sent to OpenAI after Stop; KoScribe does not save recordings or transcripts.", false))
         status = label("Preparing microphone…", false)
         card.addView(status)
         if (!speechMode) card.addView(button("Cancel") { cancel() })
@@ -259,6 +281,7 @@ internal class OverlayRecordingPanel(
         ready = true
         stage = Stage.RECORDING
         main.removeCallbacks(proofDeadline)
+        showRecordingBanner()
         status.text = if (speechMode) "Recording ${mode.label}. Tap Stop to transcribe; Cancel discards audio."
             else "Recording ${mode.label}. Audio is discarded; Stop shows a fixed sample."
         val stop = button("Stop") { stopAndReview() }
@@ -291,6 +314,7 @@ internal class OverlayRecordingPanel(
         }
         val reader = readThread
         stage = if (speechMode) Stage.PROCESSING else Stage.REVIEW
+        hideRecordingBanner()
         if (!releaseMic()) {
             fail("OVERLAY_MIC_RELEASE_FAILED")
             return
@@ -342,6 +366,7 @@ internal class OverlayRecordingPanel(
         stage = Stage.CLOSED
         main.removeCallbacks(proofDeadline)
         main.removeCallbacks(sessionDeadline)
+        hideRecordingBanner()
         releaseMic() // Host stays attached until the service ends this captured session.
         speechBuffer?.clear()
         host.removeOnAttachStateChangeListener(attachedListener)
@@ -378,6 +403,68 @@ internal class OverlayRecordingPanel(
         textSize = if (heading) 17f else 15f
         setTextColor(Color.WHITE)
         setPadding(0, dp(5), 0, dp(5))
+    }
+
+    private fun showRecordingBanner() {
+        val title = label("Recording ${mode.label}", true).apply {
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            textSize = 18f
+            contentDescription = "Recording ${mode.label}. Microphone is active."
+            accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
+        }
+        val timer = label("00:00", true).apply {
+            setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD)
+            textSize = 18f
+            contentDescription = "Elapsed recording time: 0 minutes, 0 seconds"
+        }
+        val banner = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(8), dp(2), dp(8), dp(2))
+            background = GradientDrawable().apply {
+                setColor(0xFF9B2635.toInt())
+                cornerRadius = dp(8).toFloat()
+            }
+            addView(title, LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            repeat(3) { index ->
+                val bar = View(context).apply {
+                    background = GradientDrawable().apply {
+                        setColor(Color.WHITE)
+                        cornerRadius = dp(2).toFloat()
+                    }
+                    scaleY = 0.35f
+                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                }
+                addView(bar, LinearLayout.LayoutParams(dp(3), dp(18)).apply {
+                    marginStart = dp(2)
+                    marginEnd = dp(2)
+                })
+                // Decorative pulse only; these bars do not represent audio level.
+                recordingPulseAnimators += ObjectAnimator.ofFloat(bar, View.SCALE_Y, 0.35f, 1f).apply {
+                    duration = 450L
+                    startDelay = index * 120L
+                    repeatMode = ValueAnimator.REVERSE
+                    repeatCount = ValueAnimator.INFINITE
+                    start()
+                }
+            }
+            addView(timer)
+        }
+        recordingBanner = banner
+        recordingTimer = timer
+        card.addView(banner, 2)
+        recordingStartedAtMs = SystemClock.elapsedRealtime()
+        main.post(recordingTick)
+    }
+
+    private fun hideRecordingBanner() {
+        main.removeCallbacks(recordingTick)
+        recordingPulseAnimators.forEach { it.cancel() }
+        recordingPulseAnimators.clear()
+        recordingBanner?.visibility = View.GONE
+        recordingBanner = null
+        recordingTimer = null
     }
 
     private fun button(value: String, action: () -> Unit): Button = Button(context).apply {

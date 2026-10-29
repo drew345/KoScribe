@@ -38,9 +38,13 @@ class MainActivity : Activity() {
         // Keep the fixture outside the long settings scroll and its changing
         // viewport when the keyboard opens or a recording dialog returns.
         val content = column()
-        content.addView(caption(if (BuildConfig.SPEECH_INPUT)
-            "Speech input: choose EN from the bubble, record, Stop, and edit the English transcript. Audio is sent to OpenAI after Stop; KoScribe does not save recordings or transcripts. Korean translation arrives in the next phase."
-            else "Phase 1 uses fixed samples. Audio is discarded; no recognition or translation runs."))
+        content.addView(caption(when {
+            BuildConfig.TRANSLATION_INPUT ->
+                "Speech input: choose EN, 요, or 반말 from the bubble to start recording. Tap Stop, then edit and confirm the English transcript. Korean modes translate after confirmation. Audio is sent to OpenAI after Stop; KoScribe does not save recordings or transcripts."
+            BuildConfig.SPEECH_INPUT ->
+                "Speech input: choose EN from the bubble to start recording. Tap Stop, then edit and confirm the English transcript. Audio is sent to OpenAI after Stop; KoScribe does not save recordings or transcripts."
+            else -> "Phase 1 uses fixed samples. Audio is discarded; no recognition or translation runs."
+        }))
         status = caption("")
         content.addView(status)
         content.addView(action("Open Accessibility settings") {

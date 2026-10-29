@@ -26,7 +26,17 @@ do not retry under the one-read authorization. The regular live build BAA162DD
 was restored in place afterward; its service reports speech/translation true,
 automatic insertion false, no draft or pending overlay cleanup. SwiftKey remains
 selected. Karrot Insert remains unsupported on the measured path; preserve the
-insertion guards and offer Copy & close as recovery.
+insertion guards and offer Copy & close as recovery. Astra/ultra source analysis
+identified the broad callback interruption paths; it could not identify which
+one occurred. A separate hard no-read, debug-only cause/phase probe was
+implemented by Sol/xhigh and independently cleared by Astra/xhigh. All 84 unit
+tests and app lint passed; candidate APK 649F03BD (speech/translation true,
+auto and prior content-read probe false) is saved under app/build/editor-compat.
+Its signature matches the regular APK. USB disconnected again before this
+candidate could be installed. Last verified installed build remains BAA162DD;
+after reconnection, install the candidate only while KoScribe is idle, ask for
+a newly prepared empty Karrot field, run the metadata-only command, and restore
+BAA162DD. Ordinary debug/release output flags are restored to OFF/all false.
 
 Andrew is now trying the installed MVP and will bring immediate fixes back as
 needed. Later proposals and unfinished acceptance work are tracked in

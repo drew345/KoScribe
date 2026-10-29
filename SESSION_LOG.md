@@ -943,3 +943,22 @@
   speech/translation true, auto insertion false, cleanup false; SwiftKey remained
   the selected IME. Karrot compatibility remains unresolved; do not weaken
   existing safety guards based on this interrupted diagnostic.
+
+## 2026-10-29 — Prepared no-read Karrot interruption trace
+
+- Astra/ultra reviewed the interrupted probe source: `QUEUED` precedes preflight;
+  the terminal status does not reveal whether the local read call began. Input
+  callbacks, six broad accessibility event types, screen off, and service
+  interrupt all share that status. No particular cause is established by the
+  previous result.
+- Sol/xhigh implemented a separate explicit debug-only, metadata-only dry run.
+  It reuses the Karrot preflight and continuity path, records the first fixed
+  interruption source and phase, and stops before a worker or content read.
+  Astra/xhigh independently cleared source; all 84 unit tests and app lint
+  passed. Signed candidate APK 649F03BD, in app/build/editor-compat, has REVIEW
+  with speech/translation true, auto false, old content-read probe false and
+  no-read probe true; signing certificate matches the regular build. Ordinary
+  debug and release outputs were rebuilt with all flags OFF.
+- ADB disconnected before any candidate install. The last verified installed
+  app remains regular BAA162DD with saved key/data; no new phone probe or
+  insertion occurred. Andrew was asked to reconnect before the diagnostic.

@@ -53,6 +53,14 @@ require(karrotEmptyConnectionProbe != "true" ||
     (startupExperimentArm == "REVIEW" && visualTest == "false")) {
     "koscribeKarrotEmptyConnectionProbe requires secure REVIEW and koscribeVisualTest=false"
 }
+val karrotNoReadProbe = providers.gradleProperty("koscribeKarrotNoReadProbe").orElse("false").get()
+require(karrotNoReadProbe == "true" || karrotNoReadProbe == "false") {
+    "koscribeKarrotNoReadProbe must be true or false"
+}
+require(karrotNoReadProbe != "true" ||
+    (startupExperimentArm == "REVIEW" && visualTest == "false")) {
+    "koscribeKarrotNoReadProbe requires secure REVIEW and koscribeVisualTest=false"
+}
 
 android {
     namespace = "com.koscribe.prototype"
@@ -77,6 +85,7 @@ android {
             buildConfigField("boolean", "AUTO_INSERT", autoInsert)
             buildConfigField("boolean", "KARROT_SERVICE_PROBE", karrotServiceProbe)
             buildConfigField("boolean", "KARROT_EMPTY_CONNECTION_PROBE", karrotEmptyConnectionProbe)
+            buildConfigField("boolean", "KARROT_NO_READ_PROBE", karrotNoReadProbe)
         }
         getByName("release") {
             buildConfigField("String", "STARTUP_EXPERIMENT_ARM", "\"OFF\"")
@@ -86,6 +95,7 @@ android {
             buildConfigField("boolean", "AUTO_INSERT", "false")
             buildConfigField("boolean", "KARROT_SERVICE_PROBE", "false")
             buildConfigField("boolean", "KARROT_EMPTY_CONNECTION_PROBE", "false")
+            buildConfigField("boolean", "KARROT_NO_READ_PROBE", "false")
         }
     }
 

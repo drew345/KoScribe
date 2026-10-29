@@ -55,7 +55,9 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    On 2026-10-29 Andrew tried Insert into an empty Karrot chat and then tapped
    the field and tried again. Both were refused; KoScribe's own counters show no
    commit. Same-node metadata remained focused=0, editable=0 and input type zero
-   even after a refresh. An independently safe alternative needs investigation.
+   even after a refresh. A later no-read diagnostic reached the pre-read
+   boundary with stable input/root/node metadata, but did not establish the
+   caret or safe insertion. An independently safe alternative needs investigation.
 
    On 2026-10-28 Andrew reported that KoScribe would not paste text into
    Instagram comments, while Instagram DMs work. On October 29 he clarified
@@ -66,6 +68,9 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    Wispr's public Android documentation says its own insertion can fail and
    then falls back to clipboard. Compare Wispr's actual behavior in Karrot with
    an unsent draft before assuming it has a general solution for this editor.
+   On 2026-10-29 Andrew reported that Wispr did insert directly into Karrot on
+   his A35. This supports investigating a narrow Karrot adapter; it does not
+   reveal Wispr's internal implementation or justify dropping KoScribe's guards.
 
 7. **Broader layout and interruption resilience.** Test large fonts, small usable
    screen heights, rotation/split-screen, keyboard and app switching, calls,

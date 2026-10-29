@@ -535,3 +535,22 @@ insertion. They support comparing KoScribe's existing input-connection/clipboard
 path and background readiness against specific observed app cases. A useful
 next black-box check is whether Wispr itself inserts directly into Karrot's
 composer or falls back to clipboard, using only an unsent test draft.
+
+Andrew performed that unsent test on 2026-10-29 and reported **direct insertion
+into Karrot** on his A35. This shows the editor accepted direct insertion in
+that observed case, while KoScribe's guarded Insert refused before a write.
+It does not reveal Wispr's internal implementation, prove a universal solution,
+or establish that KoScribe can safely loosen its node checks. The same day's
+KoScribe hard no-read Karrot probe reached `WOULD_READ` with stable metadata,
+but it did not read caret or content. A connection-led adapter needs independent
+field/selection/context and postcommit evidence before any write trial.
+
+Architecture review after the test: changing only the generic node mismatch
+check would leave KoScribe's separate postcommit node/caret checks unable to
+confirm a result. A Karrot-specific path would need connection-based evidence
+at each stage and should initially accept only an empty composer. Android's
+[EditorInfo.getAutofillId documentation](https://developer.android.com/reference/android/view/inputmethod/EditorInfo#getAutofillId())
+warns that a virtual editor can default to its container view's ID, so a
+present autofill ID is not independent proof of the exact Karrot field. A
+newly approved, bounded local connection read remains a prerequisite before
+implementing such a path; the 2026-10-29 no-read pass is not equivalent.

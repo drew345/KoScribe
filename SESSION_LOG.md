@@ -978,3 +978,51 @@
   falls back to clipboard when insertion fails. Its ongoing notification is
   documented for background service operation, not as an insertion mechanism.
   Sources and practical comparison are in docs/RESEARCH.md.
+
+## 2026-10-29 — Karrot no-read probe reached pre-read boundary
+
+- Andrew reconnected A35 and opened Karrot's message composer with SwiftKey.
+  Verified regular app idle (draft NONE, no pending cleanup), then installed
+  signed diagnostic 649F03BD in place. Service PID17629 reported REVIEW,
+  speech/translation true, automatic insertion false, old content-read probe
+  false and new no-read probe true. After Andrew reopened the Karrot composer,
+  status was `NO_REQUEST`; one trigger returned queued, then terminal status
+  `WOULD_READ SOURCE=NONE PHASE=SECOND_YIELD_WOULD_READ`.
+- The hard no-read probe reached the boundary before any worker/content API.
+  It neither read editor text nor wrote anything. This shows one stable
+  metadata pass, not cursor/content, insertion eligibility or the cause of the
+  previous interrupted content-read attempt. Reinstalled regular BAA162DD in
+  place. Service PID20869 reports draft NONE, speech/translation true,
+  automatic insertion false, cleanup false; SwiftKey is still selected.
+- Asked Andrew to compare Wispr Flow in an empty Karrot composer with an unsent
+  test: direct insertion versus its documented clipboard fallback. Await result
+  before choosing another compatibility experiment. No Wispr APK inspection.
+- Andrew reported that Wispr Flow inserted the unsent test directly into the
+  Karrot field on this A35. This is an observed comparison, not proof of which
+  internal API Wispr used. KoScribe's refusal is therefore not evidence that
+  Karrot universally rejects direct text insertion. Started an independent
+  Astra/ultra review of a narrow connection-led KoScribe adapter; no app source
+  or phone state was changed for that design review.
+
+## 2026-10-29 — Reviewed Karrot read trace prepared; consent pending
+
+- Astra/ultra concluded that relaxing the generic node mismatch check would
+  still fail the later caret/postcommit guards. A narrow manual Karrot adapter
+  needs separate connection-based evidence at capture, precommit and
+  confirmation; `EditorInfo.autofillId` is only supplemental because virtual
+  editors can share a container ID. A successful local read of the user's
+  confirmed empty composer is the next evidence gate, not insertion approval.
+- Sol/xhigh added fixed first interruption source/phase and call-state
+  (`NOT_STARTED/ATTEMPTED/RETURNED/THROWN`) reporting to the existing debug-only
+  one-read probe, without payload output or production insertion changes.
+  Astra/xhigh found one final-check attribution error; Sol corrected it and
+  Astra cleared the focused diff. Local unit tests: 90 passed; app lint passed.
+  Signed candidate APK 5CFDBD64, in app/build/editor-compat, has REVIEW,
+  speech/translation true, old automatic/no-read probes false, one-read probe
+  true. Ordinary debug/release outputs were rebuilt OFF/all false.
+- Candidate has not been installed or run. Regular BAA162DD remains the last
+  verified phone installation. The earlier one-read consent was used and
+  cannot authorize this new local read. Request fresh explicit consent with
+  the Android selected-text caveat, then install only if idle, ask Andrew to
+  confirm a newly empty Karrot field, run once, and restore BAA162DD. No
+  Karrot write trial is authorized by this diagnostic.

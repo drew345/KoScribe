@@ -2,15 +2,15 @@
 
 Updated: 2026-10-29 (Asia/Seoul).
 
-Andrew has paused phone reconnection and asked whether MORLUTO's REA can help
-study Wispr Flow. Public-source review is recorded in docs/RESEARCH.md: REA can
+Andrew asked whether MORLUTO's REA can help study Wispr Flow. Public-source
+review is recorded in docs/RESEARCH.md: REA can
 statically inspect Android APKs, but Wispr's terms restrict decompilation to
 access its proprietary code/algorithms. No REA installation or Wispr APK access
 occurred. Wispr's public Play listing identifies the accessibility input
 connection, and its setup guide acknowledges clipboard fallback when insertion
 fails. Continue with public/observable comparison before considering any APK
-analysis. The no-read Karrot candidate remains saved but uninstalled; the
-regular BAA162DD build is the last verified phone installation.
+analysis. The no-read Karrot diagnostic has now run; regular BAA162DD is again
+the verified installed phone build.
 
 ## Current state
 
@@ -42,11 +42,33 @@ one occurred. A separate hard no-read, debug-only cause/phase probe was
 implemented by Sol/xhigh and independently cleared by Astra/xhigh. All 84 unit
 tests and app lint passed; candidate APK 649F03BD (speech/translation true,
 auto and prior content-read probe false) is saved under app/build/editor-compat.
-Its signature matches the regular APK. USB disconnected again before this
-candidate could be installed. Last verified installed build remains BAA162DD;
-after reconnection, install the candidate only while KoScribe is idle, ask for
-a newly prepared empty Karrot field, run the metadata-only command, and restore
-BAA162DD. Ordinary debug/release output flags are restored to OFF/all false.
+Its signature matches the regular APK. After Andrew reconnected and prepared
+the Karrot field, the candidate was installed in place while KoScribe was idle.
+Its old content-read probe was disabled. The sole no-read check returned
+`WOULD_READ SOURCE=NONE PHASE=SECOND_YIELD_WOULD_READ`: Karrot's input/root/node
+metadata stayed stable through the pre-read boundary on that attempt. This
+does not establish caret/content or safe insertion, and it does not explain the
+earlier interrupted read. No editor content was read or written. BAA162DD was
+then restored in place; service PID20869 reports draft NONE, speech/translation
+true, automatic insertion false, cleanup false. SwiftKey remains selected.
+Andrew then reported that Wispr Flow directly inserted an unsent test into
+Karrot on the same phone. This is user-observed behavior, not evidence of
+Wispr's specific internal method. It makes a Karrot-specific KoScribe adapter
+worth investigating, while the existing safety checks remain in force. An
+independent Astra/ultra architecture review concluded that a Karrot-specific
+manual adapter is plausible only with fresh input-connection caret/context
+evidence through capture, precommit and postcommit. `autofillId` alone may
+identify a virtual-editor container, not a field. The earlier one-read approval
+was consumed. Sol/xhigh added fixed interruption/phase/call-stage telemetry to
+the existing opt-in one-read diagnostic; Astra/xhigh reviewed it CLEAR after one
+attribution correction. All 90 unit tests and app lint pass. Signed candidate
+APK 5CFDBD64 is saved under app/build/editor-compat, with speech/translation
+true, automatic/no-read probes false and the one-read probe true. It has not
+been installed or triggered. A fresh explicit approval is needed before another
+local read of a user-confirmed empty Karrot field; unexpected selected text
+would be discarded locally and never logged/uploaded. Regular BAA162DD remains
+the verified installed build. Ordinary debug/release output flags remain
+OFF/all false. No Karrot insertion candidate is authorized or installed.
 
 Andrew is now trying the installed MVP and will bring immediate fixes back as
 needed. Later proposals and unfinished acceptance work are tracked in

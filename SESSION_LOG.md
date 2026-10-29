@@ -1072,3 +1072,25 @@
   certificate. It is not installed or phone-tested yet. Regular BAA162DD
   remains the last verified phone build. Next: bounded visual recording/Cancel
   check in the owned Test message editor, no insertion.
+
+## 2026-10-29 — Recording indicator visual check and wider revision
+
+- After Android authorized USB, installed reviewed D70CC7DF in place. KoScribe
+  reconnected with speech/translation true, auto false, draft NONE, and SwiftKey
+  still selected. Andrew tested recording/Cancel twice in the owned Test message
+  screen. Label, timer, 3-bar motion, Stop and Cancel worked, but the three bars
+  were too narrow. Own diagnostics: proof2, two USER_CANCELLED, no draft,
+  translation request or commit, cleanup false.
+- Sol/xhigh widened the pulse to eleven bars on a separate row; Astra/xhigh
+  cleared the source. All 90 units passed, and final lint was rerun with
+  `--rerun-tasks` successfully. Signed translation-enabled v2 APK SHA-256
+  `159E2452C057E49A96751D5D277DE2704FB7719A12B0B2ABE40669B9659C538E`
+  was installed in place. Service reconnected speech/translation true,
+  auto/Karrot probes false, draft NONE. Andrew confirmed motion, label, timer,
+  Stop and Cancel worked. He found the wider decorative bars too large, but
+  explicitly chose to keep this version for now. Own trace: proof1,
+  USER_CANCELLED, commit0, draft NONE, cleanup false. No speech API request,
+  insertion or real-app trial occurred. Record finer visual/voice-reactive
+  indicator design for later. The ordinary local debug output was rebuilt and
+  verified OFF with speech/translation/auto/probes false; the saved v2 APK and
+  its hash were unchanged. This rebuild did not change the installed phone app.

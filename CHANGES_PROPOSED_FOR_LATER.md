@@ -22,8 +22,11 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    the prominent recording label, timer or visual indicator; consider optional
    start/stop vibration or sound. The choice of feedback is still open. Stop and
    Cancel visibility was already fixed and phone-tested; broader menu polish
-   remains later work. A reviewed candidate now uses a prominent recording label,
-   decorative pulsing bars and elapsed timer; A35 visual acceptance is pending.
+   remains later work. A mode-labelled recording banner and elapsed timer are
+   now installed and phone-tested. Andrew found the first 3-bar pulse too small
+   and the current 11-bar pulse too large, but chose to keep the latter for now.
+   Later try a more restrained indicator or a voice-reactive waveform, after
+   deciding whether the extra signal merits touching the audio-read path.
    Optional vibration/sound and clearer processing feedback remain proposals.
 
 3. **Optional Korean preview before insertion.** Andrew considered seeing the

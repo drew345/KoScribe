@@ -1930,3 +1930,24 @@ under app/build. Standalone service dumps intermittently time out before and
 after update; cause unmeasured, no claim the matcher fixes it. Passing instrumented
 case obtained its own state internally. Final AppOps shows only prior stopped
 4.716s audio, SwiftKey unchanged. No broad reliability acceptance implied.
+
+## Recording indicator visual checks (2026-10-29)
+
+Reviewed D70CC7DF (three decorative bars) was installed on the A35 with the
+same debug certificate; speech/translation remained true, auto false, draft
+NONE and SwiftKey selected. Andrew reported the recording label, timer, motion,
+fixed Stop/Cancel and Cancel behavior worked in the owned Test message screen,
+but the three bars were too small. Own service diagnostics showed two proved
+recordings, two USER_CANCELLED endings, draft NONE, translation requests0,
+commits0 and overlay cleanup false.
+
+Sol/xhigh expanded the pulse to eleven bars on its own line without changing
+mic/session/insertion code. Astra/xhigh reviewed CLEAR; all 90 unit tests,
+translation-enabled assembly and fresh lint `--rerun-tasks` passed. Signed APK
+`app/build/recording-indicator/TRANSLATION-recording-indicator-v2.apk`, SHA-256
+`159E2452C057E49A96751D5D277DE2704FB7719A12B0B2ABE40669B9659C538E`
+was installed in place. Andrew again confirmed the label, timer, moving bars,
+Stop and Cancel worked on the owned Test message screen. He found the bars too
+large for decorative motion, but chose to keep this revision for now. Own trace
+showed proof1, USER_CANCELLED, draft NONE, translation requests0, commit0,
+cleanup false. No transcript, API call, insertion or real-app action was tested.

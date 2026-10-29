@@ -2,20 +2,24 @@
 
 Updated: 2026-10-29 (Asia/Seoul).
 
-Recording visibility candidate: Sol/xhigh added a prominent mode-labelled
-recording banner, decorative pulsing bars and elapsed timer that start only
-after microphone proof and stop on all terminal paths. The long privacy sentence
-was removed from the compact panel; current privacy disclosure remains in the
-launcher. Astra/xhigh independently cleared the final source after a caption
-correction. All 90 unit tests, lint (0 errors) and debug assembly passed. A
-translation-enabled REVIEW APK is saved at
-`app/build/recording-indicator/TRANSLATION-recording-indicator-v1.apk` (SHA-256
-`D70CC7DFA09488D361F2D1DC642AD2D8530054FCCF49B8F0D37C5591AC154570`),
-signed by the same debug certificate as the installed build. Its flags are
-REVIEW/speech/translation true; automatic and Karrot probes false. **Not yet
-installed or phone-tested**; regular BAA162DD remains the last verified phone
-build. Next gate: inspect the recording animation, timer and fixed Stop/Cancel
-row on the A35's owned Test message screen, then Cancel without insertion.
+**Current installed build:** reviewed recording indicator v2, SHA-256
+`159E2452C057E49A96751D5D277DE2704FB7719A12B0B2ABE40669B9659C538E`,
+saved at `app/build/recording-indicator/TRANSLATION-recording-indicator-v2.apk`.
+It adds a mode-labelled recording banner, elapsed timer and decorative 11-bar
+pulse only after microphone proof. The long panel disclosure was removed; the
+launcher retains the audio-to-OpenAI/no-storage disclosure. Sol/xhigh implemented
+and Astra/xhigh independently cleared both versions. All 90 unit tests, a fresh
+lint run (0 errors), and the translation-enabled REVIEW build passed; the APK
+uses the same signing certificate as the prior installed build. Speech and
+translation remain enabled; automatic insertion and Karrot probes remain off.
+On the A35 owned Test message screen, Andrew confirmed the first 3-bar version
+recorded/animated and Cancel worked, but its bars were too small. The 11-bar
+revision also recorded/animated, kept Stop and Cancel visible, and cancelled
+without insertion. He found its decorative bars too large, but chose to keep
+this version while considering a better indicator during use. Own diagnostic
+trace: recording proof1, USER_CANCELLED, draft NONE, commit0, cleanup false.
+No speech API, translation, insertion or real-app behavior was exercised by
+these visual checks. Further indicator refinement is on the later list.
 
 Andrew asked whether MORLUTO's REA can help study Wispr Flow. Public-source
 review is recorded in docs/RESEARCH.md: REA can

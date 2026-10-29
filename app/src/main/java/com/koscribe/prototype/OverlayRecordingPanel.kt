@@ -417,39 +417,49 @@ internal class OverlayRecordingPanel(
             textSize = 18f
             contentDescription = "Elapsed recording time: 0 minutes, 0 seconds"
         }
-        val banner = LinearLayout(context).apply {
+        val header = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(8), dp(2), dp(8), dp(2))
-            background = GradientDrawable().apply {
-                setColor(0xFF9B2635.toInt())
-                cornerRadius = dp(8).toFloat()
-            }
             addView(title, LinearLayout.LayoutParams(0,
                 LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-            repeat(3) { index ->
+            addView(timer)
+        }
+        val pulse = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+            repeat(11) { index ->
                 val bar = View(context).apply {
                     background = GradientDrawable().apply {
                         setColor(Color.WHITE)
-                        cornerRadius = dp(2).toFloat()
+                        cornerRadius = dp(3).toFloat()
                     }
-                    scaleY = 0.35f
-                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                    scaleY = 0.25f
                 }
-                addView(bar, LinearLayout.LayoutParams(dp(3), dp(18)).apply {
-                    marginStart = dp(2)
-                    marginEnd = dp(2)
+                addView(bar, LinearLayout.LayoutParams(0, dp(26), 1f).apply {
+                    marginStart = dp(3)
+                    marginEnd = dp(3)
                 })
                 // Decorative pulse only; these bars do not represent audio level.
-                recordingPulseAnimators += ObjectAnimator.ofFloat(bar, View.SCALE_Y, 0.35f, 1f).apply {
-                    duration = 450L
-                    startDelay = index * 120L
+                recordingPulseAnimators += ObjectAnimator.ofFloat(bar, View.SCALE_Y, 0.25f, 1f).apply {
+                    duration = 430L + (index * 83L) % 230L
+                    startDelay = index * 55L
                     repeatMode = ValueAnimator.REVERSE
                     repeatCount = ValueAnimator.INFINITE
                     start()
                 }
             }
-            addView(timer)
+        }
+        val banner = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(8), dp(2), dp(8), dp(4))
+            background = GradientDrawable().apply {
+                setColor(0xFF9B2635.toInt())
+                cornerRadius = dp(8).toFloat()
+            }
+            addView(header)
+            addView(pulse, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(30)))
         }
         recordingBanner = banner
         recordingTimer = timer

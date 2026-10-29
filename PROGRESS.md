@@ -17,10 +17,12 @@ found a stable input connection and safe text type, matching root/node, absent
 field ID, present autofill ID and unknown node selection; node focus/editable/type
 stayed invalid. That observation does not prove insertion eligibility. The tested
 live app BAA162DD was restored after the metadata test. A separately reviewed
-and tested empty-connection diagnostic 6C902906 is now temporarily installed
+and tested empty-connection diagnostic 6C902906 was temporarily installed
 with speech/translation enabled; Andrew approved one local read from a Karrot
-field he confirms empty. Await that readiness before triggering the read, then
-restore BAA162DD. This is diagnosis only; preserve insertion guards.
+field he confirms empty. He needed more time; USB is now disconnected. No read
+was triggered. The last known installed build is the diagnostic; reconnect and
+restore BAA162DD when appropriate, or run the approved one-shot read only after
+renewed readiness then restore BAA162DD. Preserve insertion guards.
 
 Andrew is now trying the installed MVP and will bring immediate fixes back as
 needed. Later proposals and unfinished acceptance work are tracked in

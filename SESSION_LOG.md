@@ -922,5 +922,8 @@
   can return all selected text despite small context counts; unexpected text is
   discarded locally and never logged or uploaded. Andrew approved one local read
   of a field he confirms empty. Diagnostic APK 6C902906 is temporarily installed,
-  live speech/translation enabled; user needs a little time to prepare the field.
-  Await his explicit readiness before the one read; restore BAA162DD afterward.
+  live speech/translation enabled; user needed a little time to prepare the field.
+  Before restoration, ADB reported no devices. No local read was triggered.
+  Last known installed build remains the diagnostic. Reconnect and either restore
+  BAA162DD or, after explicit empty-field readiness, run the already-approved
+  one-shot read and then restore BAA162DD.

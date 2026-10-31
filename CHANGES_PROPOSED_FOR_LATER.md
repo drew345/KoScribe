@@ -1,6 +1,6 @@
 # Changes proposed for later
 
-Updated: 2026-10-29 (Asia/Seoul).
+Updated: 2026-10-31 (Asia/Seoul).
 
 Andrew is trying the current MVP and will report anything needing an immediate
 fix. This is the standing list of later improvements and unfinished acceptance
@@ -106,6 +106,20 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
     and the actual misrecognized forms have not been specified; confirm those
     when implementing rather than inventing replacement mappings. Deferred;
     no transcription or replacement behavior has changed.
+
+11. **Visual design and accessible controls.** The October 31
+    [phone screenshot audit](docs/design/UX_AUDIT_2026-10-31.md) found oversized
+    mode/review surfaces, equal-weight gray buttons, a collision with Wispr's
+    bubble, and a result control that does not show the Korean before Insert.
+    Keep all three visible mode choices, editable English review, manual Insert,
+    Copy & close, explicit Cancel/Hide, and SwiftKey. Explore a compact visual
+    system and an optional Korean snippet within the existing result control.
+    Make the Move handle usable without dragging for accessibility. Assess
+    TalkBack, larger type, reduced motion, contrast, and narrow viewports on
+    device. The screenshot-safe sample recording panel clips Stop, but the live
+    speech panel has a different fixed control row previously tested; do not
+    treat the sample clipping as a live regression. Refine the currently
+    oversized decorative recording bars and processing feedback under item 2.
 
 ## Remaining acceptance work
 

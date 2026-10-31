@@ -1,5 +1,22 @@
 # Session log
 
+## 2026-10-31 — Synthetic phone flow visual audit
+
+- After Andrew reenabled USB debugging, captured nine accepted screenshots of
+  KoScribe's owned flow with SwiftKey using a temporary screenshot-safe sample
+  build. No conversation, credential, or actual recording was captured. Live
+  protected screens remained protected; private/rejected captures were removed.
+- The mode and review panels use more space than their controls require. The
+  eleven recording bars are decorative and visually dominant. The result panel
+  gives Insert and Copy & close equal weight and shows no Korean preview;
+  KoScribe and Wispr bubbles overlap at the observed position. The sample-only
+  recording panel clips Stop; the live fixed-row version was not recaptured.
+- A single fixed Korean sample inserted in the owned test editor; no real-app
+  insertion or Send. Restored reviewed live recording-indicator v2 in place and
+  verified speech/translation on, auto/probes off, SwiftKey selected. Saved
+  findings in docs/design/UX_AUDIT_2026-10-31.md and proposals in the standing
+  changes checklist. No redesign code was changed.
+
 ## 2026-10-23 — Project initialization and planning
 
 - Initialized project memory in an empty KoScribe folder at Andrew's request.

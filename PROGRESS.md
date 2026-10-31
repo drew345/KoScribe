@@ -2,7 +2,7 @@
 
 Updated: 2026-10-31 (Asia/Seoul).
 
-**Native design checkpoint, 2026-10-31:** Andrew approved installing the
+**Native design upgrade installed, 2026-10-31:** Andrew approved installing the
 comparison design and replacing the visible Phase 1 name. Sol/xhigh implemented
 the rounded-square Spoken K bubble and launcher icon, compact three-mode/result
 controls, Quiet pulse recording panel, English review, and launcher. The app and
@@ -14,21 +14,24 @@ matches the prior installed build. A35 screenshot-safe sample checks at font
 scale 1.15 showed the bubble, mode buttons, Stop/Cancel, English review, and
 result Insert/Copy/Cancel visible; Move tap repositioned the result. The first
 review layout left a large blank gap, so Sol moved the transcript card next to
-the fixed action dock; Astra cleared that source change, but its phone appearance
-has **not** been checked. A phone call interrupted the subsequent visual check;
-temporary screenshots were removed. The screenshot-safe sample build was
-replaced with the **secure speech/translation build** saved at
-`app/build/design-install/KoScribe-0.2-translation.apk`, SHA-256
-`80DA0E88F51D7465676850B2A8CB3CC9B957DA5E3377AF6F2C59732BB8097D51`.
-This installed APK predates only the final review-card spacing adjustment.
+the fixed action dock and Astra cleared that source change. The follow-up A35
+sample check showed the card directly above Confirm/Cancel and SwiftKey, and
+Cancel returned to the owned empty editor. Temporary screenshots were removed.
+The **secure speech/translation APK** with the final spacing change is saved at
+`app/build/design-install/KoScribe-0.2-translation-final.apk`, SHA-256
+`D266E911F443B896C33E49DFCE9EDBA5705F50D1E4515956CF045DEB59DAD234`.
+The installed `/data/app` APK has that exact hash. Its reviewed flags are
+`STARTUP_EXPERIMENT_ARM=REVIEW`, speech=true, translation=true, and
+visual/auto/Karrot probes=false.
 Android reports package version 0.2, the same app-data inode, active KoScribe
-service, and SwiftKey selected. The key was not accessed. No real-app insertion,
-speech API request, or Send was used in this design check. Next at home: rebuild
-and save a secure translation APK containing the final review spacing patch,
-install it in place, verify its label/service/SwiftKey and the review controls,
-remove the separate `com.koscribe.smoke` test launcher if still desired, then
-inspect staged files/secrets and commit/push source and memory. Do not use the
-ordinary app-debug.apk until the REVIEW/speech/translation flags are verified.
+service, and SwiftKey selected. The key was not accessed. The separate
+`com.koscribe.smoke` test launcher and hidden `com.koscribe.prototype.test`
+instrumentation package were removed; only the main KoScribe package remains.
+No real-app insertion, speech API request, or Send was used in this design check.
+Ordinary `app/build/outputs/apk/debug/app-debug.apk` was rebuilt with all
+feature/test flags OFF; use the saved final APK for a live reinstall. The
+source/memory checkpoint preceding this final acceptance is on private GitHub
+at `d43bb24`.
 
 **Visual audit and design review, 2026-10-31:** Andrew requested screenshots of
 the app flow and a visual comparison website. Nine accepted screenshots of the

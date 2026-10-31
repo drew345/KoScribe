@@ -1168,3 +1168,21 @@
   a battery checkpoint. Next: build/install that final secure patch, verify
   protected review layout and phone state, remove test launcher if desired,
   and commit/push after staged-file and secret inspection. See PROGRESS.
+
+## 2026-10-31 — Final design upgrade installed at home
+
+- Built the reviewed REVIEW/speech/translation APK with the final compact
+  English review spacing. Verified the KoScribe 0.2 package label, unchanged
+  debug signing certificate, feature flags, 90 prior unit passes and lint with
+  zero errors. Saved final APK D266E911 under ignored `app/build/design-install`.
+- Installed in place, then briefly used a screenshot-safe fixed-sample build
+  only in KoScribe's owned test editor. At A35 font scale 1.15 the review card
+  sat directly above the fixed Confirm/Cancel dock and SwiftKey; Cancel returned
+  to the empty editor. Restored the secure final APK; Android's installed APK
+  hash matched D266E911 exactly. Removed temporary screenshots and the separate
+  smoke/test packages, leaving one KoScribe installation.
+- App data inode, accessibility service, microphone grant and SwiftKey remained
+  intact; the saved key was not read. No real speech API request, real-app
+  insertion, or Send. Rebuilt ordinary local debug output with all optional
+  flags OFF. Future live review/translation quality use remains ordinary MVP
+  feedback, not a claim from this sample-only layout check.

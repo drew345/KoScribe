@@ -33,7 +33,9 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    Korean result useful, but also wants fewer steps. Explore showing it within
    the existing result control, with Insert and Copy & close, without requiring
    another confirmation screen. This is an option to evaluate, not a settled
-   requirement or a replacement for the automatic-flow proposal.
+   requirement or a replacement for the automatic-flow proposal. On October31
+   Andrew confirmed that no Korean preview has been worked out or implemented;
+   the revised design comparison omits it.
 
 4. **An option to skip English review.** Initially every message keeps editable
    English review, as agreed. Later offer an explicit preference for skipping
@@ -113,7 +115,7 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
     bubble, and a result control that does not show the Korean before Insert.
     Keep all three visible mode choices, editable English review, manual Insert,
     Copy & close, explicit Cancel/Hide, and SwiftKey. Explore a compact visual
-    system and an optional Korean snippet within the existing result control.
+    system; any Korean snippet remains the unsettled option in item 3.
     Make the Move handle usable without dragging for accessibility. Assess
     TalkBack, larger type, reduced motion, contrast, and narrow viewports on
     device. The screenshot-safe sample recording panel clips Stop, but the live
@@ -123,7 +125,18 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
     Compare three visual directions in the
     [owner-private design review](https://koscribe-design-review.user78395.chatgpt.site)
     before choosing Android changes; these are HTML concepts, not implemented
-    app behavior.
+    app behavior. Andrew's review favored the compact mode card and proposed
+    recording panel. The revised comparison uses the app's actual Spoken K
+    foreground for the current bubble and a more square rounded-corner proposal
+    inspired by Wispr's shape, without copying its mark. Bubble position remains
+    user-draggable, so no position feature is proposed. Mode choices omit English
+    politeness sublabels; the recording state may show Polite/Informal. Distinct
+    secondary Hide bubble and Close panel buttons explain their current behavior.
+    English review keeps a small label and editable text, without the proposed
+    extra question/step heading. The result panel has one Cancel and a pill Move
+    handle, no Korean preview, and remains necessary for manual Insert for now;
+    eliminating it later is an idea, not implemented. The launcher/app home is
+    separate from the daily bubble flow.
 
 ## Remaining acceptance work
 

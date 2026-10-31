@@ -1,5 +1,23 @@
 # Session log
 
+## 2026-10-31 — Design review site revised from Andrew's feedback
+
+- Andrew corrected the first site's plain-K current bubble and preferred a
+  Wispr-like rounded-square silhouette with KoScribe's own mark. He liked the
+  compact mode and recording concepts, requested no Korean preview in the
+  result concept, a simpler English review, clearer Hide/Close controls, a
+  single Cancel and light Move handle, and launcher outside the daily flow.
+- Sol/xhigh revised the owner-private Site only; the current bubble now uses
+  the exact approved foreground PNG, and the website opens on bubble stage
+  1/5. Astra/xhigh independently checked product fidelity, source safety,
+  contrast, and responsive widths. Follow-up fixes removed an inaccurate phone
+  notch, improved small-text contrast and 320–361px framing, and retained the
+  launcher audio privacy disclosure. Local desktop/mobile browser checks and
+  JavaScript/source checks passed. Site source
+  `2f38f8bcf2222355209790bf5885519ce41e2d66` deployed successfully at
+  https://koscribe-design-review.user78395.chatgpt.site; owner sign-in remains
+  required. No Android code, installed APK, key, or real-app data changed.
+
 ## 2026-10-31 — Private visual comparison site
 
 - At Andrew's request, built and published an owner-private static website

@@ -5,8 +5,8 @@ Updated: 2026-10-31 (Asia/Seoul).
 **Visual audit and design review, 2026-10-31:** Andrew requested screenshots of
 the app flow and a visual comparison website. Nine accepted screenshots of the
 owned synthetic flow were captured using a temporary screenshot-safe sample
-build; the protected live
-surfaces were not captured. The reviewed live recording-indicator v2 APK was
+build; the protected live surfaces were not captured. The reviewed live
+recording-indicator v2 APK was
 restored in place, with speech/translation on, auto/Karrot probes off, and
 SwiftKey selected. One fixed sample was inserted only into the owned test
 editor, with a confirmed commit, no Send, and the small bubble still available.
@@ -14,11 +14,16 @@ The evidence and deferred redesign proposals are in
 [the visual audit](docs/design/UX_AUDIT_2026-10-31.md) and
 [the standing checklist](CHANGES_PROPOSED_FOR_LATER.md). The
 [owner-private comparison site](https://koscribe-design-review.user78395.chatgpt.site)
-shows the current sample and three proposed visual directions across six stages;
-it contains recreated HTML illustrations, not phone screenshots or live app
-functions. No Android redesign is implemented. Next: Andrew reviews the site
-and chooses elements to try; any live UI changes need their own implementation
-and phone check.
+was revised after Andrew's feedback. It now opens on the accurate current
+Spoken K bubble and compares three directions across five daily flow stages;
+the launcher/app home is separate. The proposed bubble is a rounded square,
+mode and review panels are simpler, and the result has a Move handle and no
+unsettled Korean preview. Hide/Close behavior is explained. The Site uses the
+approved native foreground asset and otherwise HTML reconstructions; it is not
+the Android app. Reviewed Site source `2f38f8bcf2222355209790bf5885519ce41e2d66`
+deployed owner-private on October31. No Android redesign is implemented. Next:
+Andrew reviews the revised Site and selects elements to implement; any live UI
+change needs its own phone check.
 
 **Current installed build:** reviewed recording indicator v2, SHA-256
 `159E2452C057E49A96751D5D277DE2704FB7719A12B0B2ABE40669B9659C538E`,

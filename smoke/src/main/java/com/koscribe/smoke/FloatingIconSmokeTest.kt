@@ -199,7 +199,7 @@ class FloatingIconSmokeTest {
         require(label in listOf("Close", "요", "반말", "EN"))
         val matches = nodes(product).filter { it.className?.toString() == "android.widget.Button" &&
             it.isVisibleToUser && it.isEnabled && it.isClickable &&
-            it.text?.toString()?.equals(label, ignoreCase = true) == true }
+            matchesOwnButtonLabel(it.text, label) }
         if (matches.size > 1) throw AssertionError("AMBIGUOUS_PRODUCT_CONTROL_$label")
         return matches.singleOrNull()
     }

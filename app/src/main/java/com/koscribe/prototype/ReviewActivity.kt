@@ -1,7 +1,11 @@
 package com.koscribe.prototype
 
 import android.app.Activity
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.view.Gravity
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowManager
@@ -57,8 +61,7 @@ class ReviewActivity : Activity() {
             val activity = active.get()?.takeIf { it.draftId == id && !it.isFinishing }
                 ?: return false
             activity.setProcessing(false)
-            activity.confirmButton.text = if (activity.autoRequested)
-                "Translate & insert" else "Translate"
+            activity.confirmButton.text = activity.confirmLabel()
             activity.showFeedback(message)
             return true
         }
@@ -98,6 +101,7 @@ class ReviewActivity : Activity() {
         if (!VisualTestMode.enabled) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
             WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
+        window.setBackgroundDrawableResource(android.R.color.transparent)
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16), 0, dp(16), 0)
@@ -106,10 +110,29 @@ class ReviewActivity : Activity() {
             importantForContentCapture = View.IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS
         }
         installInsets(root)
-        root.addView(caption((if (VisualTestMode.enabled)
-            "VISUAL TEST · KoScribe" else "KoScribe") +
-            " · English review · ${draft.mode.label}", true).apply { textSize = 17f })
-        val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+            background = rounded(Color.WHITE, 16)
+            isSaveEnabled = false
+            importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+            importantForContentCapture = View.IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS
+        }
+        content.addView(TextView(this).apply {
+            text = if (VisualTestMode.enabled) "VISUAL TEST · ENGLISH REVIEW"
+                else "ENGLISH REVIEW"
+            textSize = 11f
+            letterSpacing = 0.1f
+            setTypeface(typeface, Typeface.BOLD)
+            setTextColor(0xFF2E7569.toInt())
+            contentDescription = "English review · ${draft.mode.label}"
+        })
+        val actions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(10), dp(6), dp(10), dp(6))
+            background = rounded(Color.WHITE, 12)
+        }
         confirmButton = action(confirmLabel()) {
             val service = KoScribeService.active()
             service?.updateDraftEnglish(draftId, owner, editor.text.toString())
@@ -121,45 +144,44 @@ class ReviewActivity : Activity() {
                 }
                 UnboundDraftState.Confirm.TRANSLATING -> setProcessing(true)
                 UnboundDraftState.Confirm.TRANSLATION_ERROR -> {
-                    confirmButton.text = if (autoRequested) "Translate & insert" else "Translate"
+                    confirmButton.text = confirmLabel()
                     showFeedback("Translation could not start. Edit English or tap Translate.")
                 }
                 UnboundDraftState.Confirm.EMPTY -> showFeedback("Enter English before confirming.")
                 UnboundDraftState.Confirm.TOO_LONG ->
                     showFeedback("English exceeds 512 characters. Shorten it before translating.")
                 UnboundDraftState.Confirm.EDITED_KOREAN_SAMPLE ->
-                    showFeedback("Phase 1 cannot translate edits. Restore the exact sample or choose EN in a new recording.")
+                    showFeedback("This fixed sample cannot translate edits. Restore the sample or choose EN in a new recording.")
                 else -> { showFeedback("Review ended. Start again from the bubble."); finish() }
             }
-        }.apply { id = R.id.review_confirm; isAllCaps = false; textSize = 13f }
-        actions.addView(confirmButton, LinearLayout.LayoutParams(0, dp(52), 2f))
+        }.apply {
+            id = R.id.review_confirm
+            styleAction(true)
+        }
+        actions.addView(confirmButton, LinearLayout.LayoutParams(0, dp(48), 1.8f).apply {
+            marginEnd = dp(8)
+        })
         actions.addView(action("Cancel") { cancel() }.apply {
             id = R.id.review_cancel
-            isAllCaps = false
-            textSize = 13f
-        }, LinearLayout.LayoutParams(0, dp(52), 1f))
-        root.addView(actions, LinearLayout.LayoutParams(-1, dp(56)))
-        feedback = caption("").apply { visibility = View.GONE; textSize = 13f }
-        root.addView(feedback)
-        val content = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            isSaveEnabled = false
-            importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
-            importantForContentCapture = View.IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS
-        }
+            styleAction(false)
+        }, LinearLayout.LayoutParams(0, dp(48), 1f))
         instructions = caption(when {
             translationReview && autoRequested ->
                 "Edit English, then translate. Only confirmed English is sent to OpenAI. KoScribe inserts only if the original field and cursor verify; otherwise choose the field and tap Insert."
             translationReview ->
-                "Edit English, then confirm. Only confirmed English is sent to OpenAI for translation."
+                "Edit the transcript, then confirm it for translation."
             koreanSampleReview && autoRequested ->
                 "Fixed sample; no speech recognition ran. Confirm to insert only if the original field and cursor verify. Otherwise choose the field and tap Insert."
             BuildConfig.SPEECH_INPUT && !BuildConfig.TRANSLATION_INPUT ->
-                "Edit the English transcript, then confirm. Korean translation arrives in the next phase."
+                "Edit the transcript, then confirm the English output."
             BuildConfig.SPEECH_INPUT ->
-                "Edit the English transcript, then confirm. EN remains English."
+                "Edit the transcript, then confirm the English output."
             else -> "Fixed sample; no speech recognition ran. Edit English, then confirm."
-        })
+        }).apply {
+            textSize = 13f
+            setTextColor(0xFF536A5F.toInt())
+            setPadding(0, dp(8), 0, dp(9))
+        }
         content.addView(instructions)
         editor = EditText(this).apply {
             id = R.id.review_english
@@ -170,16 +192,39 @@ class ReviewActivity : Activity() {
                 InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
             isSaveEnabled = false
             importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+            textSize = 16f
+            setTextColor(0xFF203B36.toInt())
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            background = rounded(0xFFFBFDFB.toInt(), 10).apply {
+                setStroke(dp(1), 0xFFD8E4DC.toInt())
+            }
         }
         content.addView(editor, LinearLayout.LayoutParams(-1, -2))
+        feedback = caption("").apply {
+            visibility = View.GONE
+            textSize = 13f
+            setTextColor(0xFF9B2635.toInt())
+        }
+        content.addView(feedback)
+        val scrollContent = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.BOTTOM
+            setPadding(0, dp(12), 0, dp(8))
+            addView(content, LinearLayout.LayoutParams(-1, -2))
+        }
         val scroll = ScrollView(this).apply {
+            // Fill only this transparent wrapper. The review card stays wrap-content
+            // just above the fixed action dock and can still scroll when it grows.
             isFillViewport = true
             isSaveEnabled = false
             importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
             importantForContentCapture = View.IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS
-            addView(content)
+            addView(scrollContent)
         }
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        root.addView(actions, LinearLayout.LayoutParams(-1, dp(64)).apply {
+            bottomMargin = dp(8)
+        })
         setContentView(root)
         // Dialog themes default to wrap-content; weight needs a bounded viewport.
         window.setLayout(WindowManager.LayoutParams.MATCH_PARENT,
@@ -206,6 +251,21 @@ class ReviewActivity : Activity() {
         confirmButton.isEnabled = !processing
         confirmButton.visibility = if (processing) View.GONE else View.VISIBLE
         if (processing) showFeedback("Translating to the selected mode… Cancel remains available.")
+    }
+
+    private fun rounded(color: Int, radius: Int): GradientDrawable = GradientDrawable().apply {
+        setColor(color)
+        cornerRadius = dp(radius).toFloat()
+    }
+
+    private fun Button.styleAction(primary: Boolean) {
+        isAllCaps = false
+        textSize = 14f
+        setTypeface(typeface, Typeface.BOLD)
+        setTextColor(if (primary) Color.WHITE else 0xFF536A5F.toInt())
+        background = rounded(if (primary) 0xFF2E7569.toInt() else Color.WHITE, 10).apply {
+            if (!primary) setStroke(dp(1), 0xFFDCE6DF.toInt())
+        }
     }
 
     private fun confirmLabel(): String = when {

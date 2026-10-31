@@ -426,7 +426,7 @@ class LocalEditorSmokeTest {
         nodesForPackage(productPackage).filter {
         it.className?.toString() == "android.widget.Button" && it.isClickable &&
             it.isEnabled && (!visibleOnly || it.isVisibleToUser) &&
-            it.text?.toString()?.equals(label, ignoreCase = true) == true
+            matchesOwnButtonLabel(it.text, label)
     }
 
     private fun awaitFixtureEditor(): AccessibilityNodeInfo {

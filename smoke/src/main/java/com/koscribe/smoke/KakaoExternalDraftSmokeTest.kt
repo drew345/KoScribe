@@ -287,7 +287,7 @@ class KakaoExternalDraftSmokeTest {
                 if (node.packageName?.toString() != productPackage) continue
                 if (node.className?.toString() == "android.widget.Button" && node.isClickable &&
                     node.isEnabled && (!visibleOnly || node.isVisibleToUser) &&
-                    node.text?.toString()?.equals(label, ignoreCase = true) == true)
+                    matchesOwnButtonLabel(node.text, label))
                     matches.add(node)
                 for (index in 0 until node.childCount) node.getChild(index)?.let(pending::addLast)
             }

@@ -482,7 +482,7 @@ class AutoLifecycleDiagnosticSmokeTest {
                 val node = queue.removeFirst()
                 if (node.packageName?.toString() != product) continue
                 if (node.className?.toString() == "android.widget.Button" &&
-                    node.text?.toString()?.equals(label, ignoreCase = true) == true &&
+                    matchesOwnButtonLabel(node.text, label) &&
                     node.isVisibleToUser && node.isEnabled && node.isClickable) matches.add(node)
                 for (index in 0 until node.childCount) node.getChild(index)?.let(queue::addLast)
             }

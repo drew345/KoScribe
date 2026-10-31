@@ -105,7 +105,8 @@ class KakaoReselectRecordingSmokeTest {
             assertSameEmptyIdentity(original, captureEmptyFocusedKakaoEditor(requireVisible = false),
                 requireVisible = false)
             assertTrue("SWIFTKEY_NOT_VISIBLE_DURING_RECORDING", swiftKeySelectedAndVisible())
-            assertTrue("MODE_NOT_VISIBLE", ownExactText("Selected mode: 요").size == 1)
+            assertTrue("MODE_NOT_VISIBLE", ownExactText("Selected mode: 요").size == 1 ||
+                ownExactText("요 · Polite").size == 1)
             assertTrue("EXPERIMENT_EXPOSED_INSERTION", noInsertOrCopyButtons())
             SystemClock.sleep(3_200)
             assertTrue("RECORDING_DID_NOT_SURVIVE_THREE_SECONDS",
@@ -275,7 +276,9 @@ class KakaoReselectRecordingSmokeTest {
                 if (node.packageName?.toString() != productPackage) continue
                 if (node.className?.toString() == className && node.isEnabled &&
                     (!visibleOnly || node.isVisibleToUser) &&
-                    node.text?.toString()?.equals(exactText, ignoreCase = true) == true)
+                    (if (className == "android.widget.Button")
+                        matchesOwnButtonLabel(node.text, exactText)
+                    else node.text?.toString()?.equals(exactText, ignoreCase = true) == true))
                     matches.add(node)
                 for (index in 0 until node.childCount) node.getChild(index)?.let(pending::addLast)
             }

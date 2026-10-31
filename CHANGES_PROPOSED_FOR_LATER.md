@@ -93,9 +93,11 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    Copy & close → normal Paste. The bubble already offers Copy & close; this
    complete launcher workflow has not been built.
 
-9. **Personal installation and settings polish.** Move beyond the “Phase 1”
-   labels/debug-only feature switches to a deliberately configured personal
-   build, understandable setup/status controls, and a signed update process.
+9. **Personal installation and settings polish.** The visible “Phase 1” app and
+   accessibility labels were replaced with KoScribe in the version 0.2
+   in-place update. Later move beyond debug-only feature switches to a
+   deliberately configured personal build and signed update process; continue
+   improving setup/status controls.
    Protect the existing key and signing material; keep secrets outside Git and
    the APK, with confirmed DeveloperStuff backup for irreplaceable credentials.
 
@@ -114,18 +116,16 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
     mode/review surfaces, equal-weight gray buttons, a collision with Wispr's
     bubble, and a result control that does not show the Korean before Insert.
     Keep all three visible mode choices, editable English review, manual Insert,
-    Copy & close, explicit Cancel/Hide, and SwiftKey. Explore a compact visual
-    system; any Korean snippet remains the unsettled option in item 3.
-    Make the Move handle usable without dragging for accessibility. Assess
+    Copy & close, explicit Cancel/Hide, and SwiftKey. A compact native visual
+    system is now implemented; any Korean snippet remains the unsettled option
+    in item 3. Move can be tapped to switch sides as well as dragged. Assess
     TalkBack, larger type, reduced motion, contrast, and narrow viewports on
-    device. The screenshot-safe sample recording panel clips Stop, but the live
-    speech panel has a different fixed control row previously tested; do not
-    treat the sample clipping as a live regression. Refine the currently
-    oversized decorative recording bars and processing feedback under item 2.
+    device. The new recording panel uses a restrained decorative pulse with
+    visible Stop and Cancel in the A35 sample check. Improve processing
+    feedback or consider truly voice-reactive motion under item 2.
     Compare three visual directions in the
     [owner-private design review](https://koscribe-design-review.user78395.chatgpt.site)
-    before choosing Android changes; these are HTML concepts, not implemented
-    app behavior. Andrew's review favored the compact mode card and proposed
+    as the original HTML concepts. Andrew's review favored the compact mode card and proposed
     recording panel. The revised comparison uses the app's actual Spoken K
     foreground for the current bubble and a more square rounded-corner proposal
     inspired by Wispr's shape, without copying its mark. Bubble position remains

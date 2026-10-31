@@ -344,8 +344,10 @@ class ReviewFlowSmokeTest {
         } }
         assertTrue("KOREAN_EDIT_EXPLANATION_NOT_VISIBLE", nodes(product).any {
             it.className?.toString() == "android.widget.TextView" && it.isVisibleToUser &&
-                it.text?.toString() ==
-                    "Phase 1 cannot translate edits. Restore the exact sample or choose EN in a new recording."
+                it.text?.toString() in listOf(
+                    "Phase 1 cannot translate edits. Restore the exact sample or choose EN in a new recording.",
+                    "This fixed sample cannot translate edits. Restore the sample or choose EN in a new recording."
+                )
         })
         assertTrue("KOREAN_EDIT_PREPARED_RESULT", ownId("ready_insert") == null &&
             ownId("ready_copy") == null)
@@ -411,7 +413,7 @@ class ReviewFlowSmokeTest {
         await("MIC_PROOF_NOT_OBSERVED") { state().takeIf { it.proofs == before.proofs + 1 } }
         assertTrue("DESTINATION_CAPTURED_WHILE_RECORDING", state().captures == before.captures)
         assertTrue("SELECTED_MODE_NOT_VISIBLE_DURING_RECORDING", nodes(product).any {
-            it.isVisibleToUser && it.text?.toString() == "Selected mode: $mode"
+            it.isVisibleToUser && matchesRecordingModeLabel(it.text, mode)
         })
         clickOwnButton("Stop")
         await("EDITABLE_REVIEW_NOT_AVAILABLE") { reviewEditor()?.takeIf { it.isEditable && it.isEnabled } }
@@ -812,7 +814,7 @@ class ReviewFlowSmokeTest {
         val matches = nodes(product).filter {
             it.className?.toString() == "android.widget.Button" && it.isEnabled &&
                 it.isClickable && it.isVisibleToUser &&
-                (it.text?.toString()?.equals(label, ignoreCase = true) == true ||
+                (matchesOwnButtonLabel(it.text, label) ||
                     (label == "Ko" && (it.viewIdResourceName == "$product:id/collapsed_bubble" ||
                         it.contentDescription?.toString() == "Open KoScribe")))
         }

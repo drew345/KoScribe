@@ -1144,3 +1144,27 @@
   indicator design for later. The ordinary local debug output was rebuilt and
   verified OFF with speech/translation/auto/probes false; the saved v2 APK and
   its hash were unchanged. This rebuild did not change the installed phone app.
+
+## 2026-10-31 — Native design and installation checkpoint
+
+- Andrew approved installing the revised comparison design and replacing the
+  Phase 1 display name. Sol/xhigh implemented the native bubble, mode/result,
+  recording, review and launcher styling; the app/service label is KoScribe and
+  version is 0.2. Astra/xhigh cleared the app and smoke-selector diffs after a
+  Move-drag fix. Guarded manual Insert, Copy & close, SwiftKey, and the saved
+  on-phone key architecture remain intact.
+- Translation-enabled REVIEW build passed 90 units, lint (0 errors), assembly,
+  and signer comparison. In-place A35 install preserved the same app-data inode;
+  KoScribe service and SwiftKey remained active. Screenshot-safe sample QA at
+  font scale 1.15 showed visible mode, recording and result controls, and Move
+  tap repositioned the result. A sample Stop reached English review. No real-app
+  insertion, API request, Send, or credential read occurred.
+- Phone QA found white-on-white launcher status icons; fixed and visually
+  rechecked. It also found excess space between review card and dock; Sol
+  tightened that layout and Astra cleared source, but the final spacing was
+  not phone-checked before a call interrupted the visual check. Temporary
+  screenshots were removed. Secure translation APK 80DA0E88 was restored in
+  place; it predates only the final review spacing patch. Andrew then requested
+  a battery checkpoint. Next: build/install that final secure patch, verify
+  protected review layout and phone state, remove test launcher if desired,
+  and commit/push after staged-file and secret inspection. See PROGRESS.

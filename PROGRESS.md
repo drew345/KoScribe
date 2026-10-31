@@ -2,6 +2,34 @@
 
 Updated: 2026-10-31 (Asia/Seoul).
 
+**Native design checkpoint, 2026-10-31:** Andrew approved installing the
+comparison design and replacing the visible Phase 1 name. Sol/xhigh implemented
+the rounded-square Spoken K bubble and launcher icon, compact three-mode/result
+controls, Quiet pulse recording panel, English review, and launcher. The app and
+accessibility-service labels are now `KoScribe`; `applicationId` and signing are
+unchanged, with version 0.2 (code 2). Astra/xhigh cleared the app diff after a
+Move-drag fix and separately cleared updated smoke selectors. The translation-
+enabled build passed 90 unit tests, lint (0 errors), and assembly; its signer
+matches the prior installed build. A35 screenshot-safe sample checks at font
+scale 1.15 showed the bubble, mode buttons, Stop/Cancel, English review, and
+result Insert/Copy/Cancel visible; Move tap repositioned the result. The first
+review layout left a large blank gap, so Sol moved the transcript card next to
+the fixed action dock; Astra cleared that source change, but its phone appearance
+has **not** been checked. A phone call interrupted the subsequent visual check;
+temporary screenshots were removed. The screenshot-safe sample build was
+replaced with the **secure speech/translation build** saved at
+`app/build/design-install/KoScribe-0.2-translation.apk`, SHA-256
+`80DA0E88F51D7465676850B2A8CB3CC9B957DA5E3377AF6F2C59732BB8097D51`.
+This installed APK predates only the final review-card spacing adjustment.
+Android reports package version 0.2, the same app-data inode, active KoScribe
+service, and SwiftKey selected. The key was not accessed. No real-app insertion,
+speech API request, or Send was used in this design check. Next at home: rebuild
+and save a secure translation APK containing the final review spacing patch,
+install it in place, verify its label/service/SwiftKey and the review controls,
+remove the separate `com.koscribe.smoke` test launcher if still desired, then
+inspect staged files/secrets and commit/push source and memory. Do not use the
+ordinary app-debug.apk until the REVIEW/speech/translation flags are verified.
+
 **Visual audit and design review, 2026-10-31:** Andrew requested screenshots of
 the app flow and a visual comparison website. Nine accepted screenshots of the
 owned synthetic flow were captured using a temporary screenshot-safe sample
@@ -21,11 +49,10 @@ mode and review panels are simpler, and the result has a Move handle and no
 unsettled Korean preview. Hide/Close behavior is explained. The Site uses the
 approved native foreground asset and otherwise HTML reconstructions; it is not
 the Android app. Reviewed Site source `2f38f8bcf2222355209790bf5885519ce41e2d66`
-deployed owner-private on October31. No Android redesign is implemented. Next:
-Andrew reviews the revised Site and selects elements to implement; any live UI
-change needs its own phone check.
+deployed owner-private on October31. The native implementation status and
+remaining phone check are recorded above.
 
-**Current installed build:** reviewed recording indicator v2, SHA-256
+**Previous baseline build:** reviewed recording indicator v2, SHA-256
 `159E2452C057E49A96751D5D277DE2704FB7719A12B0B2ABE40669B9659C538E`,
 saved at `app/build/recording-indicator/TRANSLATION-recording-indicator-v2.apk`.
 It adds a mode-labelled recording banner, elapsed timer and decorative 11-bar

@@ -469,7 +469,7 @@ class AutomaticInsertSmokeTest {
         val matches = nodes(product).filter {
             it.className?.toString() == "android.widget.Button" && it.isEnabled &&
                 it.isClickable && it.isVisibleToUser &&
-                it.text?.toString()?.equals(label, ignoreCase = true) == true
+                matchesOwnButtonLabel(it.text, label)
         }
         if (matches.size > 1) throw AssertionError("AMBIGUOUS_OWN_BUTTON_$label")
         return matches.singleOrNull()

@@ -157,7 +157,7 @@ class BubbleReuseSmokeTest {
                 it.commits == before.commits
         } }
         assertTrue("SELECTED_MODE_NOT_VISIBLE", nodes(product).any {
-            it.isVisibleToUser && it.text?.toString() == "Selected mode: EN"
+            it.isVisibleToUser && matchesRecordingModeLabel(it.text, "EN")
         })
         clickOwnButton("Stop")
         await("ENGLISH_REVIEW_NOT_AVAILABLE") { ownId("review_english")?.takeIf {
@@ -394,7 +394,7 @@ class BubbleReuseSmokeTest {
         val matches = nodes(product).filter {
             it.className?.toString() == "android.widget.Button" && it.isEnabled &&
                 it.isClickable && it.isVisibleToUser &&
-                (it.text?.toString()?.equals(label, ignoreCase = true) == true ||
+                (matchesOwnButtonLabel(it.text, label) ||
                     (label == "Ko" && (it.viewIdResourceName == "$product:id/collapsed_bubble" ||
                         it.contentDescription?.toString() == "Open KoScribe")))
         }

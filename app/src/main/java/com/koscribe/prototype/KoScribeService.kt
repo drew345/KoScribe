@@ -3891,9 +3891,9 @@ class KoScribeService : AccessibilityService() {
             "ACTIVE_COMPOSITION" ->
                 "Keyboard still composing. Finish editing, place the cursor, then Insert or Copy."
             "RESULT_TOO_LONG_OR_UNSAFE" ->
-                "This Phase 1 Insert test supports up to 512 characters. Use Copy & close."
+                "Insert supports up to 512 characters. Use Copy & close."
             "RESULT_NOT_SINGLE_LINE" ->
-                "This Phase 1 Insert test accepts one line. Use Copy & close for line breaks."
+                "Insert accepts one line. Use Copy & close for line breaks."
             "NODE_EDITOR_MISMATCH" ->
                 "Could not verify this editor. Use Copy & close, then paste with your keyboard."
             else -> "Could not verify a safe destination. Tap the intended text field and try Insert, or Copy."
@@ -4528,10 +4528,26 @@ class KoScribeService : AccessibilityService() {
                 holder.isAttachedToWindow && holder.isShown && holder.isEnabled &&
                 idleBubbleGeometry != null
         }
+        // TalkBack can activate Move without a drag gesture. Each activation moves
+        // the result to the opposite side while retaining its current height.
+        handle.setOnClickListener {
+            if (!allowed()) return@setOnClickListener
+            val area = idleBubbleGeometry?.frame?.area ?: return@setOnClickListener
+            val current = bubbleScreenPoint(holder)
+            val midpoint = (area.left + area.right) / 2
+            val targetX = if (current.x + holder.width / 2 < midpoint)
+                area.right - holder.width else area.left
+            val moved = moveBubbleToScreenPoint(holder, params,
+                BubblePlacement.Point(targetX, current.y)) ?: return@setOnClickListener
+            val anchor = BubblePlacement.anchor(moved, holder.width, holder.height, area)
+            bubblePrefs.edit().putFloat("anchor_x", anchor.x).putFloat("anchor_y", anchor.y).apply()
+        }
         handle.setOnTouchListener { _, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     if (!allowed()) return@setOnTouchListener false
+                    // Keep the result ScrollView from taking over a deliberate Move drag.
+                    handle.parent?.requestDisallowInterceptTouchEvent(true)
                     downX = event.rawX
                     downY = event.rawY
                     start = bubbleScreenPoint(holder)
@@ -4541,6 +4557,7 @@ class KoScribeService : AccessibilityService() {
                 }
                 MotionEvent.ACTION_MOVE -> {
                     if (!allowed()) {
+                        handle.parent?.requestDisallowInterceptTouchEvent(false)
                         start = null
                         dragging = false
                         idleDragging = false
@@ -4569,6 +4586,8 @@ class KoScribeService : AccessibilityService() {
                                 .putFloat("anchor_y", anchor.y).apply()
                         }
                     }
+                    if (allowed() && !dragging) handle.performClick()
+                    handle.parent?.requestDisallowInterceptTouchEvent(false)
                     start = null
                     dragging = false
                     idleDragging = false
@@ -4577,6 +4596,7 @@ class KoScribeService : AccessibilityService() {
                 }
                 MotionEvent.ACTION_CANCEL -> {
                     if (allowed()) start?.let { moveBubbleToScreenPoint(holder, params, it) }
+                    handle.parent?.requestDisallowInterceptTouchEvent(false)
                     start = null
                     dragging = false
                     idleDragging = false
@@ -4586,6 +4606,32 @@ class KoScribeService : AccessibilityService() {
                 else -> true
             }
         }
+    }
+
+    private fun bubbleSurface(fill: Int, radius: Int, border: Int? = null): GradientDrawable =
+        GradientDrawable().apply {
+            setColor(fill)
+            cornerRadius = dp(radius).toFloat()
+            border?.let { setStroke(dp(1), it) }
+        }
+
+    private fun bubbleButton(
+        label: String, fill: Int, ink: Int, border: Int? = null,
+        size: Float = 13f, onClick: () -> Unit
+    ): Button = action(label) { onClick() }.apply {
+        isAllCaps = false
+        textSize = size
+        setTextColor(ink)
+        setTypeface(null, android.graphics.Typeface.BOLD)
+        minWidth = 0
+        minimumWidth = 0
+        minHeight = 0
+        minimumHeight = 0
+        setPadding(dp(4), 0, dp(4), 0)
+        backgroundTintList = null
+        background = bubbleSurface(fill, 10, border)
+        stateListAnimator = null
+        elevation = 0f
     }
 
     private fun renderBubble() {
@@ -4636,9 +4682,9 @@ class KoScribeService : AccessibilityService() {
                 importantForContentCapture = View.IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS
             }
             if (expanded) {
-                setBackgroundColor(0xFFF7F7F7.toInt())
-                setPadding(dp(8), dp(8), dp(8), dp(8))
-                elevation = dp(4).toFloat()
+                background = bubbleSurface(Color.WHITE, 16, 0xFFE3EBE6.toInt())
+                setPadding(dp(12), dp(12), dp(12), dp(12))
+                elevation = dp(8).toFloat()
             }
         }
         val resultDraft = if (expanded && startupExperiment == StartupExperiment.REVIEW)
@@ -4649,65 +4695,93 @@ class KoScribeService : AccessibilityService() {
             else null
         var resultDragHandle: Button? = null
         if (resultDraft != null) {
-            val topRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-            val dragHandle = Button(this).apply {
-                text = if (VisualTestMode.enabled)
-                    "VISUAL TEST · ${resultDraft.mode.label} · Move"
-                    else "${resultDraft.mode.label} · Move"
+            val resultControls = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+            val dragRow = LinearLayout(this).apply { gravity = Gravity.CENTER }
+            val dragHandle = bubbleButton("Move", 0xFFF4F7F5.toInt(),
+                0xFF547267.toInt(), 0xFFDCE5E1.toInt(), 12f) {}.apply {
                 contentDescription = if (VisualTestMode.enabled)
-                    "VISUAL TEST. Drag KoScribe result, ${resultDraft.mode.label} mode"
-                    else "Drag KoScribe result, ${resultDraft.mode.label} mode"
-                isAllCaps = false
-                textSize = if (VisualTestMode.enabled) 12f else 14f
-                maxLines = if (VisualTestMode.enabled) 2 else 1
-                minWidth = 0
-                setPadding(dp(4), 0, dp(4), 0)
+                    "VISUAL TEST. Drag result or double tap to move it to the other side"
+                    else "Drag result or double tap to move it to the other side"
+                background = bubbleSurface(0xFFF4F7F5.toInt(), 24, 0xFFDCE5E1.toInt())
             }
             resultDragHandle = dragHandle
-            topRow.addView(dragHandle, LinearLayout.LayoutParams(0, dp(48), 1f))
-            topRow.addView(action("Cancel") { endDraft(resultDraft.id, "USER_CANCELLED") }
-                .apply {
-                    id = R.id.ready_cancel
-                    isAllCaps = false
-                    textSize = 12f
-                    minWidth = 0
-                    setPadding(0, 0, 0, 0)
-                }, LinearLayout.LayoutParams(dp(80), dp(48)))
-            holder.addView(topRow, LinearLayout.LayoutParams(-1, dp(48)))
+            dragRow.addView(dragHandle, LinearLayout.LayoutParams(dp(104), dp(48)))
+            resultControls.addView(dragRow, LinearLayout.LayoutParams(-1, dp(48)))
+            resultControls.addView(TextView(this).apply {
+                text = if (VisualTestMode.enabled)
+                    "VISUAL TEST · ${resultDraft.mode.label} · RESULT READY"
+                    else "${resultDraft.mode.label} · RESULT READY"
+                textSize = if (VisualTestMode.enabled) 10f else 12f
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(0xFF245D55.toInt())
+                gravity = Gravity.CENTER_VERTICAL
+            }, LinearLayout.LayoutParams(-1, dp(25)))
+            resultControls.addView(TextView(this).apply {
+                text = if (resultDraft.phase == UnboundDraftState.Phase.READY)
+                    "Check field and cursor before Insert."
+                    else "Insert is unavailable. Use Copy & close or Cancel."
+                textSize = 11f
+                setTextColor(0xFF596E64.toInt())
+                gravity = Gravity.CENTER_VERTICAL
+            }, LinearLayout.LayoutParams(-1, dp(34)))
             compactResultNotice?.takeIf(String::isNotBlank)?.let { notice ->
-                holder.addView(TextView(this).apply {
+                resultControls.addView(TextView(this).apply {
                     text = notice
                     textSize = 12f
                     maxLines = 2
                     ellipsize = android.text.TextUtils.TruncateAt.END
                     gravity = Gravity.CENTER_VERTICAL
-                    setTextColor(Color.rgb(30, 30, 30))
-                    setPadding(dp(4), 0, dp(4), 0)
-                }, LinearLayout.LayoutParams(-1, dp(44)))
+                    setTextColor(0xFF744E36.toInt())
+                    setPadding(dp(7), 0, dp(7), 0)
+                    background = bubbleSurface(0xFFFAF1E7.toInt(), 8)
+                }, LinearLayout.LayoutParams(-1, dp(44)).apply { bottomMargin = dp(4) })
             }
-            val actionRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
             if (resultDraft.phase == UnboundDraftState.Phase.READY)
-                actionRow.addView(action("Insert") { insertDraft(resultDraft.id) }.apply {
+                resultControls.addView(bubbleButton("Insert", 0xFF2E7569.toInt(),
+                    Color.WHITE, size = 14f) { insertDraft(resultDraft.id) }.apply {
                     id = R.id.ready_insert
-                    isAllCaps = false
-                    textSize = 12f
-                    minWidth = 0
-                    setPadding(0, 0, 0, 0)
-                }, LinearLayout.LayoutParams(0, dp(48), 1f))
-            actionRow.addView(action("Copy & close") { copyDraft(resultDraft.id) }.apply {
+                }, LinearLayout.LayoutParams(-1, dp(48)).apply { bottomMargin = dp(6) })
+            val secondaryRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            secondaryRow.addView(bubbleButton("Copy & close", 0xFFE9F4ED.toInt(),
+                0xFF245D55.toInt(), size = 12f) { copyDraft(resultDraft.id) }.apply {
                 id = R.id.ready_copy
-                isAllCaps = false
-                textSize = 12f
-                minWidth = 0
-                setPadding(0, 0, 0, 0)
-            }, LinearLayout.LayoutParams(0, dp(48), 1f))
-            holder.addView(actionRow, LinearLayout.LayoutParams(-1, dp(48)))
+            }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { rightMargin = dp(6) })
+            secondaryRow.addView(bubbleButton("Cancel", Color.WHITE,
+                0xFF5C6C66.toInt(), 0xFFDCE6DF.toInt(), 12f) {
+                    endDraft(resultDraft.id, "USER_CANCELLED")
+                }.apply { id = R.id.ready_cancel }, LinearLayout.LayoutParams(0, dp(48), 1f))
+            resultControls.addView(secondaryRow, LinearLayout.LayoutParams(-1, dp(48)))
+            holder.addView(android.widget.ScrollView(this).apply {
+                isFillViewport = false
+                addView(resultControls)
+            }, LinearLayout.LayoutParams(-1, -1))
         } else if (expanded) {
             val controls = if (unboundArm())
                 LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
                 else holder
-            controls.addView(caption(if (BuildConfig.SPEECH_INPUT) "KoScribe · speech input" else "KoScribe · sample only", true))
-            controls.addView(caption(status))
+            controls.addView(TextView(this).apply {
+                text = "KOSCRIBE"
+                textSize = 11f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(0xFF2E7569.toInt())
+            }, LinearLayout.LayoutParams(-1, dp(18)))
+            controls.addView(TextView(this).apply {
+                text = "Choose how to speak"
+                textSize = 18f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(0xFF273939.toInt())
+                gravity = Gravity.CENTER_VERTICAL
+            }, LinearLayout.LayoutParams(-1, dp(28)))
+            controls.addView(TextView(this).apply {
+                text = status
+                textSize = 12f
+                setTextColor(0xFF566B62.toInt())
+                maxLines = 2
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                gravity = Gravity.CENTER_VERTICAL
+            }, LinearLayout.LayoutParams(-1, dp(30)))
             if (BuildConfig.SPEECH_INPUT && !BuildConfig.TRANSLATION_INPUT)
                 controls.addView(caption("EN speech now. Korean translation arrives in the next phase."))
             val modeRow = if (unboundArm())
@@ -4715,19 +4789,32 @@ class KoScribeService : AccessibilityService() {
                 else null
             for (mode in if (BuildConfig.SPEECH_INPUT && !BuildConfig.TRANSLATION_INPUT)
                     listOf(OutputMode.ENGLISH) else OutputMode.entries) {
-                val button = action(mode.label) { startMode(mode) }
+                val button = bubbleButton(mode.label, 0xFFE9F4ED.toInt(),
+                    0xFF245D55.toInt(), 0xFFD0E5D7.toInt(), 16f) { startMode(mode) }
                 if (modeRow != null)
-                    modeRow.addView(button, LinearLayout.LayoutParams(0, -2, 1f))
+                    modeRow.addView(button, LinearLayout.LayoutParams(0, dp(55), 1f).apply {
+                        rightMargin = dp(4)
+                    })
                 else controls.addView(button)
             }
-            if (modeRow != null) controls.addView(modeRow, LinearLayout.LayoutParams(-1, -2))
+            if (modeRow != null) controls.addView(modeRow, LinearLayout.LayoutParams(-1, dp(55)))
+            controls.addView(TextView(this).apply {
+                text = "Choosing a mode begins recording."
+                textSize = 11f
+                setTextColor(0xFF556C61.toInt())
+                gravity = Gravity.CENTER_VERTICAL
+            }, LinearLayout.LayoutParams(-1, dp(28)))
             if (startupExperiment == StartupExperiment.OFF && recoveryText != null)
                 controls.addView(action("Copy result manually") { copyRecovery() })
             val footerRow = if (unboundArm())
-                LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+                LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    setPadding(0, dp(8), 0, 0)
+                }
             else null
             if (footerRow != null)
-                footerRow.addView(action("Hide") {
+                footerRow.addView(bubbleButton("Hide bubble", 0xFFF8FAF8.toInt(),
+                    0xFF3B6253.toInt(), 0xFFD7E3DB.toInt(), 12f) {
                     speechKeyCheckGeneration++
                     speechKeyCheckPending = false
                     clearPendingAuto("KEY_PRECHECK_HIDDEN")
@@ -4735,8 +4822,9 @@ class KoScribeService : AccessibilityService() {
                     idleBubbleVisible = false
                     expanded = false
                     renderBubble()
-                }, LinearLayout.LayoutParams(0, -2, 1f))
-            val close = action("Close") {
+                }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { rightMargin = dp(6) })
+            val close = bubbleButton(if (footerRow != null) "Close panel" else "Close",
+                0xFFF8FAF8.toInt(), 0xFF3B6253.toInt(), 0xFFD7E3DB.toInt(), 12f) {
                 speechKeyCheckGeneration++
                 speechKeyCheckPending = false
                 clearPendingAuto("KEY_PRECHECK_CLOSED")
@@ -4744,9 +4832,15 @@ class KoScribeService : AccessibilityService() {
                 renderBubble()
             }
             if (footerRow != null) {
-                footerRow.addView(close, LinearLayout.LayoutParams(0, -2, 1f))
-                controls.addView(footerRow, LinearLayout.LayoutParams(-1, -2))
+                footerRow.addView(close, LinearLayout.LayoutParams(0, dp(48), 1f))
+                controls.addView(footerRow, LinearLayout.LayoutParams(-1, dp(56)))
             } else controls.addView(close)
+            if (footerRow != null) controls.addView(TextView(this).apply {
+                text = "Hide until the keyboard closes and reopens · Close returns to K"
+                textSize = 10f
+                setTextColor(0xFF566B62.toInt())
+                gravity = Gravity.CENTER_VERTICAL
+            }, LinearLayout.LayoutParams(-1, dp(28)))
             if (controls !== holder) {
                 val viewport = android.widget.ScrollView(this).apply { addView(controls) }
                 holder.addView(viewport, LinearLayout.LayoutParams(-1, -1))
@@ -4757,13 +4851,17 @@ class KoScribeService : AccessibilityService() {
                 text = ""
                 contentDescription = getString(R.string.collapsed_bubble_description)
                 setPadding(0, 0, 0, 0)
+                minWidth = 0
+                minimumWidth = 0
+                minHeight = 0
+                minimumHeight = 0
                 backgroundTintList = null
                 background = getDrawable(R.drawable.collapsed_bubble)
                 stateListAnimator = null
                 elevation = 0f
                 setOnClickListener { expanded = true; renderBubble() }
             }
-            holder.addView(pill, LinearLayout.LayoutParams(dp(56), dp(48)))
+            holder.addView(pill, LinearLayout.LayoutParams(dp(48), dp(48)))
         }
         val params = WindowManager.LayoutParams(
             if (resultDraft != null)
@@ -4772,10 +4870,10 @@ class KoScribeService : AccessibilityService() {
                 minOf(dp(260), available!!.right - available.left)
             else if (expanded) dp(260) else WindowManager.LayoutParams.WRAP_CONTENT,
             if (resultDraft != null)
-                minOf(dp(if (compactResultNotice.isNullOrBlank()) 112 else 156),
+                minOf(dp(if (compactResultNotice.isNullOrBlank()) 233 else 281),
                     available!!.bottom - available.top)
             else if (unboundArm() && expanded)
-                minOf(dp(320), available!!.bottom - available.top)
+                minOf(dp(272), available!!.bottom - available.top)
             else WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,

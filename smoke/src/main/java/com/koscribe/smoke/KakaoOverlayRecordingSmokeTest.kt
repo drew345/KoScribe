@@ -298,7 +298,9 @@ class KakaoOverlayRecordingSmokeTest {
                 if (node.packageName?.toString() != productPackage) continue
                 if (node.className?.toString() == className && node.isEnabled &&
                     (!visibleOnly || node.isVisibleToUser) &&
-                    node.text?.toString()?.equals(exactText, ignoreCase = true) == true)
+                    (if (className == "android.widget.Button")
+                        matchesOwnButtonLabel(node.text, exactText)
+                    else node.text?.toString()?.equals(exactText, ignoreCase = true) == true))
                     matches.add(node)
                 for (index in 0 until node.childCount) node.getChild(index)?.let(pending::addLast)
             }

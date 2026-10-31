@@ -18,6 +18,7 @@ import android.os.SystemClock
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -63,6 +64,9 @@ internal class OverlayRecordingPanel(
     private val recordingPulseAnimators = mutableListOf<ObjectAnimator>()
     private var speechActions: LinearLayout? = null
     private var stopAction: Button? = null
+    private val ink = 0xFF203B36.toInt()
+    private val muted = 0xFF536A5F.toInt()
+    private val accent = 0xFF2E7569.toInt()
     private val recordingTick = object : Runnable {
         override fun run() {
             if (stage != Stage.RECORDING) return
@@ -97,40 +101,53 @@ internal class OverlayRecordingPanel(
         if (!hostStable()) return false
         card = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(6), dp(4), dp(6), dp(4))
+            setPadding(dp(14), dp(12), dp(14), dp(12))
             background = GradientDrawable().apply {
-                setColor(0xEE263449.toInt())
-                cornerRadius = dp(12).toFloat()
+                setColor(Color.WHITE)
+                cornerRadius = dp(16).toFloat()
             }
             isClickable = true
         }
-        card.addView(label(if (speechMode) "KoScribe · speech input" else "KoScribe · sample only", true))
-        card.addView(label("Selected mode: ${mode.label}", true))
+        val heading = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(label("KOSCRIBE · RECORDING", true).apply {
+                textSize = 11f
+                setTextColor(accent)
+                letterSpacing = 0.07f
+            }, LinearLayout.LayoutParams(0, -2, 1f))
+            addView(label(modeDisplay(), true).apply {
+                textSize = 12f
+                setTextColor(accent)
+                setPadding(dp(8), dp(5), dp(8), dp(5))
+                background = rounded(0xFFE9F4ED.toInt(), 8)
+            })
+        }
+        card.addView(heading)
         status = label("Preparing microphone…", false)
         card.addView(status)
-        if (!speechMode) card.addView(button("Cancel") { cancel() })
         val interiorHeight = (capturedHeight - host.paddingTop - host.paddingBottom).coerceAtLeast(1)
         val viewport = ScrollView(context).apply {
-            isFillViewport = true
+            isFillViewport = false
             addView(card)
         }
-        val panel = if (speechMode) LinearLayout(context).apply {
+        val panel = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            background = GradientDrawable().apply {
-                setColor(0xEE263449.toInt())
-                cornerRadius = dp(12).toFloat()
-            }
+            background = rounded(Color.WHITE, 16)
             addView(viewport, LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
             ))
-            val actions = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
-            actions.addView(button("Cancel") { cancel() },
-                LinearLayout.LayoutParams(0, dp(52), 1f))
+            val actions = LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                setPadding(dp(10), dp(3), dp(10), dp(7))
+            }
+            actions.addView(button("Cancel", false) { cancel() },
+                LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginStart = dp(4) })
             speechActions = actions
             addView(actions, LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(56)
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(60)
             ))
-        } else viewport
+        }
         return try {
             host.addOnAttachStateChangeListener(attachedListener)
             host.addOnLayoutChangeListener(layoutListener)
@@ -282,14 +299,15 @@ internal class OverlayRecordingPanel(
         stage = Stage.RECORDING
         main.removeCallbacks(proofDeadline)
         showRecordingBanner()
-        status.text = if (speechMode) "Recording ${mode.label}. Tap Stop to transcribe; Cancel discards audio."
-            else "Recording ${mode.label}. Audio is discarded; Stop shows a fixed sample."
-        val stop = button("Stop") { stopAndReview() }
-        if (speechMode) {
-            val actions = speechActions ?: return fail("SPEECH_ACTION_ROW_LOST")
-            stopAction = stop
-            actions.addView(stop, 0, LinearLayout.LayoutParams(0, dp(52), 1f))
-        } else card.addView(stop)
+        status.visibility = View.GONE
+        val stop = button("Stop", true) { stopAndReview() }.apply {
+            contentDescription = "Stop recording"
+        }
+        val actions = speechActions ?: return fail("SPEECH_ACTION_ROW_LOST")
+        stopAction = stop
+        actions.addView(stop, 0, LinearLayout.LayoutParams(0, dp(48), 1.25f).apply {
+            marginEnd = dp(4)
+        })
         onReady()
     }
 
@@ -303,7 +321,7 @@ internal class OverlayRecordingPanel(
 
     private fun stopAndReview() {
         if (stage != Stage.RECORDING) return
-        if (speechMode) stopAction?.isEnabled = false
+        stopAction?.isEnabled = false
         onStopEntry()
         val own = recorder ?: return fail("OVERLAY_MIC_LOST")
         val config = runCatching { own.activeRecordingConfiguration }.getOrNull()
@@ -321,6 +339,8 @@ internal class OverlayRecordingPanel(
         }
         if (speechMode) {
             main.removeCallbacks(sessionDeadline)
+            stopAction?.visibility = View.GONE
+            status.visibility = View.VISIBLE
             status.text = "Stopping microphone…"
             Thread({
                 try { reader?.join(1_500) } catch (_: InterruptedException) { }
@@ -342,10 +362,13 @@ internal class OverlayRecordingPanel(
             return
         }
         card.removeAllViews()
-        card.addView(label("Selected mode: ${mode.label}", true))
-        card.addView(label("Fixed English sample · no recognition or insertion", true))
+        stopAction?.visibility = View.GONE
+        card.addView(label("ENGLISH REVIEW · ${modeDisplay()}", true).apply {
+            textSize = 12f
+            setTextColor(accent)
+        })
+        card.addView(label("Fixed English sample · no recognition or insertion", false))
         card.addView(label(OutputMode.SAMPLE_ENGLISH, false))
-        card.addView(button("Cancel") { cancel() })
         onReview()
     }
 
@@ -400,21 +423,21 @@ internal class OverlayRecordingPanel(
 
     private fun label(value: String, heading: Boolean): TextView = TextView(context).apply {
         text = value
-        textSize = if (heading) 17f else 15f
-        setTextColor(Color.WHITE)
-        setPadding(0, dp(5), 0, dp(5))
+        textSize = if (heading) 16f else 14f
+        setTextColor(if (heading) ink else muted)
+        setPadding(0, dp(4), 0, dp(4))
     }
 
     private fun showRecordingBanner() {
-        val title = label("Recording ${mode.label}", true).apply {
+        val title = label("Speak naturally.", true).apply {
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             textSize = 18f
-            contentDescription = "Recording ${mode.label}. Microphone is active."
+            contentDescription = "Recording ${modeDisplay()}. Microphone is active."
             accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
         }
         val timer = label("00:00", true).apply {
             setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD)
-            textSize = 18f
+            textSize = 15f
             contentDescription = "Elapsed recording time: 0 minutes, 0 seconds"
         }
         val header = LinearLayout(context).apply {
@@ -427,43 +450,55 @@ internal class OverlayRecordingPanel(
         val pulse = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
-            repeat(11) { index ->
-                val bar = View(context).apply {
-                    background = GradientDrawable().apply {
-                        setColor(Color.WHITE)
-                        cornerRadius = dp(3).toFloat()
-                    }
-                    scaleY = 0.25f
+            setPadding(dp(12), 0, dp(12), 0)
+            background = rounded(0xFFE9F4ED.toInt(), 11)
+            val ring = FrameLayout(context).apply {
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(0xFFF7E6E5.toInt())
+                    setStroke(dp(1), 0xFFD7AAA7.toInt())
                 }
-                addView(bar, LinearLayout.LayoutParams(0, dp(26), 1f).apply {
-                    marginStart = dp(3)
-                    marginEnd = dp(3)
-                })
-                // Decorative pulse only; these bars do not represent audio level.
-                recordingPulseAnimators += ObjectAnimator.ofFloat(bar, View.SCALE_Y, 0.25f, 1f).apply {
-                    duration = 430L + (index * 83L) % 230L
-                    startDelay = index * 55L
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                addView(View(context).apply {
+                    background = GradientDrawable().apply {
+                        shape = GradientDrawable.OVAL
+                        setColor(0xFFB5444E.toInt())
+                    }
+                }, FrameLayout.LayoutParams(dp(9), dp(9), Gravity.CENTER))
+            }
+            addView(ring, LinearLayout.LayoutParams(dp(27), dp(27)))
+            // A slow decorative pulse signals activity; it is not a voice level.
+            if (ValueAnimator.areAnimatorsEnabled()) {
+                recordingPulseAnimators += ObjectAnimator.ofFloat(ring, View.SCALE_X, 0.88f, 1.12f).apply {
+                    duration = 1_200L
+                    repeatMode = ValueAnimator.REVERSE
+                    repeatCount = ValueAnimator.INFINITE
+                    start()
+                }
+                recordingPulseAnimators += ObjectAnimator.ofFloat(ring, View.SCALE_Y, 0.88f, 1.12f).apply {
+                    duration = 1_200L
                     repeatMode = ValueAnimator.REVERSE
                     repeatCount = ValueAnimator.INFINITE
                     start()
                 }
             }
+            addView(label("Recording is active", false).apply {
+                textSize = 13f
+                setTextColor(ink)
+                setPadding(dp(10), 0, 0, 0)
+                accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
+            })
         }
         val banner = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(8), dp(2), dp(8), dp(4))
-            background = GradientDrawable().apply {
-                setColor(0xFF9B2635.toInt())
-                cornerRadius = dp(8).toFloat()
-            }
+            setPadding(0, dp(10), 0, 0)
             addView(header)
             addView(pulse, LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(30)))
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(58)).apply { topMargin = dp(8) })
         }
         recordingBanner = banner
         recordingTimer = timer
-        card.addView(banner, 2)
+        card.addView(banner, 1)
         recordingStartedAtMs = SystemClock.elapsedRealtime()
         main.post(recordingTick)
     }
@@ -477,9 +512,25 @@ internal class OverlayRecordingPanel(
         recordingTimer = null
     }
 
-    private fun button(value: String, action: () -> Unit): Button = Button(context).apply {
+    private fun modeDisplay(): String = when (mode) {
+        OutputMode.POLITE -> "요 · Polite"
+        OutputMode.CASUAL -> "반말 · Informal"
+        OutputMode.ENGLISH -> "EN · English"
+    }
+
+    private fun rounded(color: Int, radius: Int): GradientDrawable = GradientDrawable().apply {
+        setColor(color)
+        cornerRadius = dp(radius).toFloat()
+    }
+
+    private fun button(value: String, primary: Boolean, action: () -> Unit): Button = Button(context).apply {
         text = value
         isAllCaps = false
+        textSize = 14f
+        setTextColor(if (primary) Color.WHITE else muted)
+        background = rounded(if (primary) accent else 0xFFF7FAF8.toInt(), 10).apply {
+            if (!primary) setStroke(dp(1), 0xFFDCE6DF.toInt())
+        }
         setOnClickListener { action() }
     }
 

@@ -148,13 +148,13 @@ class SpeechSetupSmokeTest {
 
     private fun ownButton(label: String): AccessibilityNodeInfo? = nodes(product).filter {
         it.className?.toString() == "android.widget.Button" && it.isVisibleToUser &&
-            it.isEnabled && it.isClickable && it.text?.toString() == label
+            it.isEnabled && it.isClickable && matchesOwnButtonLabel(it.text, label, ignoreCase = false)
     }.singleOrNull()
 
     private fun ownCloseCandidate(): AccessibilityNodeInfo? {
         val matches = nodes(product).filter {
             it.className?.toString() == "android.widget.Button" && it.isEnabled &&
-                it.isClickable && it.text?.toString() == "Close"
+                it.isClickable && matchesOwnButtonLabel(it.text, "Close", ignoreCase = false)
         }
         if (matches.size > 1) throw AssertionError("AMBIGUOUS_OWN_CLOSE")
         return matches.singleOrNull()

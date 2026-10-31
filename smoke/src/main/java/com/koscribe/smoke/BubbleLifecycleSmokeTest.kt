@@ -280,7 +280,7 @@ class BubbleLifecycleSmokeTest {
         val matches = nodes(product).filter {
             it.className?.toString() == "android.widget.Button" &&
                 it.isEnabled && it.isClickable && it.isVisibleToUser &&
-                it.text?.toString()?.equals(label, ignoreCase = true) == true
+                matchesOwnButtonLabel(it.text, label)
         }
         if (matches.size > 1) throw AssertionError("AMBIGUOUS_OWN_BUTTON")
         return matches.singleOrNull()
@@ -334,11 +334,11 @@ class BubbleLifecycleSmokeTest {
         val buttons = own.filter { it.className?.toString() == "android.widget.Button" }
         val buttonCodes = labels.joinToString("_") { label ->
             val matches = buttons.filter {
-                it.text?.toString()?.equals(label, ignoreCase = true) == true
+                matchesOwnButtonLabel(it.text, label)
             }
             val flags = matches.take(2).joinToString("+") { node ->
                 val bounds = Rect().also(node::getBoundsInScreen)
-                "M${if (node.text?.toString() == label) "EXACT" else "CASE_VARIANT"}" +
+                "M${if (node.text?.toString() == label) "EXACT" else "ALIAS_OR_CASE_VARIANT"}" +
                     "V${if (node.isVisibleToUser) 1 else 0}" +
                     "E${if (node.isEnabled) 1 else 0}" +
                     "C${if (node.isClickable) 1 else 0}" +

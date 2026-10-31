@@ -120,6 +120,10 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
     speech panel has a different fixed control row previously tested; do not
     treat the sample clipping as a live regression. Refine the currently
     oversized decorative recording bars and processing feedback under item 2.
+    Compare three visual directions in the
+    [owner-private design review](https://koscribe-design-review.user78395.chatgpt.site)
+    before choosing Android changes; these are HTML concepts, not implemented
+    app behavior.
 
 ## Remaining acceptance work
 

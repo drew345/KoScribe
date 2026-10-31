@@ -2,18 +2,23 @@
 
 Updated: 2026-10-31 (Asia/Seoul).
 
-**Visual audit, 2026-10-31:** Andrew requested screenshots of the app flow and
-design proposals. Nine accepted screenshots of the owned synthetic flow were
-captured using a temporary screenshot-safe sample build; the protected live
+**Visual audit and design review, 2026-10-31:** Andrew requested screenshots of
+the app flow and a visual comparison website. Nine accepted screenshots of the
+owned synthetic flow were captured using a temporary screenshot-safe sample
+build; the protected live
 surfaces were not captured. The reviewed live recording-indicator v2 APK was
 restored in place, with speech/translation on, auto/Karrot probes off, and
 SwiftKey selected. One fixed sample was inserted only into the owned test
 editor, with a confirmed commit, no Send, and the small bubble still available.
 The evidence and deferred redesign proposals are in
 [the visual audit](docs/design/UX_AUDIT_2026-10-31.md) and
-[the standing checklist](CHANGES_PROPOSED_FOR_LATER.md). No redesign is
-implemented. Next: Andrew reviews the proposals and selects a visual direction;
-any live UI changes need their own implementation and phone check.
+[the standing checklist](CHANGES_PROPOSED_FOR_LATER.md). The
+[owner-private comparison site](https://koscribe-design-review.user78395.chatgpt.site)
+shows the current sample and three proposed visual directions across six stages;
+it contains recreated HTML illustrations, not phone screenshots or live app
+functions. No Android redesign is implemented. Next: Andrew reviews the site
+and chooses elements to try; any live UI changes need their own implementation
+and phone check.
 
 **Current installed build:** reviewed recording indicator v2, SHA-256
 `159E2452C057E49A96751D5D277DE2704FB7719A12B0B2ABE40669B9659C538E`,

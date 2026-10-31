@@ -1,5 +1,20 @@
 # Session log
 
+## 2026-10-31 — Private visual comparison site
+
+- At Andrew's request, built and published an owner-private static website
+  comparing the current KoScribe sample flow with Quiet pulse, Compact level,
+  and Calm status concepts across six stages. Source is in a separate Sites
+  checkout; no phone captures, private content, mic/API access, or Android code
+  were added to it.
+- Sol/xhigh implemented the site; Astra/xhigh independently reviewed it. Fixed
+  keyboard focus after selection, low small-text contrast, and 320px phone
+  framing before publication. Local desktop/phone-width visual and interaction
+  checks passed. Published version `31799738d3df3bbeea811bdb930f2a0580207a3e`
+  at https://koscribe-design-review.user78395.chatgpt.site. The owner-private
+  gate requires ChatGPT sign-in; deployed status succeeded. No Android app
+  changes were made.
+
 ## 2026-10-31 — Synthetic phone flow visual audit
 
 - After Andrew reenabled USB debugging, captured nine accepted screenshots of

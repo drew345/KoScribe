@@ -2417,3 +2417,27 @@ The first post-install service check preceded reconnection. A follow-up
 confirmed PID 13370 idle, normal speech/translation on, auto off and cleanup
 clear. SwiftKey remained selected. The automatic experiment was then shelved
 when Andrew proposed the editable Korean manual MVP.
+
+## Manual Korean result review on November 5
+
+Andrew offered five minutes for the four owned-fixture checks and asked to
+leave the revised live MVP installed if they pass. Installed secure manual
+sample AE1D1C6B and smoke 69A663B4, verified both installed hashes. PID 22405,
+speech/translation/auto off, SwiftKey selected. All four use fixed content.
+Synthetic edits target only KoScribe's Korean editor. The clipboard is untouched.
+
+The Discard case passed in 7.700s. The full prepared Korean was visible, Edit
+accepted a replacement, Discard returned the original, and Cancel cleared the
+draft. No destination capture or write occurred. The local mic proof stopped
+after 632ms. The first long-preview setup failed in 11.491s at STOP_NOT_AVAILABLE.
+Android reported OVERLAY_MIC_SILENCED and stopped the mic after 1ms. No recording
+proof, English review, transaction or write was started by that attempt. The
+draft ended NONE and cleanup clear. The long preview had yet to be exercised.
+
+Asked whether the phone was still free after microphone silencing. Restored
+the verified normal build D266E911 within the original availability window and
+removed the fixture. The service reconnected at PID 31731, normal speech and
+translation on, auto off, draft NONE, cleanup clear, SwiftKey selected. The
+revised live build was withheld per Andrew's all-gates-pass condition. Long
+preview and the two Insert cases remain pending. No actual clipboard operation
+or live translation request was made.

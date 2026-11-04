@@ -11,7 +11,7 @@ user last saved. The October design preference to hide the Korean preview has
 been superseded. Keep the automatic experiments available for later investigation.
 
 **Installed phone:** the secure manual MVP D266E911 is restored and its installed
-hash verified. Service PID 13370, REVIEW, speech/translation on, auto off, draft
+hash verified. Service PID 31731, REVIEW, speech/translation on, auto off, draft
 NONE, cleanup clear. SwiftKey is selected and the fixture was removed for user 0.
 This installed build predates the requested editable Korean result.
 
@@ -24,8 +24,19 @@ Independent app review cleared service E4BB7D07, draft 754C641C, IDs A4EF0CB6,
 strings F74D355F and tests 165F4017. The secure fixed-sample and live-translation
 builds both passed 159 unit tests, assembly and app lint (0 errors, 50 warnings).
 The matching-signer APKs are archived in `app/build/manual-korean-result-20261105/`:
-sample AE1D1C6B and live 3FE8BE0F. The new result screen still needs its A35
-fixture checks.
+sample AE1D1C6B and live 3FE8BE0F. Source checkpoint `d40cd21`.
+
+**A35 manual gates:** Discard passed in 7.700s. The Korean was visible, the
+owned editor accepted a synthetic correction with SwiftKey present, Discard
+restored the original, and Cancel cleared the draft with zero writes.
+The next case stopped before English review because Android silenced the
+microphone at startup. No write, recording proof or pending draft. Returned
+the previous MVP within the five-minute window. Andrew asked to leave the
+revised live build only after all four cases pass. On fresh availability,
+resume with long-preview, then unedited Insert, then edited Insert at the
+newly selected cursor. Each is an independent test using the same frozen
+sample, smoke 69A663B4 and source 4CD5DFE5. The normal clipboard was untouched.
+See [manual A35 results](docs/DEVICE_TESTS.md#manual-korean-result-review-on-november-5).
 
 **Automatic checkpoint, November 5:** C and D passed the identical-field switch
 with usable manual recovery. Neither unchanged-middle test wrote any text. The

@@ -1536,3 +1536,9 @@
   ignored manual-korean-result-20261105 build directory. Both app signatures
   match the normal MVP. Ordinary debug and release configurations are OFF.
   Requested a new phone window for the manual tests and installation choice.
+- Andrew chose to leave the revised live MVP only after the four checks pass.
+  A35 Discard passed, 7.700s, no captures/commits. The long-preview setup
+  stopped before review with OVERLAY_MIC_SILENCED, 1ms and zero proof. No
+  destination transaction. Requested status, then restored D266E911 within
+  the five-minute window (PID 31731 idle, normal settings and SwiftKey,
+  fixture removed). Long preview, unedited Insert and edited Insert are pending.

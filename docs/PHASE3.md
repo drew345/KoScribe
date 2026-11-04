@@ -178,3 +178,51 @@ for success and no manual Insert panel on that path. Actual speech/edit/Korean
 translation is a separate gate because processing changes review UI state.
 External automatic eligibility remains disabled until reviewed acceptance;
 previous real-app insertion trials do not grant that scope.
+
+### November5 overlay candidate: first owned write gate
+
+The six [no-write comparisons](DEVICE_TESTS.md#review-surface-comparison-2026-11-05)
+support trying a focusable review overlay: the original root/node was available
+in the overlay samples, unlike Activity samples. Both arms needed a fresh input
+session on return. This does not prove continuous visibility or a logical
+conversation identity. Preserve that comparison and its hard no-write guard as
+a separate build. The following contract is for a new default-OFF candidate;
+source review, build and phone acceptance are still required.
+
+1. Admit only the package-fenced, dedicated stable editor in our owned fixture.
+   Its view has one logical backing for its lifetime. The stable editor ID narrows
+   the supported destination; it does not establish an insertion permit. Never
+   consult the fixture's hidden rebind epoch. External apps remain manual.
+2. At a deliberate Korean mode click, pin a read-only original intent: verified
+   input session, window/root/node, collapsed caret and safe bounded context.
+   This first sample opens fixed English review directly, without starting a
+   microphone, ASR or translation request. Follow the intent through review;
+   a future real-speech integration must also cover recording and processing,
+   without silently capturing a different destination later. Missing required
+   evidence, original removal, contradictory target/selection events, unexpected
+   input starts/restarts, lock or interruption permanently disarm the intent.
+3. Authenticate the owned focusable overlay and its exact English editor.
+   The review must own the expected next input generation. While it owns input,
+   original text/caret are unverified; observe only pinned target metadata.
+   An exposed contradictory selection can disarm the intent, but missing or
+   matching selection metadata cannot prove return. Do not retain/reuse the
+   former input connection or reread unrelated window content.
+4. On explicit English approval, prepare a **fixed Korean test sample** through
+   the draft state machine; do not call it a live translation. Dismiss review and
+   require the next fresh original input generation within the bounded return
+   window, exact window/root/node, caret and bounded context. Do not expose
+   manual Insert on the eligible path. A prewrite refusal keeps the prepared
+   result available for explicit recovery.
+5. Create a new guarded destination transaction and independently recheck the
+   original at precommit. Consume intent/attempt before the single `commitText`;
+   confirm only the exact expected context/caret on the same destination/session.
+   A commit returning is not success. Uncertainty after attempting is terminal:
+   no retry, delayed upgrade, automatic clipboard fallback, Enter or Send.
+
+Run the different-field negative first: identical text/caret must still yield
+zero commits. Then a single approval at an unchanged middle caret must yield
+one confirmed Korean insertion, exact prefix/suffix/caret, no intermediate
+Insert panel and clean completion. Follow with empty, Cancel and observable
+mutation checks. Hidden same-view rebinding remains an explicit unsupported
+semantic case; do not write into it to demonstrate an already measured limit.
+Real speech/translation and any external-app trial are separate acceptance gates.

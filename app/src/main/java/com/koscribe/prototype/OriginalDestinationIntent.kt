@@ -77,9 +77,10 @@ internal class OriginalDestinationIntent private constructor(
     }
 
     /** One new, non-restarting own editor input session is required. */
-    fun reviewInputStarted(generation: Int, restarting: Boolean): Boolean {
+    fun reviewInputStarted(generation: Int, restarting: Boolean, requireOriginalFinish: Boolean = false): Boolean {
         if (phase != Phase.ENTERING_REVIEW || reviewInputSeen || restarting ||
-            generation != originalGeneration + 1) return fail("REVIEW_INPUT_MISMATCH")
+            generation != originalGeneration + 1 || (requireOriginalFinish && !originalInputFinished))
+            return fail("REVIEW_INPUT_MISMATCH")
         reviewInputSeen = true
         if (reviewFocusSeen) phase = Phase.REVIEW
         return true

@@ -1458,3 +1458,17 @@
   candidate integrating editable overlay approval with the existing guarded
   writer. Preserve this no-write probe. Confirm-to-commit, actual translation
   and any external support are unproven. No external trial is reopened.
+- Saved reviewed probe and measurements in local commit `0c2c94b` after staged
+  source/artifact/secret-pattern checks. Began the separate stable-editor candidate
+  under the existing automatic-fixture authorization. App and smoke ownership
+  remain split, with independent prewrite design/source review. No new phone use.
+- **Implemented/reviewed:** distinct secure default-OFF stable fixture automatic
+  overlay, exact owner/input handoff, signed package/stable field admission, fresh
+  return plus independent precommit and existing single guarded commit/readback.
+  English approval prepares the disclosed fixed Korean test result; no speech/API.
+  Manual recovery remains fixture-fenced. Source review cleared service637B2B99/
+  adapterE1B44BD0 and harnessD383EDDA after deadline, stale-callback, fallback
+  timing and manual-render accounting fixes. Final150 tests passed; app lint0/50,
+  smoke lint0/5; assemblies passed. Saved app8D8F27BC/smoke353EED3B. Verified
+  ordinary/release OFF/allfalse. Fresh phone availability requested for the first
+  changed-field negative; this build has no device-success claim yet.

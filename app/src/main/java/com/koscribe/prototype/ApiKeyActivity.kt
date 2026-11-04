@@ -22,7 +22,7 @@ class ApiKeyActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (ReviewSurfaceProbeMode.block()) { finish(); return }
+        if (ReviewSurfaceProbeMode.block() || BuildConfig.STABLE_OVERLAY_AUTO) { finish(); return }
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
 

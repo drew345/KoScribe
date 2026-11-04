@@ -45,6 +45,18 @@ internal class UnboundDraftState(private val newId: () -> String = { UUID.random
     }
 
     fun confirm(id: String): Confirm {
+        return confirm(id, fixedOverlaySample = false)
+    }
+
+    /** Explicit test-sample approval; the UI discloses that the result is fixed. */
+    fun confirmFixedOverlaySample(id: String): Confirm {
+        val current = draft ?: return Confirm.STALE
+        if (current.source != Source.SAMPLE || current.mode == OutputMode.ENGLISH) return Confirm.STALE
+        if (current.english.length > 512) return Confirm.TOO_LONG
+        return confirm(id, fixedOverlaySample = true)
+    }
+
+    private fun confirm(id: String, fixedOverlaySample: Boolean): Confirm {
         val old = draft ?: return Confirm.STALE
         if (old.id != id || old.phase != Phase.REVIEW) return Confirm.STALE
         if (old.english.isBlank()) return Confirm.EMPTY
@@ -54,7 +66,7 @@ internal class UnboundDraftState(private val newId: () -> String = { UUID.random
                 translationAttempt = old.translationAttempt + 1)
             return Confirm.TRANSLATING
         }
-        if (old.mode != OutputMode.ENGLISH && old.english != OutputMode.SAMPLE_ENGLISH)
+        if (!fixedOverlaySample && old.mode != OutputMode.ENGLISH && old.english != OutputMode.SAMPLE_ENGLISH)
             return Confirm.EDITED_KOREAN_SAMPLE
         val output = if (old.mode == OutputMode.ENGLISH) old.english else old.mode.sampleOutput
         draft = old.copy(result = output, phase = Phase.READY)

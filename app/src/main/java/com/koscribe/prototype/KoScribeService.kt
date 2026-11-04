@@ -221,11 +221,11 @@ class KoScribeService : AccessibilityService() {
     private data class AutoDestinationIntent(
         val nonce: String,
         val mode: OutputMode,
-        val policy: OriginalDestinationIntent,
+        override val policy: OriginalDestinationIntent,
         val original: EditorSnapshot,
-        val node: AccessibilityNodeInfo,
-        val root: AccessibilityNodeInfo,
-        val generation: Int,
+        override val node: AccessibilityNodeInfo,
+        override val root: AccessibilityNodeInfo,
+        override val generation: Int,
         val benignWindowIds: MutableSet<Int>,
         val systemWindowsAtCapture: List<AutoSystemWindowMetadata>,
         val systemBaselineComplete: Boolean,
@@ -242,7 +242,7 @@ class KoScribeService : AccessibilityService() {
         var removalRefusalRecorded: Boolean = false,
         var removalAttestationStep: String = "NOT_CALLED",
         var recordingId: String? = null,
-        var draftId: String? = null,
+        override var draftId: String? = null,
         var reviewOwner: Any? = null,
         var reviewWindowId: Int? = null,
         var reviewRoot: AccessibilityNodeInfo? = null,
@@ -253,8 +253,113 @@ class KoScribeService : AccessibilityService() {
         var returnPoll: Runnable? = null,
         var returnStartedMs: Long? = null,
         var returnAttempted: Boolean = false
-    )
+    ) : OriginalWriteBinding
     private var autoDestination: AutoDestinationIntent? = null
+    private var stableSession: StableOverlayAuto? = null
+    private var stableLastPhase = "IDLE"
+    private var stableLastReason = "NONE"
+
+    private fun stableFieldResource(fieldId: Int): String? = runCatching {
+        packageManager.getResourcesForApplication(StableFixtureField.PACKAGE).getResourceName(fieldId)
+    }.getOrNull()
+
+    private fun startStableSample(mode: OutputMode) {
+        if (stableSession != null || freshDestination != null || unboundDraft.current() != null) return
+        val started = SystemClock.uptimeMillis()
+        val capturedAt = SystemClock.elapsedRealtime()
+        val first = if (mode == OutputMode.ENGLISH) null else runCatching {
+            observeEditor(requiredStableField = true)
+        }.getOrNull()
+        val intent = first?.takeIf { StableFixtureField.eligible(it.snapshot,
+            stableFieldResource(it.snapshot.editorFieldId)) }?.let {
+            OriginalDestinationIntent.capture(it.snapshot, it.generation, capturedAt, mode)
+        }
+        if (first == null || intent == null) {
+            stableLastPhase = "REFUSED"; stableLastReason = "STABLE_FIXTURE_REQUIRED"
+            status = "Choose a Korean mode in the stable test editor."
+            renderBubble(); return
+        }
+        expanded = false
+        renderBubble()
+        val draft = unboundDraft.begin(mode) ?: return
+        val session = StableOverlayAuto(this, first.snapshot, first.node, first.root,
+            first.generation, intent, draft.id, started, collapsedHostResolver(), input = {
+                val method = inputMethod as? TrackingInputMethod
+                if (method?.currentInputStarted == true) method.currentInputEditorInfo?.let {
+                    StableOverlayAuto.Served(it, method.generation)
+                } else null
+            }, usable = {
+                serviceConnected && !(getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked &&
+                    (getSystemService(POWER_SERVICE) as PowerManager).isInteractive
+            })
+        stableSession = session; draftReviewOwner = session
+        autoCapturedCount++; autoFallbackDraftId = null
+        stableLastReason = "CAPTURED"; autoLastReason = "STABLE_OVERLAY_CAPTURED"
+        session.start()
+    }
+
+    internal fun stablePrepareResult(session: StableOverlayAuto, english: String): Boolean =
+        stableSession === session && draftReviewOwner === session &&
+            unboundDraft.edit(session.draftId, english) &&
+            unboundDraft.confirmFixedOverlaySample(session.draftId) == UnboundDraftState.Confirm.READY
+
+    internal fun stableWrite(session: StableOverlayAuto) {
+        if (stableSession !== session || draftReviewOwner !== session || session.windowAttached ||
+            unboundDraft.current()?.let { it.id == session.draftId && it.phase == UnboundDraftState.Phase.READY } != true) {
+            session.disarm("RETURN_OWNER_CHANGED"); return
+        }
+        draftReviewOwner = null
+        insertDraft(session.draftId, session)
+    }
+
+    internal fun stableDisarmed(session: StableOverlayAuto, reason: String) {
+        if (stableSession !== session) return
+        autoFallbackCount++; autoFallbackDraftId = session.draftId
+        stableLastPhase = "FALLBACK"; stableLastReason = reason
+        autoLastPhase = "FALLBACK"; autoLastReason = reason
+        freshDestination?.takeIf { it.autoIntent === session && it.phase == DestinationPhase.PRECOMMIT }?.let {
+            guard.invalidate(it.id); guard.end(it.id); freshDestination = null; resetFreshComposition()
+        }
+        note("STABLE_AUTO_FALLBACK_$reason")
+    }
+
+    internal fun stableRemovalFailed(session: StableOverlayAuto) {
+        if (stableSession === session) { stableLastReason = "PANEL_REMOVE_FAILED"; note("STABLE_AUTO_PANEL_REMOVE_FAILED") }
+    }
+
+    internal fun stableFinished(session: StableOverlayAuto, reason: String) {
+        if (stableSession !== session) return
+        stableSession = null; draftReviewOwner = null
+        if (reason == "MANUAL_READY" && unboundDraft.current()?.phase == UnboundDraftState.Phase.READY) {
+            expanded = true; status = "Check the intended field and cursor, then tap Insert."
+            compactResultNotice = "Automatic insertion unavailable. Choose the field, then tap Insert."
+            refreshIdleBubble(forceRender = true)
+        } else {
+            if (reason != "PREPARATION_REFUSED") {
+                stableLastPhase = "CANCELLED"; stableLastReason = reason
+                autoLastPhase = "FALLBACK"; autoLastReason = reason
+            } else stableLastPhase = "REFUSED"
+            endDraft(session.draftId, reason)
+        }
+    }
+
+    private fun originalIsCurrent(binding: OriginalWriteBinding): Boolean =
+        if (binding is StableOverlayAuto) stableSession === binding else autoDestination === binding
+
+    private fun originalCanWrite(binding: OriginalWriteBinding): Boolean = originalIsCurrent(binding) &&
+        (binding !is StableOverlayAuto || binding.canWrite())
+
+    private fun finishOriginal(binding: OriginalWriteBinding, reason: String, fallback: Boolean = true) {
+        if (!originalIsCurrent(binding)) return
+        if (binding is StableOverlayAuto) {
+            if (fallback) binding.disarm(reason)
+            else {
+                binding.consumed(); stableSession = null
+                stableLastPhase = "CONSUMED"; stableLastReason = reason
+                autoLastPhase = "CONSUMED"; autoLastReason = reason
+            }
+        } else clearAutoIntent(reason, fallback)
+    }
     private var autoFallbackDraftId: String? = null
     private var autoLastReason = "NONE"
     private var autoLastPhase = "NONE"
@@ -293,7 +398,7 @@ class KoScribeService : AccessibilityService() {
         val host: View,
         val hostToken: IBinder?,
         val hostWindowId: Int,
-        val autoIntent: AutoDestinationIntent? = null,
+        val autoIntent: OriginalWriteBinding? = null,
         var phase: DestinationPhase = DestinationPhase.PRECOMMIT,
         var commitRequestedUptimeMs: Long = 0L
     )
@@ -2116,6 +2221,9 @@ class KoScribeService : AccessibilityService() {
     fun diagnostics(): String = synchronized(trace) {
         (if (ReviewSurfaceProbeMode.enabled) surfaceProbe.diagnostics() else
             "Review surface probe: arm=OFF state=IDLE samples=0 edits=0 blocked=0\n") +
+        "Stable overlay auto enabled: ${BuildConfig.STABLE_OVERLAY_AUTO}\n" +
+        "Stable overlay auto phase: ${stableSession?.phase ?: stableLastPhase}\n" +
+        "Stable overlay auto reason: $stableLastReason\n" +
         "Last observation: ${observationCode.name}\n" +
             "First invalidation: ${lastInvalidationCode ?: "none"}\n" +
             "First content timing: ${firstTargetContentTimeCode ?: "none"}\n" +
@@ -2133,7 +2241,7 @@ class KoScribeService : AccessibilityService() {
             "Karrot no-read probe enabled: ${BuildConfig.KARROT_NO_READ_PROBE}\n" +
             "Speech input enabled: ${BuildConfig.SPEECH_INPUT}\n" +
             "Translation input enabled: ${BuildConfig.TRANSLATION_INPUT}\n" +
-            "Original intent phase: ${autoDestination?.policy?.phase?.name ?: autoLastPhase}\n" +
+            "Original intent phase: ${autoDestination?.policy?.phase?.name ?: stableSession?.phase ?: autoLastPhase}\n" +
             "Original intent last reason: $autoLastReason\n" +
             "Original intent captured count: $autoCapturedCount\n" +
             "Auto insert attempt count: $autoAttemptCount\n" +
@@ -2910,6 +3018,7 @@ class KoScribeService : AccessibilityService() {
             if (startupExperiment == StartupExperiment.REVIEW) {
                 generation++
                 composition.reset()
+                stableSession?.inputStarted(attribute, generation, restarting)
                 trackAutoInputStarted(attribute, generation, restarting)
                 abortPostCommitProbe("INPUT_STARTED")
                 freshDestination?.let {
@@ -2948,6 +3057,7 @@ class KoScribeService : AccessibilityService() {
                 return
             }
             if (startupExperiment == StartupExperiment.REVIEW) {
+                stableSession?.inputFinished(generation)
                 trackAutoInputFinished(generation)
                 composition.reset()
                 abortPostCommitProbe("INPUT_FINISHED")
@@ -2988,6 +3098,7 @@ class KoScribeService : AccessibilityService() {
             }
             if (startupExperiment == StartupExperiment.RESELECT) return
             if (startupExperiment == StartupExperiment.REVIEW) {
+                stableSession?.selection(generation, newSelStart, newSelEnd, candidatesStart, candidatesEnd)
                 if (freshDestination == null)
                     trackAutoSelection(generation, currentInputEditorInfo,
                         newSelStart, newSelEnd, candidatesStart, candidatesEnd)
@@ -3062,7 +3173,7 @@ class KoScribeService : AccessibilityService() {
     private fun refreshIdleBubble(
         forceRender: Boolean = false, reason: IdleRefreshReason = IdleRefreshReason.DIRECT
     ) {
-        if (ReviewSurfaceProbeMode.enabled && surfaceProbe.active) return
+        if (stableSession != null || (ReviewSurfaceProbeMode.enabled && surfaceProbe.active)) return
         var gate = IdleRefreshGate.NONE
         var stage = IdleCheckStage.NOT_CHECKED
         var ime = IdleBubblePolicy.Ime.UNKNOWN
@@ -3252,6 +3363,7 @@ class KoScribeService : AccessibilityService() {
             }
         }
         if (unboundArm()) {
+            stableSession?.event(event)
             if (autoDestination != null) trackAutoEvent(event)
             postCommitProbe?.let { probe ->
                 if ((event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED ||
@@ -3637,6 +3749,7 @@ class KoScribeService : AccessibilityService() {
     }.getOrDefault("LOCAL_CONTENT_UNKNOWN")
 
     override fun onInterrupt() {
+        stableSession?.interrupt("SERVICE_INTERRUPTED")
         if (ReviewSurfaceProbeMode.enabled) surfaceProbe.terminate("SERVICE_INTERRUPTED")
         if (karrotProbeBusy.get()) karrotProbeMutationEpoch++
         karrotEmptyToken.get()?.let { karrotEmptyComplete(it, "INTERRUPTED",
@@ -3653,6 +3766,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        stableSession?.interrupt("SERVICE_DESTROYED")
         if (ReviewSurfaceProbeMode.enabled) surfaceProbe.terminate("SERVICE_DESTROYED")
         if (karrotProbeBusy.get()) karrotProbeMutationEpoch++
         karrotEmptyToken.get()?.let { karrotEmptyComplete(it, "SERVICE_LOST",
@@ -3786,7 +3900,38 @@ class KoScribeService : AccessibilityService() {
         main.postDelayed({ attemptInsertion(id) }, 750)
     }
 
+    private fun collapsedHostResolver(): () -> Int? {
+        val host = bubble
+        val params = bubbleParams
+        var token: IBinder? = null
+        var windowId: Int? = null
+        var rect: Rect? = null
+        return {
+            if (host == null || bubble !== host || params == null || bubbleParams !== params ||
+                expanded || !host.isAttachedToWindow || !host.isShown || !host.isEnabled ||
+                host.width <= 0 || host.height <= 0 || host.windowToken == null ||
+                params.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE == 0) null
+            else {
+                val currentId = ownHostWindowId()
+                val xy = IntArray(2).also(host::getLocationOnScreen)
+                val currentRect = Rect(xy[0], xy[1], xy[0] + host.width, xy[1] + host.height)
+                val geometry = idleBubbleGeometry
+                // updateViewLayout returns before traversal applies its requested origin.
+                if (currentId == null || geometry == null ||
+                    xy[0] != params.x + geometry.screenOffset.x ||
+                    xy[1] != params.y + geometry.screenOffset.y ||
+                    (token != null && (token != host.windowToken ||
+                        windowId != currentId || rect != currentRect))) null
+                else {
+                    token = host.windowToken; windowId = currentId; rect = currentRect
+                    currentId
+                }
+            }
+        }
+    }
+
     private fun startMode(mode: OutputMode) {
+        if (BuildConfig.STABLE_OVERLAY_AUTO) { startStableSample(mode); return }
         if (ReviewSurfaceProbeMode.enabled) {
             if (surfaceProbe.active) return
             val started = SystemClock.uptimeMillis()
@@ -3794,33 +3939,7 @@ class KoScribeService : AccessibilityService() {
             val captured = captureSurfaceProbeTarget()
             expanded = false
             renderBubble()
-            val host = bubble
-            val params = bubbleParams
-            var token: IBinder? = null
-            var windowId: Int? = null
-            var rect: Rect? = null
-            surfaceProbe.start(captured, started) {
-                if (host == null || bubble !== host || params == null || bubbleParams !== params ||
-                    expanded || !host.isAttachedToWindow || !host.isShown || !host.isEnabled ||
-                    host.width <= 0 || host.height <= 0 || host.windowToken == null ||
-                    params.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE == 0) null
-                else {
-                    val currentId = ownHostWindowId()
-                    val xy = IntArray(2).also(host::getLocationOnScreen)
-                    val currentRect = Rect(xy[0], xy[1], xy[0] + host.width, xy[1] + host.height)
-                    val geometry = idleBubbleGeometry
-                    // updateViewLayout returns before traversal applies its requested origin.
-                    if (currentId == null || geometry == null ||
-                        xy[0] != params.x + geometry.screenOffset.x ||
-                        xy[1] != params.y + geometry.screenOffset.y ||
-                        (token != null && (token != host.windowToken ||
-                            windowId != currentId || rect != currentRect))) null
-                    else {
-                        token = host.windowToken; windowId = currentId; rect = currentRect
-                        currentId
-                    }
-                }
-            }
+            surfaceProbe.start(captured, started, collapsedHostResolver())
             return
         }
         if (unboundArm()) {
@@ -4890,55 +5009,56 @@ class KoScribeService : AccessibilityService() {
     }
 
     /** A click owns one short transaction; no prior recording/review target is inherited. */
-    private fun insertDraft(draftId: String, automatic: AutoDestinationIntent? = null) {
+    private fun insertDraft(draftId: String, automatic: OriginalWriteBinding? = null) {
         if (ReviewSurfaceProbeMode.block()) return
         if (automatic == null && autoForDraft(draftId) != null)
             clearAutoIntent("MANUAL_INSERT_SELECTED", renderReady = false)
+        if (automatic == null && stableSession != null) return
         val draft = unboundDraft.current() ?: return
         if (startupExperiment != StartupExperiment.REVIEW || draft.id != draftId ||
             draft.phase != UnboundDraftState.Phase.READY || draftReviewOwner != null ||
             freshDestination != null) return
-        if (automatic != null && (autoDestination !== automatic ||
+        if (automatic != null && (!originalCanWrite(automatic) ||
                 automatic.draftId != draftId ||
                 automatic.policy.phase != OriginalDestinationIntent.Phase.RETURNING)) {
-            clearAutoIntent("AUTO_NOT_ELIGIBLE")
+            finishOriginal(automatic, "AUTO_NOT_ELIGIBLE")
             return
         }
         val result = draft.result ?: return
         if (result.any { it == '\n' || it == '\r' })
             return if (automatic == null) refuseFreshInsertion("RESULT_NOT_SINGLE_LINE")
-                else clearAutoIntent("RESULT_NOT_SINGLE_LINE")
+                else finishOriginal(automatic, "RESULT_NOT_SINGLE_LINE")
         val host = bubble?.takeIf { it.isAttachedToWindow && it.isShown && it.isEnabled }
         if (host == null) return if (automatic == null) refuseFreshInsertion("BUBBLE_UNAVAILABLE")
-            else clearAutoIntent("AUTO_HOST_UNAVAILABLE")
+            else finishOriginal(automatic, "AUTO_HOST_UNAVAILABLE")
         host.findViewById<Button>(R.id.ready_insert)?.isEnabled = false
         host.findViewById<Button>(R.id.ready_copy)?.isEnabled = false
         val token = host.windowToken
         val hostWindowId = runCatching { host.createAccessibilityNodeInfo().windowId }.getOrDefault(-1)
         if (token == null || hostWindowId < 0)
             return if (automatic == null) refuseFreshInsertion("BUBBLE_UNVERIFIED")
-                else clearAutoIntent("AUTO_HOST_UNVERIFIED")
+                else finishOriginal(automatic, "AUTO_HOST_UNVERIFIED")
 
         resetFreshComposition()
         if (automatic == null) destinationCaptureCount++
-        val first = observeEditor()
+        val first = observeEditor(requiredStableField = automatic is StableOverlayAuto)
         if (automatic != null) {
             val verdict = automatic.policy.checkReturn(first?.snapshot,
                 first?.generation ?: automatic.generation + 2,
                 first?.let { it.node == automatic.node && it.root == automatic.root } == true,
                 SystemClock.elapsedRealtime())
             if (verdict != OriginalDestinationIntent.ReturnVerdict.READY) {
-                clearAutoIntent("RETURN_PROOF_REFUSED")
+                finishOriginal(automatic, if (automatic is StableOverlayAuto) automatic.classify(first?.snapshot) else "RETURN_PROOF_REFUSED")
                 return
             }
         }
         if (first == null) return refuseFreshInsertion(observationCode.name)
         val expected = CommitConfirmation.expected(first.snapshot, result)
             ?: return if (automatic == null) refuseFreshInsertion("RESULT_TOO_LONG_OR_UNSAFE")
-                else clearAutoIntent("AUTO_RESULT_UNSAFE")
+                else finishOriginal(automatic, "AUTO_RESULT_UNSAFE")
         val session = guard.begin(draft.mode, first.snapshot, SystemClock.elapsedRealtime())
             ?: return if (automatic == null) refuseFreshInsertion("CAPTURE_REJECTED")
-                else clearAutoIntent("AUTO_CAPTURE_REFUSED")
+                else finishOriginal(automatic, "AUTO_CAPTURE_REFUSED")
         if (automatic != null) {
             destinationCaptureCount++
             autoAttemptCount++
@@ -4946,7 +5066,7 @@ class KoScribeService : AccessibilityService() {
         if (!guard.publish(session.id, result)) {
             guard.end(session.id)
             return if (automatic == null) refuseFreshInsertion("RESULT_REJECTED")
-                else clearAutoIntent("AUTO_RESULT_REJECTED")
+                else finishOriginal(automatic, "AUTO_RESULT_REJECTED")
         }
         val transaction = FreshDestination(draftId, session.id, first.node, first.root,
             first.generation, expected, host, token, hostWindowId, automatic)
@@ -4963,10 +5083,10 @@ class KoScribeService : AccessibilityService() {
                 it.id == transaction.draftId && it.phase == UnboundDraftState.Phase.READY &&
                     it.result == result
             } == null) return
-        val second = observeEditor()
+        val second = observeEditor(requiredStableField = transaction.autoIntent is StableOverlayAuto)
         val same = second != null && sameFreshTarget(transaction, second)
         val automatic = transaction.autoIntent
-        if (automatic != null && (autoDestination !== automatic || !same ||
+        if (automatic != null && (!originalCanWrite(automatic) || !same ||
                 !automatic.policy.checkPrecommit(second?.snapshot,
                     second?.generation ?: automatic.generation + 2,
                     second?.let { it.node == automatic.node && it.root == automatic.root } == true,
@@ -4974,7 +5094,7 @@ class KoScribeService : AccessibilityService() {
             guard.end(transaction.id)
             freshDestination = null
             resetFreshComposition()
-            if (autoDestination === automatic) clearAutoIntent("AUTO_PRECOMMIT_REFUSED")
+            if (originalIsCurrent(automatic)) finishOriginal(automatic, "AUTO_PRECOMMIT_REFUSED")
             else refreshIdleBubble(forceRender = true)
             return
         }
@@ -4985,24 +5105,24 @@ class KoScribeService : AccessibilityService() {
             guard.end(transaction.id)
             freshDestination = null
             resetFreshComposition()
-            if (automatic != null) clearAutoIntent("AUTO_GUARD_REFUSED")
+            if (automatic != null) finishOriginal(automatic, "AUTO_GUARD_REFUSED")
             else refuseFreshInsertion(if (second == null) observationCode.name else
                 (decision as GuardDecision.Refused).reason.name)
             return
         }
         if (automatic != null) {
-            if (autoDestination !== automatic || !automatic.policy.consume(second?.snapshot,
+            if (!originalCanWrite(automatic) || !automatic.policy.consume(second?.snapshot,
                     second?.generation ?: automatic.generation + 2,
                     second?.let { it.node == automatic.node && it.root == automatic.root } == true,
                     SystemClock.elapsedRealtime())) {
                 guard.end(transaction.id)
                 freshDestination = null
                 resetFreshComposition()
-                if (autoDestination === automatic) clearAutoIntent("AUTO_CONSUME_REFUSED")
+                if (originalIsCurrent(automatic)) finishOriginal(automatic, "AUTO_CONSUME_REFUSED")
                 else refreshIdleBubble(forceRender = true)
                 return
             }
-            clearAutoIntent("AUTO_CONSUMED", fallback = false)
+            finishOriginal(automatic, "AUTO_CONSUMED", fallback = false)
         }
         // The guard has consumed the attempt before any editor IPC. No later tap can
         // get another Insert for this draft, even if the IPC throws or proves nothing.
@@ -5065,7 +5185,7 @@ class KoScribeService : AccessibilityService() {
             return
         if (!sameFreshHost(transaction)) return finishUncertain(transaction, "HOST_CHANGED")
         val observed = observeEditor(transaction.expected.beforeCount,
-            transaction.expected.afterCount, postCommit = true)
+            transaction.expected.afterCount, postCommit = true, requiredStableField = transaction.autoIntent is StableOverlayAuto)
         if (observed == null || !sameFreshTarget(transaction, observed))
             return finishUncertain(transaction, "TARGET_CHANGED")
         val verdict = CommitConfirmation.verdict(transaction.expected, observed.snapshot)
@@ -5575,7 +5695,8 @@ class KoScribeService : AccessibilityService() {
     )
 
     private fun observeEditor(beforeCount: Int = 64, afterCount: Int = 64,
-        postCommit: Boolean = false, requiredPackage: String? = null): Observation? {
+        postCommit: Boolean = false, requiredPackage: String? = if (BuildConfig.STABLE_OVERLAY_AUTO)
+            StableFixtureField.PACKAGE else null, requiredStableField: Boolean = false): Observation? {
         if (startupExperiment == StartupExperiment.RESELECT) destinationCaptureCount++
         observationCode = ObservationCode.NOT_CHECKED
         val locked = (getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked
@@ -5584,6 +5705,9 @@ class KoScribeService : AccessibilityService() {
             ?: return refuse(ObservationCode.NO_INPUT_METHOD)
         if (!method.currentInputStarted) return refuse(ObservationCode.INPUT_NOT_STARTED)
         val info = method.currentInputEditorInfo ?: return refuse(ObservationCode.NO_EDITOR_INFO)
+        if (BuildConfig.STABLE_OVERLAY_AUTO && packageManager.checkSignatures(packageName,
+                StableFixtureField.PACKAGE) != android.content.pm.PackageManager.SIGNATURE_MATCH)
+            return refuse(ObservationCode.NODE_EDITOR_MISMATCH)
         if (requiredPackage != null && info.packageName != requiredPackage)
             return refuse(ObservationCode.NODE_EDITOR_MISMATCH)
         val observedGeneration = method.generation
@@ -5621,6 +5745,9 @@ class KoScribeService : AccessibilityService() {
             return refuse(ObservationCode.NODE_DISABLED)
         if (focus.isPassword || !safeInputType(focus.inputType))
             return refuse(ObservationCode.PROTECTED_OR_NON_TEXT_NODE)
+        if (requiredStableField && (focus.viewIdResourceName != StableFixtureField.ID ||
+            stableFieldResource(info.fieldId) != StableFixtureField.ID))
+            return refuse(ObservationCode.NODE_EDITOR_MISMATCH)
         val initialUnique = focus.uniqueId?.takeIf(String::isNotBlank) ?: "source-node"
         if (requiredPackage != null && (!method.currentInputStarted ||
             method.generation != observedGeneration || method.currentInputEditorInfo !== info ||
@@ -6109,7 +6236,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     private fun renderBubble() {
-        if (ReviewSurfaceProbeMode.enabled && surfaceProbe.active) return
+        if (stableSession != null || (ReviewSurfaceProbeMode.enabled && surfaceProbe.active)) return
         if (!serviceConnected || !::windowManager.isInitialized) return
         if (unboundArm()) idleRenderCount++
         if (unboundArm() && unboundRecording.current() != null) {
@@ -6181,7 +6308,7 @@ class KoScribeService : AccessibilityService() {
             return
         }
         if (resultDraft?.phase == UnboundDraftState.Phase.READY &&
-            (autoFallbackDraftId == resultDraft.id || autoForDraft(resultDraft.id) != null))
+            (BuildConfig.STABLE_OVERLAY_AUTO || autoFallbackDraftId == resultDraft.id || autoForDraft(resultDraft.id) != null))
             autoManualReadyRenderCount++
         var resultDragHandle: Button? = null
         if (resultDraft != null) {
@@ -6396,7 +6523,7 @@ class KoScribeService : AccessibilityService() {
         ).apply {
             if (startupExperiment == StartupExperiment.REVIEW && !VisualTestMode.enabled)
                 flags = flags or WindowManager.LayoutParams.FLAG_SECURE
-            if (ReviewSurfaceProbeMode.enabled && Build.VERSION.SDK_INT >= 34)
+            if ((ReviewSurfaceProbeMode.enabled || BuildConfig.STABLE_OVERLAY_AUTO) && Build.VERSION.SDK_INT >= 34)
                 setCanPlayMoveAnimation(false)
             gravity = if (unboundArm())
                 Gravity.TOP or Gravity.LEFT else Gravity.TOP or Gravity.END

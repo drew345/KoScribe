@@ -29,6 +29,7 @@ class SmokeEditorActivity : Activity() {
         const val EXTRA_MANUAL_FIXTURE = "com.koscribe.smoke.MANUAL_FIXTURE"
         const val EXTRA_COMPOSED_FIXTURES = "com.koscribe.smoke.COMPOSED_FIXTURES"
         const val EXTRA_REVIEW_SURFACE_PROBE = "com.koscribe.smoke.REVIEW_SURFACE_PROBE"
+        const val EXTRA_STABLE_AUTO_FIXTURE = "com.koscribe.smoke.STABLE_AUTO_FIXTURE"
         const val COMPOSED_WRONG_RESULT = "Incorrect synthetic composed result."
         @Volatile
         var current = WeakReference<SmokeEditorActivity>(null)
@@ -61,6 +62,22 @@ class SmokeEditorActivity : Activity() {
     fun probeLogicalEpoch(): Int = probeLogicalEpoch
     fun probeOriginalEditor(): EditText = messageEditor
     fun probeAlternateEditor(): EditText? = findViewById(R.id.local_probe_alternate_editor)
+    fun stableAutoEditor(): EditText? = findViewById(R.id.stable_auto_editor)
+    fun stableAutoAlternateEditor(): EditText? = findViewById(R.id.stable_auto_alternate_editor)
+    /** Immutable fixture-only draft ownership for this view's entire lifetime. */
+    fun stableAutoDraftToken(): Any? =
+        (stableAutoEditor() as? StableAutoEditor)?.logicalDraft
+
+    fun stableAutoSelectIdenticalAlternate(): Boolean {
+        if (!intent.getBooleanExtra(EXTRA_STABLE_AUTO_FIXTURE, false)) return false
+        val original = stableAutoEditor() ?: return false
+        val alternate = stableAutoAlternateEditor() ?: return false
+        if (alternate.text.toString() != original.text.toString() ||
+            alternate.selectionStart != original.selectionStart ||
+            alternate.selectionEnd != original.selectionEnd) return false
+        original.clearFocus()
+        return alternate.requestFocus() && alternate.isFocused
+    }
 
     fun probeSelectIdenticalAlternate(): Boolean {
         if (!intent.getBooleanExtra(EXTRA_REVIEW_SURFACE_PROBE, false)) return false
@@ -121,6 +138,10 @@ class SmokeEditorActivity : Activity() {
         root.addView(messageEditor, LinearLayout.LayoutParams(-1, (160 * density + 0.5f).toInt()))
         if (intent.getBooleanExtra(EXTRA_REVIEW_SURFACE_PROBE, false))
             root.addView(probeAlternateField(), LinearLayout.LayoutParams(-1, -2))
+        if (intent.getBooleanExtra(EXTRA_STABLE_AUTO_FIXTURE, false)) {
+            root.addView(stableAutoField(), LinearLayout.LayoutParams(-1, -2))
+            root.addView(stableAutoAlternateField(), LinearLayout.LayoutParams(-1, -2))
+        }
         if (composedFixtures()) {
             root.addView(composedEditor(R.id.local_composed_match_editor, false),
                 LinearLayout.LayoutParams(-1, -2))
@@ -164,6 +185,17 @@ class SmokeEditorActivity : Activity() {
             if (alternate == null) fixtureRoot.addView(probeAlternateField(), 2,
                 LinearLayout.LayoutParams(-1, -2))
         } else if (alternate != null) fixtureRoot.removeView(alternate)
+        val stable = stableAutoEditor()
+        val stableAlternate = stableAutoAlternateEditor()
+        if (intent.getBooleanExtra(EXTRA_STABLE_AUTO_FIXTURE, false)) {
+            if (stable == null) fixtureRoot.addView(stableAutoField(),
+                LinearLayout.LayoutParams(-1, -2))
+            if (stableAlternate == null) fixtureRoot.addView(stableAutoAlternateField(),
+                LinearLayout.LayoutParams(-1, -2))
+        } else {
+            if (stableAlternate != null) fixtureRoot.removeView(stableAlternate)
+            if (stable != null) fixtureRoot.removeView(stable)
+        }
         val protectedField = fixtureRoot.findViewById<EditText>(R.id.local_protected_editor)
         if (manual || intent.getBooleanExtra(EXTRA_OMIT_PROTECTED_EDITOR, false)) {
             if (protectedField != null) fixtureRoot.removeView(protectedField)
@@ -202,6 +234,24 @@ class SmokeEditorActivity : Activity() {
         hint = "Synthetic alternate editor"
         inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
         importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+    }
+
+    private fun stableAutoField(): EditText = StableAutoEditor(this).apply {
+        id = R.id.stable_auto_editor
+        hint = "Stable synthetic destination"
+        inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+    }
+
+    private fun stableAutoAlternateField(): EditText = EditText(this).apply {
+        id = R.id.stable_auto_alternate_editor
+        hint = "Identical synthetic alternate"
+        inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+    }
+
+    private class StableAutoEditor(context: Context) : EditText(context) {
+        val logicalDraft = Any()
     }
 
     private fun uncertainEditor(): EditText = UncertainCommitEditor(this).apply {

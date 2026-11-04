@@ -474,6 +474,42 @@ attempt/recording-proof counters and unchanged SwiftKey. No screenshots, externa
 editor actions or Send. Stop on interruption or unexpected effects and inspect
 the result before continuing. Restore the saved secure MVP when the session ends.
 
+## Stable-editor automatic sample (2026-11-05)
+
+This is a separate **write-capable**, API-free debug candidate. The six-case
+review-surface comparison above remains hard no-write. Build the new arm with
+`-PkoscribeStartupArm=REVIEW -PkoscribeStableOverlayAuto=true`; old AUTO, review
+surface probe, visual, speech, translation and the other probes must remain off.
+Save its signed APK, matching BuildConfig and exact smoke before any phone test.
+The synthetic editor's stable logical backing is a test contract, not evidence
+that a third-party composer has that property.
+
+After final source review, successful builds, and fresh phone availability, use
+only `com.koscribe.smoke.StableOverlayAutoSmokeTest`, one method and its sole
+readiness flag. Inspect each result before proceeding. The tests open fixed
+English directly and exercise one explicit sample approval or Cancel; they do
+not record, translate through an API, type into a real app, use the clipboard,
+press Enter or Send. A refusal or uncertain write is not a confirmed insertion.
+
+| Order | Method | Sole flag | Required evidence |
+| ---: | --- | --- | --- |
+| 1 | `changedIdenticalFieldFallsBackBeforeWrite` | `stableAlternateReady` | Armed before change; target-specific refusal, zero commits, explicit manual recovery |
+| 2 | `unchangedMiddleCaretInsertsOnce` | `stableMiddleReady` | One approval/confirmed commit; exact Korean/emoji prefix, suffix and caret; no manual result panel |
+| 3 | `unchangedEmptyInsertsOnce` | `stableEmptyReady` | One approval/confirmed commit in empty stable editor |
+| 4 | `reviewCancelNeverWrites` | `stableCancelReady` | Original and alternate untouched; clean Cancel |
+| 5 | `changedCaretFallsBackBeforeWrite` | `stableCaretReady` | Cursor contradiction refuses before writing; restoring old position cannot rearm |
+| 6 | `changedContextFallsBackBeforeWrite` | `stableContextReady` | Text contradiction refuses before writing; restoring old content cannot rearm |
+
+For example, the first (negative) gate is:
+
+```powershell
+adb -d shell am instrument --user 0 -w -r -e class 'com.koscribe.smoke.StableOverlayAutoSmokeTest#changedIdenticalFieldFallsBackBeforeWrite' -e stableAlternateReady true com.koscribe.smoke/com.koscribe.smoke.KoScribeTestRunner
+```
+
+Restore and verify the saved secure MVP after the session. Do not advance to a
+positive write because a negative test happened to refuse for an unrelated
+reason. Do not retry an ambiguous commit or claim this sample is a translation.
+
 ## Authorized save-prompt dismissal (2026-10-24)
 
 Andrew explicitly authorized clicking the visible save prompt's negative action.

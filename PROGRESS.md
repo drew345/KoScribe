@@ -9,8 +9,27 @@ D266E911 is restored, installed hash verified, servicePID28713 idle; SwiftKey
 unchanged and smoke removed from user0. Independent architecture and safety review
 support the next separate default-OFF owned-fixture overlay candidate: English
 approval prepares a fixed Korean result, then the existing guarded writer may try
-once after a verified return. This is an implementation direction, not acceptance
-of a write on the phone.
+once after a verified return. Under the existing November4 authorization, the
+separate sample arm and six-case harness are implemented, reviewed and built. It admits
+only the stable owned editor, never the epoch-mutable diagnostic view. Reviewed
+contract: [PHASE3](docs/PHASE3.md#november5-overlay-candidate-first-owned-write-gate).
+Checkpoint `0c2c94b` preserves the finished no-write experiment. The first new
+phone gate is the changed-field negative, then middle-caret insertion only after
+that gate passes. Fresh A35 availability was requested; no write-capable overlay
+phone result yet.
+
+**Reviewed stable sample:** `app/build/stable-overlay-auto-20261105/` contains
+`stable-overlay-sample-v1.apk` SHA-256
+8D8F27BC5BCABDFBAE062EFCB88F33A07C926E63CC9D7BF956F57B3C4AD9B3FE and
+`smoke-stable-overlay-v1.apk` SHA-256
+353EED3B25D9A722F869FFD73E03CDF61D78E132F2D838B3C54FEE4F2ABF746F.
+Service637B2B99, adapterE1B44BD0, policy tests3907BBDA; harnessD383EDDA,
+fixture5A3190DE/IDsBDD1FB9F. Astra/xhigh cleared exact source for the signed
+stable fixture. All150 final unit tests passed, app lint0errors50warnings, smoke
+lint0errors5warnings; both assembled. Saved config: secure REVIEW, only
+STABLE_OVERLAY_AUTO=true; existing experiments false and review probe OFF. Signer
+matches the MVP. Ordinary debug/release verified OFF/allfalse after archiving.
+No microphone, speech API or actual translation in this first fixed-sample gate.
 
 **Latest measured result (November5):** the original window/root/node was available
 in overlay review samples (2/2/2 in each case), absent in Activity samples (2/0/0

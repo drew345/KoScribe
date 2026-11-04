@@ -9,37 +9,15 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
 
 ## Deferred changes
 
-1. **Approve English, then translate and insert automatically.** Reopened and
-   selected as the active goal on November4; current status is in PROGRESS.
-   Preserve the manual Insert and Copy & close
-   baseline. Require proof of the original destination, caret, surrounding text
-   and continuity after review; otherwise offer manual Insert. The reviewed
-   default-OFF candidate now handles one authenticated original-window
-   disappearance/reappearance and removes the intermediate manual controls on
-   the automatic path. Phone acceptance remains pending. See
-   [Phase 3](docs/PHASE3.md#october25-proposal-reopened-november4).
-   The current retained-host/keyboard-readiness work is still undergoing owned
-   acceptance. Its complete-inventory candidate deliberately requires the
-   measured original-window removal/replacement. A no-original-removal review
-   path will use manual fallback until its distinct inventory projection is
-   designed and accepted. That later path also needs readiness observation after
-   late core binding; the last layout callback may already have occurred. This
-   does not reopen external automatic eligibility or treat missing proof as success.
-   The November4 final run passed retained-host preparation and provisional
-   original focus loss, but a passive poll could not read one remote window root.
-   November5's six owned no-write comparison cases completed. Editable overlay
-   review samples kept the original window/root/node accessible; Activity samples
-   showed them absent. Continuous availability was not measured.
-   Both restored text/caret with a fresh session and detected an identical-content
-   alternate field. Both missed hidden same-view logical rebinding, as expected
-   from indistinguishable public evidence. The overlay is now an evidence-backed
-   review direction; production migration/automatic eligibility remains unaccepted.
-   First-null IME in both positive probes does not identify November4's historical
-   missing root. Do not keep extending global exceptions or treat fingerprint
-   equality as universal conversation identity. See DEVICE_TESTS for exact scope.
-   On the A35 the stable-editor overlay now passes the identical-field switch and
-   manual recovery check. The unchanged middle-caret case still refuses before
-   commit. PROGRESS tracks that gate before live translation or external trials.
+1. **Automatic insertion after English approval.** Deferred again on November 5
+   in favor of editable Korean in the manual MVP. The owned A35 test proved
+   changed-field refusal and manual recovery. Two unchanged-middle runs reached
+   the original field but refused before committing. The later trace identified
+   six queued window notifications, including an added system window of unknown
+   purpose. Preserve the default-OFF experiments and the records in
+   [DEVICE_TESTS](docs/DEVICE_TESTS.md#system-managed-swiftkey-and-first-guarded-return-on-november-5).
+   Any future attempt still requires owned empty/middle preservation, changed
+   destination and interruption checks, then separate external acceptance.
 
 2. **Make recording and processing states more obvious.** Andrew initially did
    not realize tapping a language choice immediately started recording. Improve
@@ -53,13 +31,10 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    deciding whether the extra signal merits touching the audio-read path.
    Optional vibration/sound and clearer processing feedback remain proposals.
 
-3. **Optional Korean preview before insertion.** Andrew considered seeing the
-   Korean result useful, but also wants fewer steps. Explore showing it within
-   the existing result control, with Insert and Copy & close, without requiring
-   another confirmation screen. This is an option to evaluate, not a settled
-   requirement or a replacement for the automatic-flow proposal. On October31
-   Andrew confirmed that no Korean preview has been worked out or implemented;
-   the revised design comparison omits it.
+3. **Korean preview and editing.** Moved into the active manual MVP on
+   November 5. Show the prepared Korean in the existing result panel, allow
+   local edits, and use the saved text for Insert or Copy & close. Current
+   implementation and acceptance status are in [PROGRESS](PROGRESS.md).
 
 4. **An option to skip English review.** Initially every message keeps editable
    English review, as agreed. Later offer an explicit preference for skipping

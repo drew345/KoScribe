@@ -69,6 +69,8 @@ internal class StableOverlayAuto(
     private var hostSeenAt: Long? = null
     private var launchedAt: Long? = null
     private var returningAt: Long? = null
+    val diagnosticReturnStart: Long? get() = returningAt
+    private var currentEventRole = StablePrecommitTrace.Role.UNKNOWN
     private var approved = false
     private var sawReturnInput = false
     private var writerCalled = false
@@ -157,7 +159,8 @@ internal class StableOverlayAuto(
             disarm("TARGET_SELECTION_CHANGED")
     }
 
-    fun event(event: AccessibilityEvent) {
+    fun event(event: AccessibilityEvent, tracePrecommitWindow: Boolean = false) {
+        currentEventRole = StablePrecommitTrace.Role.UNKNOWN
         if (closed || stoppingReason != null || event.eventTime < capturedUptime) return
         val type = event.eventType
         val focusNotice = type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
@@ -189,7 +192,17 @@ internal class StableOverlayAuto(
         if (type == AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
             type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED || type == AccessibilityEvent.TYPE_VIEW_FOCUSED ||
             (event.windowId == original.windowId && type == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED))
-            inspect()
+            inspect(if (tracePrecommitWindow) event.windowId else null)
+    }
+
+    fun diagnosticRole(event: AccessibilityEvent): StablePrecommitTrace.Role = when {
+        event.windowId == original.windowId -> StablePrecommitTrace.Role.ORIGINAL
+        event.windowId == ownId -> StablePrecommitTrace.Role.REVIEW
+        event.windowId == hostId -> StablePrecommitTrace.Role.HOST
+        currentEventRole != StablePrecommitTrace.Role.UNKNOWN -> currentEventRole
+        event.packageName?.toString() == StableFixtureField.PACKAGE -> StablePrecommitTrace.Role.FIXTURE_PACKAGE
+        event.packageName?.toString() == service.packageName -> StablePrecommitTrace.Role.OWN_PACKAGE
+        else -> StablePrecommitTrace.Role.UNKNOWN
     }
 
     private val pulse = object : Runnable {
@@ -261,18 +274,29 @@ internal class StableOverlayAuto(
         return true
     }
 
-    private fun inspect() {
+    private fun inspect(diagnosticWindowId: Int? = null) {
         if (closed || stoppingReason != null || fallbackReported) return
-        try { inspectCurrent() } catch (_: Exception) { disarm("EVIDENCE_UNAVAILABLE") }
+        try { inspectCurrent(diagnosticWindowId) } catch (_: Exception) { disarm("EVIDENCE_UNAVAILABLE") }
     }
 
-    private fun inspectCurrent() {
+    private fun inspectCurrent(diagnosticWindowId: Int?) {
         if (!usable()) { interrupt("INTERRUPTED"); return }
         val windows = service.windows
         targetProblem(windows)?.let { disarm(it); return }
         val currentHost = host()
         if (hostId != null && currentHost != hostId) { disarm("HOST_CHANGED"); return }
-        val focused = windows.filter { it.isFocused }
+        val focused = windows.filter { window ->
+            // Classify only the notice being handled from this existing snapshot and traversal.
+            if (diagnosticWindowId != null && diagnosticWindowId >= 0 && window.id == diagnosticWindowId) {
+                currentEventRole = when {
+                    window.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD && window.displayId == Display.DEFAULT_DISPLAY ->
+                        StablePrecommitTrace.Role.CURRENT_DEFAULT_IME
+                    window.type == AccessibilityWindowInfo.TYPE_SYSTEM -> StablePrecommitTrace.Role.CURRENT_SYSTEM
+                    else -> StablePrecommitTrace.Role.UNKNOWN
+                }
+            }
+            window.isFocused
+        }
         val localId = editor?.takeIf { it.isAttachedToWindow }?.createAccessibilityNodeInfo()?.windowId
         if (focused.size > 1 || focused.any { it.id != original.windowId && it.id != (ownId ?: localId) }) {
             interrupt("FOREIGN_FOCUS"); return

@@ -5,6 +5,15 @@ Planning baseline: 2026-10-23. Andrew authorized Phase 1 implementation on
 
 ## Confirmed product choices
 
+Current priority, November 5: finish the manual MVP with Korean visible and
+editable on the result panel. The approved English triggers one translation.
+Edit and Done update the current result locally. Insert checks the destination
+afresh at the explicit tap. Copy & close copies that same saved result. Test
+unedited Insert, edited Insert into a newly chosen cursor, Discard edits and
+the same Copy payload. An uncertain attempted insertion allows Copy and Cancel
+only. Preserve the normal secure build until the owned fixture passes.
+The automatic experiments described below are deferred.
+
 November4 update: Andrew reopened both automatic insertion and unsupported-editor
 compatibility. The chosen active goal is automatic insertion after English
 approval. Implement the bounded paired own-review occlusion protocol described

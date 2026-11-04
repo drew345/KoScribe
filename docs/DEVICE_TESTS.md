@@ -2390,3 +2390,30 @@ the adapter AEFF4629 and harness 311EE671.
 Restored and verified the normal secure D266E911 in place inside the availability
 window. PID 5575, REVIEW, speech and translation on, auto off, draft NONE,
 cleanup clear. SwiftKey selected, smoke removed for user 0.
+
+In a second, separate five-minute window, diagnostic D (6757F300) and smoke
+FE40499D ran on PID 11005. The identical-field test passed in 5.088s, with
+usable manual controls, clean Cancel and zero fresh captures, attempts and
+commits. The unchanged-middle test failed in 10.716s. The guard returned
+RESERVE_TARGET_CHANGED. The six notifications below accounted for the whole
+trace. Each carried a timestamp after return began and before the fresh editor
+read started. All were delivered within 50ms of the transaction opening.
+
+| Event order | Reported window role | Reported change |
+| --- | --- | --- |
+| 1 | KoScribe bubble host | Layer (16) |
+| 2–4 | System | Layer (16) each |
+| 5 | System | Added (1) |
+| 6 | Current default-display IME | Bounds (8) |
+
+The system-window reports identify the role at callback time. Several kinds of
+Android surface, including navigation bars and system dialogs, share that role.
+The purpose of the added window remains unknown. [Android 16 window types](https://github.com/aosp-mirror/platform_frameworks_base/blob/android16-release/services/accessibility/java/com/android/server/accessibility/AccessibilityWindowManager.java#L930-L944)
+
+The original field and context matched at both reads, one automatic attempt
+opened one fresh transaction, and commit requests stayed at zero. Cancel cleared
+the draft. Testing stopped. Restored verified D266E911 and removed the fixture.
+The first post-install service check preceded reconnection. A follow-up
+confirmed PID 13370 idle, normal speech/translation on, auto off and cleanup
+clear. SwiftKey remained selected. The automatic experiment was then shelved
+when Andrew proposed the editable Korean manual MVP.

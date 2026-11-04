@@ -31,12 +31,11 @@ without an API key; ordinary and release builds default to OFF. See
 
 ## Agreed interaction
 
-The installed MVP keeps manual **Insert** plus **Copy & close**. On November4,
-Andrew reopened the one-button automatic Translate & insert work. The active
-goal is English approval followed by translation and safe insertion into the
-original field, with manual recovery when it cannot be verified. Development
-starts in the owned test editor; automatic insertion is not yet phone-proven
-or enabled for external apps. Repeat bubble use in the same editor is phone-tested.
+The November 5 MVP uses manual **Insert** and **Copy & close**. Its next
+revision shows the translated Korean on the result panel, where the user can
+read it and save corrections before either action. The installed-build status
+and acceptance evidence are in [PROGRESS](PROGRESS.md). Work on automatic
+insertion is deferred. Repeat bubble use in the same editor is phone-tested.
 The floating button uses the selected [Spoken K design](docs/design/floating-button/README.md)
 with a light gray, slightly translucent body. Copy & close supports normal manual Paste
 when an app's editor cannot be verified for Insert.
@@ -53,10 +52,14 @@ when an app's editor cannot be verified for Insert.
    **Translate** (Korean modes) or **Use English** (EN). **Cancel**
    discards the session. Review appears for every message initially; a skip
    option can be added later.
-5. When the result is ready, check the intended message field and cursor.
+5. In the Korean-result revision, read the Korean on the result panel.
+   To change it, tap **Edit**, correct it using SwiftKey, then tap **Done**.
+   **Discard edits** keeps the last saved version. For insertion, check the
+   intended message field and cursor.
    Tap the field if you need to select it or reposition the cursor, then tap
    **Insert** in the floating box. KoScribe captures and checks that destination
-   afresh before insertion. EN skips translation. If the check fails, keep the result for an
+   afresh before insertion. Alternatively, use **Copy & close** and paste the
+   saved Korean in the destination app. EN skips translation. If the check fails, keep the result for an
    explicit new destination attempt; never silently retarget or retry a commit.
 6. After successful insertion or explicit Copy, close the result panel. Keep the small collapsed K bubble
    available while SwiftKey remains open so another message can begin. Hide it
@@ -64,8 +67,8 @@ when an app's editor cannot be verified for Insert.
    the destination app and press Send yourself.
 
 Each message requires an explicit mode choice. No hidden gesture determines
-politeness. There is no 습니다 output mode. The English review is editable text,
-not an image; there is no required second preview of the Korean result. Cancel,
+politeness. There is no 습니다 output mode. English review precedes translation.
+The result panel is also the Korean review, with no extra approval to Insert. Cancel,
 error recovery and the supporting settings screen still need detailed design.
 Contextual visibility, dragging, remembered position, and the selected floating
 icon have bounded phone-test evidence; broader reliability remains open.

@@ -9,6 +9,15 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
 
 ## Work authorization and model roles
 
+- On 2026-11-05, after the automatic mid-caret experiment refused before write,
+  Andrew proposed returning to the proven manual workflow and checking/editing
+  the Korean on the result screen. This manual MVP is the current priority.
+  Show the prepared Korean, let the user save corrections with SwiftKey, and use
+  the saved version for explicit Insert or Copy & close. Only the user's Insert
+  tap captures a destination. Keep uncertain writes terminal, live credentials
+  private, and the regular baseline available. Park the automatic experiments
+  and external compatibility work until deliberately reopened. This supersedes
+  the earlier no-preview design choice.
 - On 2026-11-05 Andrew explicitly resumed the goal with the revised plan after
   outside-advice review. The prior sleep pause no longer applies. Implement and
   independently review the API-free, hard no-write owned-fixture comparison of

@@ -500,6 +500,22 @@ press Enter or Send. A refusal or uncertain write is not a confirmed insertion.
 | 5 | `changedCaretFallsBackBeforeWrite` | `stableCaretReady` | Cursor contradiction refuses before writing; restoring old position cannot rearm |
 | 6 | `changedContextFallsBackBeforeWrite` | `stableContextReady` | Text contradiction refuses before writing; restoring old content cannot rearm |
 
+The November 5 sample C passed case 1. Case 2 matched the original editor
+twice but stopped at the transaction guard with zero commit requests. The
+subsequent diagnostic D identified six window events, including a system window
+added. Automatic testing is now deferred.
+Keep each positive case's exact field contents, caret, single commit,
+confirmation, zero intermediate result panels and clean completion as its
+success criteria. A reason code on a failed test is evidence about that
+failure. [Device record](DEVICE_TESTS.md#system-managed-swiftkey-and-first-guarded-return-on-november-5)
+
+Compare an event's framework timestamp to the fresh editor read and transaction
+creation using uptime. Android stamps accessibility events when dispatching
+them. A timestamp preceding capture can identify a queued notification. It
+alone cannot establish when an editor changed or make a write eligible.
+[Android 16 app event dispatch](https://github.com/aosp-mirror/platform_frameworks_base/blob/android16-release/core/java/android/view/accessibility/AccessibilityManager.java#L657-L666)
+and [system event dispatch](https://github.com/aosp-mirror/platform_frameworks_base/blob/android16-release/services/accessibility/java/com/android/server/accessibility/AccessibilityManagerService.java#L4387-L4393).
+
 For example, the first (negative) gate is:
 
 ```powershell

@@ -1506,3 +1506,21 @@
 - Returned phone within Andrew's ten-minute window. Verified normal MVP
   D266E911 installed in place, PID 5575 idle, fixture removed and SwiftKey
   selected. Full measurements and hashes are in DEVICE_TESTS.
+- Reviewed diagnostic D records up to eight invalidating events and the actual
+  decision at commit reservation. Its guard behavior is identical to C's. All
+  156 unit tests passed, app lint 0 errors/50 warnings and assembly succeeded.
+  Saved D 6757F300 with its BuildConfig and verified the original signer. A
+  separate phone window is needed after returning Andrew's phone.
+- In the subsequent five-minute window D passed the changed-field gate in
+  5.088s. It refused the unchanged middle in 10.716s. All six notifications
+  were timestamped before the fresh read: bubble layer, three system-layer
+  changes, system window added, and IME bounds. RESERVE_TARGET_CHANGED, zero
+  commits, clean Cancel. D266E911 restored in place, PID 13370 verified idle,
+  SwiftKey selected, fixture removed. No further automatic gate ran.
+
+## 2026-11-05 — Manual MVP with editable Korean
+
+- Andrew proposed returning to the successful manual Insert workflow, showing
+  the Korean result for checking and allowing correction before Insert or Copy.
+  Switched the active work to that MVP. Preserve automatic experiments for
+  later. Karrot/OpenAI dot retain the explicit Copy & close / manual Paste path.

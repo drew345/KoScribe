@@ -259,6 +259,7 @@ class KoScribeService : AccessibilityService() {
     private var stableLastPhase = "IDLE"
     private var stableLastReason = "NONE"
     @Volatile private var stableLastInputTrace = "NONE"
+    @Volatile private var stableLastPrecommitTrace: StablePrecommitTrace? = null
 
     internal fun stableInputDiagnostic(session: StableOverlayAuto, summary: String) {
         if (stableSession === session) stableLastInputTrace = summary
@@ -271,6 +272,7 @@ class KoScribeService : AccessibilityService() {
     private fun startStableSample(mode: OutputMode) {
         if (stableSession != null || freshDestination != null || unboundDraft.current() != null) return
         stableLastInputTrace = "NONE"
+        stableLastPrecommitTrace = null
         val started = SystemClock.uptimeMillis()
         val capturedAt = SystemClock.elapsedRealtime()
         val first = if (mode == OutputMode.ENGLISH) null else runCatching {
@@ -324,6 +326,7 @@ class KoScribeService : AccessibilityService() {
         stableLastPhase = "FALLBACK"; stableLastReason = reason
         autoLastPhase = "FALLBACK"; autoLastReason = reason
         freshDestination?.takeIf { it.autoIntent === session && it.phase == DestinationPhase.PRECOMMIT }?.let {
+            it.stablePrecommitTrace?.finish("ADAPTER_DISARMED_${reason}")
             guard.invalidate(it.id); guard.end(it.id); freshDestination = null; resetFreshComposition()
         }
         note("STABLE_AUTO_FALLBACK_$reason")
@@ -406,7 +409,8 @@ class KoScribeService : AccessibilityService() {
         val hostWindowId: Int,
         val autoIntent: OriginalWriteBinding? = null,
         var phase: DestinationPhase = DestinationPhase.PRECOMMIT,
-        var commitRequestedUptimeMs: Long = 0L
+        var commitRequestedUptimeMs: Long = 0L,
+        var stablePrecommitTrace: StablePrecommitTrace? = null
     )
     private var freshDestination: FreshDestination? = null
     private enum class PostCommitProbeKind(val prefix: String) {
@@ -2231,6 +2235,8 @@ class KoScribeService : AccessibilityService() {
         "Stable overlay auto phase: ${stableSession?.phase ?: stableLastPhase}\n" +
         "Stable overlay auto reason: $stableLastReason\n" +
         (if (BuildConfig.STABLE_OVERLAY_AUTO) "Stable overlay input trace: $stableLastInputTrace\n" else "") +
+        (if (BuildConfig.STABLE_OVERLAY_AUTO)
+            "Stable overlay precommit trace: ${stableLastPrecommitTrace?.summary() ?: "NONE"}\n" else "") +
         "Last observation: ${observationCode.name}\n" +
             "First invalidation: ${lastInvalidationCode ?: "none"}\n" +
             "First content timing: ${firstTargetContentTimeCode ?: "none"}\n" +
@@ -3029,8 +3035,11 @@ class KoScribeService : AccessibilityService() {
                 trackAutoInputStarted(attribute, generation, restarting)
                 abortPostCommitProbe("INPUT_STARTED")
                 freshDestination?.let {
-                    if (it.phase == DestinationPhase.PRECOMMIT) guard.invalidate(it.id)
-                    else finishUncertain(it, "INPUT_STARTED")
+                    if (it.phase == DestinationPhase.PRECOMMIT) {
+                        guard.invalidate(it.id)
+                        it.stablePrecommitTrace?.invalidated(StablePrecommitTrace.Kind.INPUT_START,
+                            StablePrecommitTrace.Role.UNKNOWN, null, null, SystemClock.uptimeMillis())
+                    } else finishUncertain(it, "INPUT_STARTED")
                     note("FRESH_INPUT_STARTED")
                 }
                 scheduleIdleBubbleRefresh(IdleRefreshReason.INPUT_STARTED)
@@ -3069,8 +3078,11 @@ class KoScribeService : AccessibilityService() {
                 composition.reset()
                 abortPostCommitProbe("INPUT_FINISHED")
                 freshDestination?.let {
-                    if (it.phase == DestinationPhase.PRECOMMIT) guard.invalidate(it.id)
-                    else finishUncertain(it, "INPUT_FINISHED")
+                    if (it.phase == DestinationPhase.PRECOMMIT) {
+                        guard.invalidate(it.id)
+                        it.stablePrecommitTrace?.invalidated(StablePrecommitTrace.Kind.INPUT_FINISH,
+                            StablePrecommitTrace.Role.UNKNOWN, null, null, SystemClock.uptimeMillis())
+                    } else finishUncertain(it, "INPUT_FINISHED")
                     note("FRESH_INPUT_FINISHED")
                 }
                 // Android clears currentInputStarted after this callback returns.
@@ -3327,6 +3339,9 @@ class KoScribeService : AccessibilityService() {
     override fun onCreateInputMethod(): InputMethod = TrackingInputMethod(this)
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
+        val precommitReceipt = if (BuildConfig.STABLE_OVERLAY_AUTO &&
+            freshDestination?.phase == DestinationPhase.PRECOMMIT && freshDestination?.stablePrecommitTrace != null)
+            SystemClock.uptimeMillis() else null
         if (ReviewSurfaceProbeMode.enabled && surfaceProbe.active) {
             if (event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
                 event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
@@ -3370,7 +3385,7 @@ class KoScribeService : AccessibilityService() {
             }
         }
         if (unboundArm()) {
-            stableSession?.event(event)
+            stableSession?.event(event, tracePrecommitWindow = precommitReceipt != null)
             if (autoDestination != null) trackAutoEvent(event)
             postCommitProbe?.let { probe ->
                 if ((event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED ||
@@ -3400,6 +3415,24 @@ class KoScribeService : AccessibilityService() {
                             event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED ||
                             event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED)))) {
                 guard.invalidate(destination.id)
+                if (precommitReceipt != null && destination.autoIntent is StableOverlayAuto) {
+                    val kind = when (event.eventType) {
+                        AccessibilityEvent.TYPE_WINDOWS_CHANGED -> StablePrecommitTrace.Kind.WINDOWS
+                        AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> StablePrecommitTrace.Kind.WINDOW_STATE
+                        AccessibilityEvent.TYPE_VIEW_FOCUSED -> StablePrecommitTrace.Kind.VIEW_FOCUS
+                        AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED -> StablePrecommitTrace.Kind.TARGET_TEXT
+                        AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED -> StablePrecommitTrace.Kind.TARGET_SELECTION
+                        else -> StablePrecommitTrace.Kind.TARGET_CONTENT
+                    }
+                    val mask = when (kind) {
+                        StablePrecommitTrace.Kind.WINDOWS -> event.windowChanges
+                        StablePrecommitTrace.Kind.WINDOW_STATE, StablePrecommitTrace.Kind.TARGET_CONTENT ->
+                            event.contentChangeTypes
+                        else -> null
+                    }
+                    destination.stablePrecommitTrace?.invalidated(kind, destination.autoIntent.diagnosticRole(event),
+                        mask, event.eventTime, precommitReceipt)
+                }
                 note("FRESH_TARGET_EVENT")
                 return
             }
@@ -5048,7 +5081,10 @@ class KoScribeService : AccessibilityService() {
 
         resetFreshComposition()
         if (automatic == null) destinationCaptureCount++
+        val stableAuto = automatic as? StableOverlayAuto
+        val readStarted = if (stableAuto != null) SystemClock.uptimeMillis() else 0L
         val first = observeEditor(requiredStableField = automatic is StableOverlayAuto)
+        val readFinished = if (stableAuto != null) SystemClock.uptimeMillis() else 0L
         if (automatic != null) {
             val verdict = automatic.policy.checkReturn(first?.snapshot,
                 first?.generation ?: automatic.generation + 2,
@@ -5063,6 +5099,7 @@ class KoScribeService : AccessibilityService() {
         val expected = CommitConfirmation.expected(first.snapshot, result)
             ?: return if (automatic == null) refuseFreshInsertion("RESULT_TOO_LONG_OR_UNSAFE")
                 else finishOriginal(automatic, "AUTO_RESULT_UNSAFE")
+        val guardStarted = if (stableAuto != null) SystemClock.uptimeMillis() else 0L
         val session = guard.begin(draft.mode, first.snapshot, SystemClock.elapsedRealtime())
             ?: return if (automatic == null) refuseFreshInsertion("CAPTURE_REJECTED")
                 else finishOriginal(automatic, "AUTO_CAPTURE_REFUSED")
@@ -5078,6 +5115,12 @@ class KoScribeService : AccessibilityService() {
         val transaction = FreshDestination(draftId, session.id, first.node, first.root,
             first.generation, expected, host, token, hostWindowId, automatic)
         freshDestination = transaction
+        if (stableAuto != null) {
+            val trace = StablePrecommitTrace(stableAuto.diagnosticReturnStart, readStarted, readFinished,
+                guardStarted, SystemClock.uptimeMillis())
+            transaction.stablePrecommitTrace = trace
+            stableLastPrecommitTrace = trace
+        }
         // Yield once so queued editor/window events can terminally invalidate this
         // capture before the final synchronous reobservation and one commit.
         main.post { commitFreshDestination(transaction, result) }
@@ -5098,6 +5141,7 @@ class KoScribeService : AccessibilityService() {
                     second?.generation ?: automatic.generation + 2,
                     second?.let { it.node == automatic.node && it.root == automatic.root } == true,
                     SystemClock.elapsedRealtime()))) {
+            transaction.stablePrecommitTrace?.finish("ORIGINAL_PRECOMMIT_REFUSED")
             guard.end(transaction.id)
             freshDestination = null
             resetFreshComposition()
@@ -5107,6 +5151,8 @@ class KoScribeService : AccessibilityService() {
         }
         val decision = guard.reserveCommit(transaction.id,
             if (same) second?.snapshot else null, SystemClock.elapsedRealtime())
+        transaction.stablePrecommitTrace?.finish(if (decision is GuardDecision.Refused)
+            "RESERVE_${decision.reason.name}" else "RESERVE_READY")
         if (decision != GuardDecision.Ready) {
             note("FRESH_INSERT_REFUSED")
             guard.end(transaction.id)

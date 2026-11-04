@@ -2,32 +2,35 @@
 
 Updated: 2026-11-05 (Asia/Seoul).
 
-**Current action, November 5:** the changed-field safety gate passed on the A35.
-With system-managed keyboard display, SwiftKey opened for English review. After
-the fixture switched to an identical-looking field, KoScribe refused before
-writing. Insert, Copy and Cancel were usable together. Cancel cleared the draft.
+**Current product direction:** Andrew proposed returning to the working manual
+workflow after the automatic insertion experiments. Proceed with the manual MVP:
+record → edit and approve English → translate → review the Korean on the result
+panel, with the option to correct it → Insert or Copy & close. Explicit Insert
+still checks the field and cursor afresh. Both actions must use the Korean the
+user last saved. The October design preference to hide the Korean preview has
+been superseded. Keep the automatic experiments available for later investigation.
 
-The unchanged middle-caret test reached the next stage. After one approval,
-KoScribe recovered the original editor, cursor and context and created one fresh
-transaction. Six accessibility notifications invalidated it before commit. The
-independent final editor checks passed, and the transaction guard refused the
-write. Commit requests were zero. Stop here in the gate sequence. Identify the
-first invalidating event and its timing before changing when the transaction starts.
-The empty, Cancel, caret and context cases on this path are pending, as are live
-translation and external acceptance. [Device record](docs/DEVICE_TESTS.md#system-managed-swiftkey-and-first-guarded-return-on-november-5)
+**Installed phone:** the secure manual MVP D266E911 is restored and its installed
+hash verified. Service PID 13370, REVIEW, speech/translation on, auto off, draft
+NONE, cleanup clear. SwiftKey is selected and the fixture was removed for user 0.
+This installed build predates the requested editable Korean result.
 
-**Phone returned:** restored the secure manual MVP in place, verified installed
-SHA-256 D266E911, PID 5575 idle, speech/translation on, auto off, draft NONE,
-cleanup clear. SwiftKey is selected. The fixture was removed from user 0.
+**Automatic checkpoint, November 5:** C and D passed the identical-field switch
+with usable manual recovery. Neither unchanged-middle test wrote any text. The
+fresh original field, caret and context matched twice. D's complete trace showed
+six window-change notifications timestamped before the first fresh read and
+delivered after the transaction started: four layer changes (bubble host then
+three system windows/events), a system window added, and keyboard bounds changed.
+The guard refused TARGET_CHANGED with zero commits. The purpose of the added
+system window was unknown. No trial of a timing exception or broader eligibility
+was run. Empty/Cancel/caret/context gates, actual automatic translation and
+external support remain untested. [Device record](docs/DEVICE_TESTS.md#system-managed-swiftkey-and-first-guarded-return-on-november-5)
 
-**Tested candidate:** sample C and smoke v2 are in the ignored
-`app/build/stable-overlay-auto-20261105/` directory. C is
-`stable-overlay-system-show-C.apk` (636BD6CE), smoke is
-`smoke-stable-overlay-v2.apk` (FE40499D). Source hashes are AEFF4629 for the
-adapter and 311EE671 for the harness. C keeps the window visibility hint and
-lets Android show SwiftKey. The fixture uses a fixed Korean sample. Its English
-approval exercises routing without using the microphone or translation API.
-The earlier Activity/overlay no-write comparison is preserved at `0c2c94b`.
+**Reproducible baseline:** C and smoke v2 are in the ignored
+`app/build/stable-overlay-auto-20261105/` directory at source checkpoint
+`f784177`. D is `stable-overlay-precommit-D.apk` (6757F300), using smoke v2
+(FE40499D). D passed 156 unit tests, assembly and app lint (0 errors/50 warnings).
+See [INSTRUMENTATION](docs/INSTRUMENTATION.md#stable-editor-automatic-sample-2026-11-05) for the historical test sequence.
 
 **Reviewed stable sample:** `app/build/stable-overlay-auto-20261105/` contains
 `stable-overlay-sample-v1.apk` SHA-256
@@ -78,7 +81,7 @@ the saved secure MVP. Exact methods/sole flags and evidence meanings are in
 Normal debug APK/release BuildConfig were rebuilt and verified OFF/allfalse.
 Keep diagnostic completion distinct from automatic eligibility.
 
-**Selected active goal:** automatic Korean translation and insertion after
+**Deferred automatic goal from November 4:** automatic Korean translation and insertion after
 English approval, without the intermediate Insert action on the verified path.
 Andrew reopened this work on November4, superseding the October26 deferral.
 Karrot/OpenAI dot compatibility remains a separate follow-up; old real-app

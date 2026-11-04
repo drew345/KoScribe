@@ -569,3 +569,41 @@ snippet with unknown offset does not establish an absolute caret or safe
 destination. Further adapter design would have to use separate relative
 selection/context evidence and exact postcommit verification, initially in
 an owned fixture; no Karrot write is justified by this read alone.
+
+## Automatic flow and compatibility review — 2026-11-04
+
+**Decision:** Andrew reopened both issues; the selected first goal is automatic
+translation/insertion after English approval. The October25 fixture measured one
+original window removal/addition around the own review while the original editor
+survived. Finish that bounded protocol before replacing the review architecture.
+It addresses review continuity, not Karrot's separate observation gaps.
+
+**Public-source findings:** [Wispr's current Play disclosure](https://play.google.com/store/apps/details?id=com.wispr.flowapp)
+still names the accessibility input connection and keyboard coexistence. Its
+[Android setup guide](https://docs.wisprflow.ai/articles/8858845757-setup-wispr-flow-on-android-android-settings)
+documents clipboard recovery when insertion fails. [DictoKey](https://dictokey.com/accessibility/)
+documents independent keyboard and floating-bubble routes through accessibility.
+[Glaido's dictation guide](https://glaido.com/docs/features/dictation) describes
+automatic desktop paste and Copy recovery. These are vendor descriptions, not
+proof of universal Android insertion or of their internal destination checks.
+
+Android's [accessibility-overlay contract](https://developer.android.com/reference/android/view/WindowManager.LayoutParams#TYPE_ACCESSIBILITY_OVERLAY)
+preserves introspection of covered windows. A focusable review overlay is a
+possible later alternative, but still requires its own SwiftKey focus/ownership
+and return gates. The existing review Activity is already translucent. Merely
+changing transparency is therefore not the selected fix.
+
+**Compatibility finding for later:** The [AOSP default InputConnection implementation](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/main/core/java/android/view/inputmethod/InputConnection.java)
+can construct SurroundingText from before/selected/after text and return offset
+-1. [Android's contract](https://developer.android.com/reference/android/view/inputmethod/SurroundingText)
+allows relative selection with unknown absolute offset. This suggests a separate
+relative-context strategy may be possible, not that Karrot uses this default.
+The default also treats unavailable selected text as empty, so apparent collapsed
+relative selection needs independent corroboration. KoScribe's old diagnostic
+classified OFFSET_UNKNOWN before checking relative selection; its recorded result
+does not prove a 0/0 caret. Do not normalize unknown offset to zero or loosen the
+generic guard. InputConnection wrapper identity is also unsuitable as a session
+token: [AOSP InputMethod](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/main/core/java/android/accessibilityservice/InputMethod.java)
+creates a fresh wrapper on access. Any future adapter must retain actual input
+generation, editor/window/root/node continuity and exact postcommit evidence.
+No new real-app content read or write was performed in this research pass.

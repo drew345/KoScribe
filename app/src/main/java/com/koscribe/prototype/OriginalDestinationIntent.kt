@@ -12,6 +12,8 @@ internal class OriginalDestinationIntent private constructor(
 ) {
     enum class Phase { ORIGINAL, ENTERING_REVIEW, REVIEW, RETURNING, CONSUMED, FALLBACK }
     enum class ReturnVerdict { READY, WAIT, FALLBACK }
+    enum class AdditionEvidence { MISSING, MATCH, CONTRADICTION }
+    private enum class WindowPair { NONE, REMOVED, ADD_PENDING, COMPLETE }
 
     companion object {
         private const val LIFETIME_MS = 180_000L
@@ -37,6 +39,8 @@ internal class OriginalDestinationIntent private constructor(
     var lastInvalidationReason: String? = null
         private set
 
+    val reviewFocusAttested: Boolean get() = reviewFocusSeen
+
     private var draftId: String? = null
     private var reviewInputSeen = false
     private var reviewFocusSeen = false
@@ -46,6 +50,7 @@ internal class OriginalDestinationIntent private constructor(
     private var returnStartedAtMs: Long? = null
     private var returnVerified = false
     private var precommitVerified = false
+    private var windowPair = WindowPair.NONE
 
     private fun validTime(nowMs: Long): Boolean =
         nowMs >= capturedAtMs && nowMs - capturedAtMs <= LIFETIME_MS &&
@@ -120,6 +125,46 @@ internal class OriginalDestinationIntent private constructor(
         return true
     }
 
+    /** A single original-window removal is allowed only under fully attested own review. */
+    fun originalRemoved(nowMs: Long, exactEvent: Boolean, originalAbsent: Boolean,
+        ownReviewAttested: Boolean): Boolean {
+        if (!activeAt(nowMs)) return false
+        if (phase !in setOf(Phase.ENTERING_REVIEW, Phase.REVIEW) ||
+            windowPair != WindowPair.NONE || !exactEvent || !originalAbsent ||
+            !ownReviewAttested) return fail("ORIGINAL_REMOVAL_UNVERIFIED")
+        windowPair = WindowPair.REMOVED
+        return true
+    }
+
+    /** Missing metadata may settle only during the original, nonextending return window. */
+    fun originalAdded(nowMs: Long, exactEvent: Boolean,
+        evidence: AdditionEvidence): ReturnVerdict {
+        if (!activeAt(nowMs)) return ReturnVerdict.FALLBACK
+        if (phase != Phase.RETURNING || windowPair != WindowPair.REMOVED || !exactEvent ||
+            evidence == AdditionEvidence.CONTRADICTION) {
+            invalidate("ORIGINAL_ADDITION_UNVERIFIED")
+            return ReturnVerdict.FALLBACK
+        }
+        windowPair = if (evidence == AdditionEvidence.MATCH) WindowPair.COMPLETE
+            else WindowPair.ADD_PENDING
+        return if (windowPair == WindowPair.COMPLETE) ReturnVerdict.READY else ReturnVerdict.WAIT
+    }
+
+    fun resolvePendingAddition(nowMs: Long, evidence: AdditionEvidence): ReturnVerdict {
+        if (!activeAt(nowMs)) return ReturnVerdict.FALLBACK
+        if (phase != Phase.RETURNING || windowPair != WindowPair.ADD_PENDING ||
+            evidence == AdditionEvidence.CONTRADICTION) {
+            invalidate("PENDING_ADDITION_UNVERIFIED")
+            return ReturnVerdict.FALLBACK
+        }
+        if (evidence == AdditionEvidence.MATCH) windowPair = WindowPair.COMPLETE
+        return if (windowPair == WindowPair.COMPLETE) ReturnVerdict.READY else ReturnVerdict.WAIT
+    }
+
+    val additionPending: Boolean get() = windowPair == WindowPair.ADD_PENDING
+    val returnWindowProved: Boolean get() =
+        windowPair == WindowPair.NONE || windowPair == WindowPair.COMPLETE
+
     /** The original app must receive exactly the next fresh input generation. */
     fun originalInputReturned(generation: Int, restarting: Boolean): Boolean {
         if (phase != Phase.RETURNING || originalReturnInputSeen || !reviewInputFinished ||
@@ -149,7 +194,8 @@ internal class OriginalDestinationIntent private constructor(
             invalidate("RETURN_TARGET_MISMATCH")
             return ReturnVerdict.FALLBACK
         }
-        if (!reviewInputFinished || !originalReturnInputSeen) return ReturnVerdict.WAIT
+        if (!returnWindowProved || !reviewInputFinished || !originalReturnInputSeen)
+            return ReturnVerdict.WAIT
         if (observedSnapshot == null) {
             invalidate("RETURN_OBSERVATION_MISSING")
             return ReturnVerdict.FALLBACK
@@ -164,7 +210,7 @@ internal class OriginalDestinationIntent private constructor(
         nowMs: Long,
     ): Boolean {
         if (!activeAt(nowMs)) return false
-        if (phase != Phase.RETURNING || !returnVerified || !originalReturnInputSeen ||
+        if (phase != Phase.RETURNING || !returnWindowProved || !returnVerified || !originalReturnInputSeen ||
             !exactOriginal(observedSnapshot, generation, sameNodeAndRoot))
             return fail("PRECOMMIT_MISMATCH")
         precommitVerified = true
@@ -177,7 +223,7 @@ internal class OriginalDestinationIntent private constructor(
         nowMs: Long,
     ): Boolean {
         if (!activeAt(nowMs)) return false
-        if (phase != Phase.RETURNING || !precommitVerified ||
+        if (phase != Phase.RETURNING || !returnWindowProved || !precommitVerified ||
             !exactOriginal(observedSnapshot, generation, sameNodeAndRoot))
             return fail("CONSUME_MISMATCH")
         phase = Phase.CONSUMED

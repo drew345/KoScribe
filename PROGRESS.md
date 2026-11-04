@@ -1,6 +1,39 @@
 # Current progress
 
-Updated: 2026-10-31 (Asia/Seoul).
+Updated: 2026-11-04 (Asia/Seoul).
+
+**Active goal, 2026-11-04:** Andrew reopened automatic translate-and-insert and
+unsupported-editor compatibility and asked us to choose one. Selected issue 1:
+English approval should translate and insert into the verified original field
+without the intermediate Insert screen on the supported path. The immediate
+implementation is the bounded own-review removal/addition protocol previously
+measured in the owned fixture. Independent review and owned A35 empty/middle
+insertion plus adversarial fallback checks precede external acceptance. The
+October26 deferral is superseded for this work; no previous real-app read/write
+trial is reopened. Karrot's invalid node metadata and unknown absolute offset
+are separate unresolved compatibility gaps. OpenAI dot is newly reported by
+Andrew as another failing destination; its cause has not been measured.
+**Reviewed candidate ready:** Sol/xhigh implemented one authenticated original
+window removal/addition, preserving the existing input-generation, fresh capture,
+precommit and postcommit checks. Return uses status plus Cancel; manual Insert
+appears only on prewrite fallback. Translation keeps the reviewed editor session
+focused while blocking edits. Astra/xhigh cleared app/policy/UI and smoke diffs
+after fixes for callback ordering, pending-review identity and conflicting focus.
+All 97 unit tests pass; app/smoke lint has 0 errors (38/4 warnings), both APKs
+assemble, and the candidate signer matches the baseline. Saved API-free secure
+REVIEW/auto candidate `app/build/auto-insert-20261104/AUTO-sample-v1.apk` SHA-256
+`9F5EC233D0F310BE736F7E1FFF64C6F186FFE71199D971244E03A1CA9C9112BB` and
+`smoke-auto-v1.apk` SHA-256
+`987D40B162C56884D279CDC362412E6544FFCC13D89320DA3F9062D2A77DF9CD`.
+Speech/translation/visual/Karrot flags are false; auto eligibility is fixture-only.
+No November4 candidate has been installed or phone-tested yet. Awaiting Andrew's
+phone-readiness reply before exact owned tests. The secure D266E911 build below
+remains the last verified installed baseline; restore it after sample checks.
+The secure speech/translation variant is also built and saved as
+`app/build/auto-insert-20261104/AUTO-translation-v1.apk`, SHA-256
+`BA90AA2EE22ABE5A14106073AB7488977C4C5D247F1D2CF63233FAA3DAD28870`;
+use only after the sample gates pass. It has no live/API/device acceptance yet.
+Ordinary debug output and release BuildConfig have been restored to OFF/all false.
 
 **Native design upgrade installed, 2026-10-31:** Andrew approved installing the
 comparison design and replacing the visible Phase 1 name. Sol/xhigh implemented

@@ -5,6 +5,15 @@ Planning baseline: 2026-10-23. Andrew authorized Phase 1 implementation on
 
 ## Confirmed product choices
 
+November4 update: Andrew reopened both automatic insertion and unsupported-editor
+compatibility. The chosen active goal is automatic insertion after English
+approval. Implement the bounded paired own-review occlusion protocol described
+in PHASE3, independently review it, and test empty/middle insertion and terminal
+fallback in the owned fixture first. This supersedes the October26 deferral for
+that scope. Default/release OFF, existing manual recovery and all insertion
+safeguards remain. External automatic acceptance is a later explicit gate;
+compatibility with Karrot/OpenAI dot is not implied by this flow change.
+
 October26 priority: defer the automatic Translate & insert/paired-occlusion
 experiment. Andrew selected the MVP with explicit manual Insert plus Copy & close.
 Fix same-editor reuse after completion without requiring SwiftKey to close.

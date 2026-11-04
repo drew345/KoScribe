@@ -1,6 +1,6 @@
 # Changes proposed for later
 
-Updated: 2026-10-31 (Asia/Seoul).
+Updated: 2026-11-04 (Asia/Seoul).
 
 Andrew is trying the current MVP and will report anything needing an immediate
 fix. This is the standing list of later improvements and unfinished acceptance
@@ -9,13 +9,15 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
 
 ## Deferred changes
 
-1. **Approve English, then translate and insert automatically.** Deferred by
-   Andrew while establishing the MVP. Preserve the manual Insert and Copy & close
-   baseline. Resume only with a way to verify the original destination, caret,
-   surrounding text and continuity after review; otherwise offer manual Insert.
-   Existing experimental code is disabled. The proposed handling of the original
-   window disappearing/reappearing during review remains unimplemented and has
-   no automatic-insertion pass. See the [Phase 3 proposal](docs/PHASE3.md#stopped-october25-unimplemented-paired-occlusion-proposal).
+1. **Approve English, then translate and insert automatically.** Reopened and
+   selected as the active goal on November4; current status is in PROGRESS.
+   Preserve the manual Insert and Copy & close
+   baseline. Require proof of the original destination, caret, surrounding text
+   and continuity after review; otherwise offer manual Insert. The reviewed
+   default-OFF candidate now handles one authenticated original-window
+   disappearance/reappearance and removes the intermediate manual controls on
+   the automatic path. Phone acceptance remains pending. See
+   [Phase 3](docs/PHASE3.md#october25-proposal-reopened-november4).
 
 2. **Make recording and processing states more obvious.** Andrew initially did
    not realize tapping a language choice immediately started recording. Improve
@@ -52,7 +54,10 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    KoScribe feature. Wispr's public setup guide attributes its ongoing notice
    to background operation, not to the insertion method (see docs/RESEARCH.md).
 
-6. **Better compatibility with unsupported editors, including Karrot and Instagram comments.** The
+6. **Better compatibility with unsupported editors, including Karrot, OpenAI dot and Instagram comments.**
+   Andrew reported OpenAI dot as another failing destination on November4; no
+   focused-editor diagnosis has yet established its cause. This remains a
+   separate follow-up to the selected automatic-flow goal. The
    current metadata probe found that Karrot does not expose the focused/editable
    field information guarded Insert requires. Keep Copy & close followed by
    normal Paste as the MVP route. Any future integration needs preservation and

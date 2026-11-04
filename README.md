@@ -31,9 +31,12 @@ without an API key; ordinary and release builds default to OFF. See
 
 ## Agreed interaction
 
-The MVP keeps manual **Insert** plus **Copy & close**. Andrew deferred the
-one-button automatic Translate & insert experiment on October26. Its default-OFF
-code is saved for later. Repeat bubble use in the same editor is phone-tested.
+The installed MVP keeps manual **Insert** plus **Copy & close**. On November4,
+Andrew reopened the one-button automatic Translate & insert work. The active
+goal is English approval followed by translation and safe insertion into the
+original field, with manual recovery when it cannot be verified. Development
+starts in the owned test editor; automatic insertion is not yet phone-proven
+or enabled for external apps. Repeat bubble use in the same editor is phone-tested.
 The floating button uses the selected [Spoken K design](docs/design/floating-button/README.md)
 with a light gray, slightly translucent body. Copy & close supports normal manual Paste
 when an app's editor cannot be verified for Insert.

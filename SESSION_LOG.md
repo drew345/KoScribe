@@ -1186,3 +1186,29 @@
   insertion, or Send. Rebuilt ordinary local debug output with all optional
   flags OFF. Future live review/translation quality use remains ordinary MVP
   feedback, not a claim from this sample-only layout check.
+
+## 2026-11-04 — Automatic approval-to-insertion goal resumed
+
+- **User decision:** reopened automatic insertion and failed-editor compatibility;
+  asked us to choose one goal. Selected automatic insertion after English
+  approval. Earlier deferral is superseded for this work; consumed external
+  read/write trial scopes remain closed. OpenAI dot is newly reported as failing,
+  without a measured cause. Karrot remains a separate compatibility follow-up.
+- **Implementation/review:** Sol/xhigh added one fully attested original-window
+  removal/addition, a status/Cancel return host, focused read-only translation
+  processing, and adversarial pure/owned-smoke tests. Astra/xhigh cleared the
+  final app and harness diffs after callback-order, pending-owner, conflicting
+  focus and paused-fixture fixes. Manual recovery and one-attempt rules remain;
+  automatic eligibility is still fixture-only and default/release OFF.
+- **Measured local checks:** 97 unit tests passed; app/smoke lint 0 errors
+  (38/4 warnings), both assembled. Saved sample9F5EC233/smoke987D40B1 and
+  speech/translationBA90AA2E candidates in ignored app/build/auto-insert-20261104.
+  Sample signer matches the saved live baseline. Ordinary outputs restored OFF.
+- **Research finding:** official Wispr/DictoKey docs support accessibility-based
+  insertion; Glaido describes desktop paste. AOSP allows unknown absolute offset,
+  but its fallback can conceal missing selected-text evidence. This is a future
+  adapter lead, not permission to loosen Karrot checks. Sources in RESEARCH.
+- **Pending device gate:** A35 is connected; readiness question sent because tests
+  take the screen. No candidate installed, content read, API call, new insertion,
+  screenshot or credential change. Run exact owned sample gates, then separate
+  actual translation gate; restore D266E911 after sample checks. Goal stays active.

@@ -9,6 +9,15 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
 
 ## Work authorization and model roles
 
+- On 2026-11-04 Andrew reopened work on automatic insertion after English
+  approval and compatibility with Karrot, OpenAI dot and other failed editors,
+  asking us to choose one goal. The selected active goal is automatic
+  translate-and-insert. This supersedes the October26 automatic-work deferral
+  below. First implement/review the measured own-review window continuity fix
+  and test in the owned fixture; keep default/release OFF and the tested manual
+  fallback. External automatic eligibility still needs separate reviewed
+  acceptance. Prior real-app read/write trial scopes are not renewed. Preserve
+  SwiftKey, existing text, no-Send, one-attempt and credential/privacy rules.
 - On2026-10-26 Andrew deferred the difficult automatic Translate & insert work
   and prioritized an MVP. Keep manual Insert plus Copy & close (explicitly
   selected); do not resume paired-occlusion/automatic-destination work. Fix the

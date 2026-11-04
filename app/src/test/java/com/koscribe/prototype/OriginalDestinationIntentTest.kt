@@ -213,4 +213,140 @@ class OriginalDestinationIntentTest {
             slowReturn.checkReturn(null, 9, false, 2_301))
         assertEquals("EXPIRED", slowReturn.lastInvalidationReason)
     }
+
+    @Test fun unchangedNoRemovalPathStillUsesFreshReturnChecks() {
+        val intent = returning()
+        assertTrue(intent.returnWindowProved)
+        assertEquals(OriginalDestinationIntent.ReturnVerdict.READY,
+            intent.checkReturn(original, 10, true, 350))
+        assertTrue(intent.checkPrecommit(original, 10, true, 351))
+        assertTrue(intent.consume(original, 10, true, 352))
+    }
+
+    @Test fun exactPairMayAttestOwnReviewBeforeInputCallbackButNeedsThatCallback() {
+        val intent = captured()
+        assertTrue(intent.beginReview("draft-1", 200))
+        assertTrue(intent.originalRemoved(201, true, true, true))
+        assertTrue(intent.reviewFocused("draft-1", 202))
+        assertFalse(intent.beginReturn("draft-1", 203, true))
+        assertEquals(OriginalDestinationIntent.Phase.FALLBACK, intent.phase)
+
+        val complete = captured()
+        assertTrue(complete.beginReview("draft-1", 200))
+        assertTrue(complete.originalRemoved(201, true, true, true))
+        assertTrue(complete.reviewFocused("draft-1", 202))
+        assertTrue(complete.inputFinished(8, false))
+        assertTrue(complete.reviewInputStarted(9, false))
+        assertTrue(complete.beginReturn("draft-1", 300, true))
+        assertEquals(OriginalDestinationIntent.ReturnVerdict.READY,
+            complete.originalAdded(301, true, OriginalDestinationIntent.AdditionEvidence.MATCH))
+        assertTrue(complete.inputFinished(9, false))
+        assertTrue(complete.originalInputReturned(10, false))
+        assertEquals(OriginalDestinationIntent.ReturnVerdict.READY,
+            complete.checkReturn(original, 10, true, 350))
+        assertTrue(complete.checkPrecommit(original, 10, true, 351))
+        assertTrue(complete.consume(original, 10, true, 352))
+    }
+
+    @Test fun previouslyAttestedFocusCanBeRecheckedAtRemovalBeforeInputCallback() {
+        val intent = captured()
+        assertTrue(intent.beginReview("draft-1", 200))
+        assertTrue(intent.reviewFocused("draft-1", 201))
+        assertTrue(intent.reviewFocusAttested)
+        // The service rechecks the live owner/window/root/editor here and must not
+        // submit a second policy focus edge for this same review Activity.
+        assertTrue(intent.originalRemoved(202, true, true, true))
+        assertTrue(intent.reviewInputStarted(9, false))
+        assertEquals(OriginalDestinationIntent.Phase.REVIEW, intent.phase)
+        assertTrue(intent.beginReturn("draft-1", 300, true))
+    }
+
+    @Test fun incompletePairCannotAuthorizeReturnOrPrecommit() {
+        val intent = inReview()
+        assertTrue(intent.originalRemoved(220, true, true, true))
+        assertTrue(intent.beginReturn("draft-1", 300, true))
+        assertTrue(intent.inputFinished(9, false))
+        assertTrue(intent.originalInputReturned(10, false))
+        assertFalse(intent.returnWindowProved)
+        assertEquals(OriginalDestinationIntent.ReturnVerdict.WAIT,
+            intent.checkReturn(original, 10, true, 350))
+        assertFalse(intent.checkPrecommit(original, 10, true, 351))
+        assertEquals(OriginalDestinationIntent.Phase.FALLBACK, intent.phase)
+    }
+
+    @Test fun duplicateMixedWrongPhaseAndUnattestedRemovalAreTerminal() {
+        fun entering() = captured().also { assertTrue(it.beginReview("draft-1", 200)) }
+        val cases = listOf<(OriginalDestinationIntent) -> Boolean>(
+            { it.originalRemoved(201, false, true, true) },
+            { it.originalRemoved(201, true, false, true) },
+            { it.originalRemoved(201, true, true, false) }
+        )
+        cases.forEach { reject ->
+            val intent = entering()
+            assertFalse(reject(intent))
+            assertFalse(intent.originalRemoved(202, true, true, true))
+            assertEquals(OriginalDestinationIntent.Phase.FALLBACK, intent.phase)
+        }
+        val duplicate = entering()
+        assertTrue(duplicate.originalRemoved(201, true, true, true))
+        assertFalse(duplicate.originalRemoved(202, true, true, true))
+        val tooEarly = captured()
+        assertFalse(tooEarly.originalRemoved(101, true, true, true))
+        val tooLate = returning()
+        assertFalse(tooLate.originalRemoved(350, true, true, true))
+    }
+
+    @Test fun additionRequiresPriorRemovalExplicitReturnAndOneExactEvent() {
+        val noRemoval = returning()
+        assertEquals(OriginalDestinationIntent.ReturnVerdict.FALLBACK,
+            noRemoval.originalAdded(350, true, OriginalDestinationIntent.AdditionEvidence.MATCH))
+        val beforeReturn = inReview()
+        assertTrue(beforeReturn.originalRemoved(220, true, true, true))
+        assertEquals(OriginalDestinationIntent.ReturnVerdict.FALLBACK,
+            beforeReturn.originalAdded(221, true, OriginalDestinationIntent.AdditionEvidence.MATCH))
+        val mixed = inReview()
+        assertTrue(mixed.originalRemoved(220, true, true, true))
+        assertTrue(mixed.beginReturn("draft-1", 300, true))
+        assertEquals(OriginalDestinationIntent.ReturnVerdict.FALLBACK,
+            mixed.originalAdded(301, false, OriginalDestinationIntent.AdditionEvidence.MATCH))
+        val duplicate = inReview()
+        assertTrue(duplicate.originalRemoved(220, true, true, true))
+        assertTrue(duplicate.beginReturn("draft-1", 300, true))
+        assertEquals(OriginalDestinationIntent.ReturnVerdict.READY,
+            duplicate.originalAdded(301, true, OriginalDestinationIntent.AdditionEvidence.MATCH))
+        assertEquals(OriginalDestinationIntent.ReturnVerdict.FALLBACK,
+            duplicate.originalAdded(302, true, OriginalDestinationIntent.AdditionEvidence.MATCH))
+        assertEquals(OriginalDestinationIntent.Phase.FALLBACK, duplicate.phase)
+    }
+
+    @Test fun pendingAdditionWaitsWithinOriginalDeadlineAndNeverTreatsMismatchAsAbsence() {
+        val intent = inReview()
+        assertTrue(intent.originalRemoved(220, true, true, true))
+        assertTrue(intent.beginReturn("draft-1", 300, true))
+        assertEquals(OriginalDestinationIntent.ReturnVerdict.WAIT,
+            intent.originalAdded(301, true, OriginalDestinationIntent.AdditionEvidence.MISSING))
+        assertFalse(intent.returnWindowProved)
+        assertEquals(OriginalDestinationIntent.ReturnVerdict.WAIT,
+            intent.resolvePendingAddition(350, OriginalDestinationIntent.AdditionEvidence.MISSING))
+        assertEquals(OriginalDestinationIntent.ReturnVerdict.READY,
+            intent.resolvePendingAddition(2_299, OriginalDestinationIntent.AdditionEvidence.MATCH))
+        assertTrue(intent.returnWindowProved)
+
+        val timedOut = inReview()
+        assertTrue(timedOut.originalRemoved(220, true, true, true))
+        assertTrue(timedOut.beginReturn("draft-1", 300, true))
+        assertEquals(OriginalDestinationIntent.ReturnVerdict.WAIT,
+            timedOut.originalAdded(301, true, OriginalDestinationIntent.AdditionEvidence.MISSING))
+        assertEquals(OriginalDestinationIntent.ReturnVerdict.FALLBACK,
+            timedOut.resolvePendingAddition(2_301, OriginalDestinationIntent.AdditionEvidence.MATCH))
+        assertFalse(timedOut.returnWindowProved)
+
+        val mismatch = inReview()
+        assertTrue(mismatch.originalRemoved(220, true, true, true))
+        assertTrue(mismatch.beginReturn("draft-1", 300, true))
+        assertEquals(OriginalDestinationIntent.ReturnVerdict.FALLBACK,
+            mismatch.originalAdded(301, true, OriginalDestinationIntent.AdditionEvidence.CONTRADICTION))
+        assertEquals(OriginalDestinationIntent.ReturnVerdict.FALLBACK,
+            mismatch.resolvePendingAddition(302, OriginalDestinationIntent.AdditionEvidence.MATCH))
+    }
 }

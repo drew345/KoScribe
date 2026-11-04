@@ -1,5 +1,38 @@
 # Synthetic cross-app instrumentation smoke test
 
+## Automatic approval-to-insertion candidate — November4
+
+Use the reviewed secure API-free REVIEW build with AUTO_INSERT=true. Speech,
+translation, visual and Karrot probe flags must be false. Eligibility remains
+`com.koscribe.smoke` only. Run while Andrew has confirmed the phone is free;
+one exact method and its sole flag at a time. Never run the entire instrumented
+suite. Inspect each outcome before continuing and restore the saved regular
+speech/translation APK afterward. No screenshots or external app inspection.
+
+Method prefix: `com.koscribe.smoke.AutomaticInsertSmokeTest#`.
+
+| Method | Sole flag |
+| --- | --- |
+| `unchangedEmptyOriginalAutoInsertsOnceAndDismisses` | `autoEmptyReady` |
+| `unchangedMiddleOriginalPreservesBothSides` | `autoMiddleReady` |
+| `changedOriginalFallsBackAndLateRestoreNeedsManualInsert` | `autoChangedReady` |
+| `changedOriginalCaretFallsBackWithoutLateAutoRetry` | `autoCaretReady` |
+| `changedOriginalFieldFallsBackWithoutWritingEitherField` | `autoFieldReady` |
+| `initialSelectedRangeRequiresManualFallbackWithoutWriting` | `autoSelectedReady` |
+| `reviewCancelNeverAutoCommits` | `autoCancelReady` |
+| `acceptedButUnobservedAutoCommitIsTerminalWithoutInsertRetry` | `autoUncertainReady` |
+
+Pass the flag with value `true` to the existing
+`com.koscribe.smoke/com.koscribe.smoke.KoScribeTestRunner`. Automatic success
+requires one confirmed commit, exact fixture text, SwiftKey retained, collapsed
+Ko visible, no result controls and zero increment in `Auto manual result renders`.
+Changed destination cases must fall back before writing. The uncertain fixture
+accepts a single commit call without applying it; the draft must remain terminal
+with no Insert retry. A sample pass is not proof of live translation processing
+or external-app automatic eligibility; those are separate acceptance gates.
+
+## Existing instrumentation architecture
+
 The dedicated `:smoke` debug APK targets its **own** package, `com.koscribe.smoke`. Android restarts an instrumentation target process; self-targeting prevents the test command from restarting KoScribe's accessibility service. The smoke APK has no launcher, runtime permission, credential, or product code. AndroidX Test currently merges a normal `REORDER_TASKS` permission and test helper activities into its APK. Its one nonexported fixture Activity contains a standard EditText and no Send control. This creates a synthetic cross-app destination in a separate process from KoScribe. Do not use the earlier app-targeted AndroidTest command: on the A35 it stopped the service before any test action.
 
 Precondition: exactly one authorized physical A35 in user 0, with KoScribe accessibility and microphone permission already enabled; SwiftKey remains selected. The synthetic suite does not change permissions, accessibility settings, the keyboard, or any messaging app. It never sends a message or presses Enter. Product button selectors inspect only `com.koscribe.prototype` nodes; the editor selector inspects only the stable `local_test_editor` in `com.koscribe.smoke`. It finds unique enabled product buttons by exact label and uses `ACTION_SHOW_ON_SCREEN` for clipped own controls. `ACTION_SET_TEXT` and `ACTION_SET_SELECTION` prepare only the synthetic smoke editor; production insertion still uses its guarded accessibility input connection.

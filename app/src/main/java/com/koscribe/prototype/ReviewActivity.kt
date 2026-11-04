@@ -18,6 +18,7 @@ import android.widget.TextView
 import android.text.InputType
 import android.text.TextWatcher
 import android.text.Editable
+import android.text.InputFilter
 import java.lang.ref.WeakReference
 
 /** Own editor for one unbound draft. Only its opaque ID crosses the Intent. */
@@ -57,6 +58,19 @@ class ReviewActivity : Activity() {
                 .getOrNull()?.takeIf { it >= 0 }
         }
 
+        /** Local references only; the service performs the remote accessibility attestation. */
+        fun focusedReviewViews(id: String, owner: Any): Pair<View, EditText>? {
+            val activity = active.get()?.takeIf {
+                it.draftId == id && it.owner === owner && !it.isFinishing && !it.isDestroyed &&
+                    it::editor.isInitialized
+            } ?: return null
+            val decor = activity.window.decorView
+            val edit = activity.editor
+            return if (decor.hasWindowFocus() && decor.isAttachedToWindow && edit.isAttachedToWindow &&
+                edit.isFocused && decor.windowToken != null && edit.windowToken == decor.windowToken)
+                decor to edit else null
+        }
+
         fun translationFailed(id: String, message: String): Boolean {
             val activity = active.get()?.takeIf { it.draftId == id && !it.isFinishing }
                 ?: return false
@@ -84,6 +98,9 @@ class ReviewActivity : Activity() {
     private var autoRequested = false
     private var translationReview = false
     private var koreanSampleReview = false
+    private val processingInputBlock = InputFilter { _, _, _, dest, start, end ->
+        dest.subSequence(start, end)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -245,8 +262,13 @@ class ReviewActivity : Activity() {
     }
 
     private fun setProcessing(processing: Boolean) {
-        editor.isEnabled = !processing
-        editor.visibility = if (processing) View.GONE else View.VISIBLE
+        // Keep the exact focused review editor/input session alive for the optional
+        // automatic return. The confirmed English is immutable while translation runs.
+        editor.filters = if (processing && autoRequested) arrayOf(processingInputBlock)
+            else emptyArray()
+        editor.isEnabled = !processing || autoRequested
+        editor.visibility = if (processing && !autoRequested) View.GONE else View.VISIBLE
+        editor.isCursorVisible = !processing
         instructions.visibility = if (processing) View.GONE else View.VISIBLE
         confirmButton.isEnabled = !processing
         confirmButton.visibility = if (processing) View.GONE else View.VISIBLE

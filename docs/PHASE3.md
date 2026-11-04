@@ -143,7 +143,7 @@ existing text, SwiftKey, one-attempt and never-Send rules. Broader custom-app
 semantic rebinding cannot be proved by view identity alone and is not covered
 by the earlier manual insertion passes. Record measured limitations honestly.
 
-### Stopped October25: unimplemented paired-occlusion proposal
+### October25 proposal, reopened November4
 
 The Cancel-only fixture trace proved the same original window/root/node and
 direct editor instance survive one removal/addition during our review. A future
@@ -161,3 +161,20 @@ or an automatic-insertion pass. Service/policy agents made no implementation edi
 Andrew stopped for token reset and reconsidered manual Translate→Insert with a
 Korean preview as a possible useful alternative. No preview was added. Resume
 with a brief priority choice; preserve the restored working manual translation v2.
+
+On November4 Andrew reopened both automatic insertion and editor compatibility.
+The selected goal is automatic insertion after English approval. The paired
+protocol above is now being implemented as a default-OFF, owned-fixture candidate;
+the earlier stop is historical. It must also replace the old automatic path's
+temporary Insert panel with a nonfocusable waiting host and Cancel, showing
+manual controls only upon prewrite fallback. Keep collapsed Ko after success,
+as in the accepted October26 behavior.
+
+Acceptance requires independent source review and deterministic adversarial
+policy checks before an A35 run. Then exercise exact owned-fixture empty and
+middle insertion, changed destination text/caret/field, selected text, Cancel,
+and terminal uncertainty without retries. Require exactly one confirmed commit
+for success and no manual Insert panel on that path. Actual speech/edit/Korean
+translation is a separate gate because processing changes review UI state.
+External automatic eligibility remains disabled until reviewed acceptance;
+previous real-app insertion trials do not grant that scope.

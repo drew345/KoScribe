@@ -7,5 +7,6 @@
     <item name="ready_insert" type="id" />
     <item name="ready_copy" type="id" />
     <item name="ready_cancel" type="id" />
+    <item name="auto_return_cancel" type="id" />
     <item name="open_api_key_settings" type="id" />
 </resources>

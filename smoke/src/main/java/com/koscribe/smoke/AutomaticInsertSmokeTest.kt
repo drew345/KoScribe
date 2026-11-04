@@ -33,6 +33,7 @@ class AutomaticInsertSmokeTest {
     private val fixedEnglish = "Hello, I will arrive in ten minutes."
     private val fixedKorean = "안녕하세요. 10분 후에 도착할게요."
     private val flags = listOf("autoEmptyReady", "autoMiddleReady", "autoChangedReady",
+        "autoCaretReady", "autoFieldReady", "autoUncertainReady",
         "autoSelectedReady", "autoCancelReady")
     private lateinit var instrumentation: Instrumentation
     private var sessionAttempted = false
@@ -42,7 +43,7 @@ class AutomaticInsertSmokeTest {
         val confirmation: String, val proofs: Int, val cleanup: Boolean,
         val autoEnabled: Boolean, val speechEnabled: Boolean, val translationEnabled: Boolean,
         val intentPhase: String, val intentReason: String, val intentCaptures: Int,
-        val autoAttempts: Int, val autoFallbacks: Int,
+        val autoAttempts: Int, val autoFallbacks: Int, val manualResultRenders: Int,
     )
 
     private data class ReviewGeometry(val window: Rect, val confirm: Rect, val cancel: Rect,
@@ -152,13 +153,99 @@ class AutomaticInsertSmokeTest {
             fallback.intentCaptures == before.intentCaptures + 1 &&
                 fallback.intentPhase == "FALLBACK" &&
                 fallback.intentReason != "NONE" && fallback.intentReason != "none" &&
-                fallback.autoFallbacks == before.autoFallbacks + 1)
+                fallback.autoFallbacks == before.autoFallbacks + 1 &&
+                fallback.manualResultRenders > before.manualResultRenders)
         seedFixture(original, prefix.length)
         SystemClock.sleep(400) // A late exact match cannot arm an automatic write.
         assertNoWrite(before)
         assertTrue("MANUAL_INSERT_NOT_AVAILABLE_AFTER_LATE_RESTORE", ownId("ready_insert") != null)
         clickOwnId("ready_insert") // One fresh manual transaction after explicit choice.
         successfulManualInsert(before, prefix + fixedKorean + suffix)
+    }
+
+    @Test fun changedOriginalCaretFallsBackWithoutLateAutoRetry() {
+        only("autoCaretReady")
+        val prefix = "앞🙂 "
+        val suffix = " 뒤🌙"
+        val original = prefix + suffix
+        seedFixture(original, prefix.length)
+        val before = state()
+        startReview(before)
+        setPausedFixtureCaret(prefix.length + 1)
+        assertTrue("CARET_MUTATION_STOLE_REVIEW_FOCUS",
+            ownId("review_english")?.isFocused == true)
+        clickOwnId("review_confirm")
+        manualFallback(before, original)
+        assertTrue("CARET_MISMATCH_DID_NOT_TERMINALLY_FALL_BACK", state().let {
+            it.intentPhase == "FALLBACK" && it.autoFallbacks == before.autoFallbacks + 1 &&
+                it.manualResultRenders > before.manualResultRenders
+        })
+        selectFixtureRange(prefix.length, prefix.length)
+        SystemClock.sleep(400)
+        assertNoWrite(before)
+        assertTrue("LATE_CARET_RESTORE_REARMED_AUTO", ownId("ready_insert") != null)
+        clickOwnId("ready_cancel")
+        sessionAttempted = false
+        assertNoWrite(before)
+    }
+
+    @Test fun changedOriginalFieldFallsBackWithoutWritingEitherField() {
+        only("autoFieldReady")
+        val original = "Synthetic original field."
+        seedFixture(original, original.length)
+        val before = state()
+        startReview(before)
+        var changedFocus = false
+        instrumentation.runOnMainSync {
+            val activity = SmokeEditorActivity.current.get() ?: throw AssertionError("FIXTURE_ACTIVITY_MISSING")
+            val other = activity.findViewById<EditText>(R.id.local_uncertain_editor)
+            changedFocus = other.requestFocus() && other.isFocused &&
+                !activity.findViewById<EditText>(R.id.local_test_editor).isFocused
+        }
+        assertTrue("FIELD_MUTATION_NOT_APPLIED", changedFocus)
+        assertTrue("FIELD_MUTATION_STOLE_REVIEW_FOCUS",
+            ownId("review_english")?.isFocused == true)
+        clickOwnId("review_confirm")
+        manualFallback(before, original)
+        assertTrue("FIELD_MISMATCH_DID_NOT_TERMINALLY_FALL_BACK", state().let {
+            it.intentPhase == "FALLBACK" && it.autoFallbacks == before.autoFallbacks + 1 &&
+                it.manualResultRenders > before.manualResultRenders
+        })
+        assertTrue("FIELD_SWITCH_LOST_ON_RETURN", fixtureEditor()?.isFocused == false)
+        assertTrue("ALTERNATE_FIXTURE_FIELD_CHANGED", fixtureText(
+            fixtureEditor("local_uncertain_editor") ?: throw AssertionError("ALTERNATE_FIELD_MISSING")) == "")
+        clickOwnId("ready_cancel")
+        sessionAttempted = false
+        assertNoWrite(before)
+    }
+
+    @Test fun acceptedButUnobservedAutoCommitIsTerminalWithoutInsertRetry() {
+        only("autoUncertainReady")
+        val original = "Synthetic uncertain commit."
+        seedUncertainFixture(original)
+        val before = state()
+        startReview(before, targetEditorName = "local_uncertain_editor")
+        clickOwnId("review_confirm")
+        await("AUTO_UNCERTAIN_COMMIT_NOT_TERMINAL") { state().takeIf {
+            it.captures == before.captures + 1 && it.commits == before.commits + 1 &&
+                it.autoAttempts == before.autoAttempts + 1 &&
+                it.autoFallbacks == before.autoFallbacks && it.phase == "UNCERTAIN" &&
+                it.confirmation == "UNCERTAIN" && !it.cleanup
+        } }
+        assertTrue("UNCERTAIN_FIXTURE_WAS_CHANGED", fixtureEditor("local_uncertain_editor")?.let {
+            fixtureText(it) == original
+        } == true)
+        assertTrue("UNCERTAIN_COMMIT_REGAINED_INSERT", ownId("ready_insert") == null &&
+            ownId("ready_copy") != null && ownId("ready_cancel") != null)
+        SystemClock.sleep(500)
+        assertTrue("UNCERTAIN_COMMIT_RETRIED_OR_RENDERED_READY_INSERT", state().let {
+            it.captures == before.captures + 1 && it.commits == before.commits + 1 &&
+                it.autoAttempts == before.autoAttempts + 1 &&
+                it.manualResultRenders == before.manualResultRenders &&
+                it.confirmation == "UNCERTAIN" && ownId("ready_insert") == null
+        })
+        clickOwnId("ready_cancel")
+        sessionAttempted = false
     }
 
     @Test fun initialSelectedRangeRequiresManualFallbackWithoutWriting() {
@@ -199,13 +286,14 @@ class AutomaticInsertSmokeTest {
         assertTrue("REVIEW_CANCEL_LEFT_INSERT_AVAILABLE", ownId("ready_insert") == null)
     }
 
-    private fun startReview(before: State, expectArmed: Boolean = true) {
+    private fun startReview(before: State, expectArmed: Boolean = true,
+        targetEditorName: String = "local_test_editor") {
         assertTrue("PREEXISTING_DRAFT", before.phase == "NONE")
         assertTrue("ORIGINAL_FIXTURE_OR_SWIFTKEY_NOT_READY",
-            focusedFixtureApp() && fixtureEditor()?.isFocused == true &&
+            focusedFixtureApp() && fixtureEditor(targetEditorName)?.isFocused == true &&
                 imeVisible() && selectedSwiftKey())
-        await("BUBBLE_NOT_AVAILABLE") { ownButton("Ko") ?: ownButton("Close") }
-        if (ownButton("Ko") != null) clickOwnButton("Ko")
+        await("BUBBLE_NOT_AVAILABLE") { ownId("collapsed_bubble") ?: ownButton("Close") }
+        if (ownId("collapsed_bubble") != null) clickOwnId("collapsed_bubble")
         sessionAttempted = true
         clickOwnButton("요")
         await("STOP_NOT_AVAILABLE") { ownButton("Stop") }
@@ -290,7 +378,7 @@ class AutomaticInsertSmokeTest {
                 it.phase == "NONE" && it.confirmation == "CONFIRMED" && !it.cleanup
         } }
         sessionAttempted = false
-        assertTrue("AUTO_INSERT_NOT_DISMISSED", !visibleOwnUi())
+        assertCollapsedBubbleWithoutResult("AUTO_INSERT_RESULT_PANEL_REMAINED")
         assertTrue("SWIFTKEY_NOT_VISIBLE_AFTER_AUTO", imeVisible() && selectedSwiftKey())
         SystemClock.sleep(500)
         assertFixtureText(expected)
@@ -299,8 +387,10 @@ class AutomaticInsertSmokeTest {
             settled.captures == before.captures + 1 && settled.commits == before.commits + 1 &&
                 settled.autoAttempts == before.autoAttempts + 1 &&
                 settled.autoFallbacks == before.autoFallbacks &&
+                settled.manualResultRenders == before.manualResultRenders &&
                 settled.phase == "NONE" && settled.confirmation == "CONFIRMED" &&
-                ownId("ready_insert") == null && !visibleOwnUi())
+                ownId("ready_insert") == null)
+        assertCollapsedBubbleWithoutResult("AUTO_INSERT_REOPENED_RESULT_PANEL")
     }
 
     private fun manualFallback(before: State, expected: String) {
@@ -321,11 +411,19 @@ class AutomaticInsertSmokeTest {
                 it.confirmation == "CONFIRMED" && !it.cleanup
         } }
         sessionAttempted = false
-        assertTrue("MANUAL_INSERT_NOT_DISMISSED", !visibleOwnUi())
+        assertCollapsedBubbleWithoutResult("MANUAL_INSERT_RESULT_PANEL_REMAINED")
         assertTrue("SWIFTKEY_NOT_VISIBLE_AFTER_MANUAL", imeVisible() && selectedSwiftKey())
         SystemClock.sleep(500)
         assertFixtureText(expected)
         assertTrue("MANUAL_INSERT_RETRIED", state().commits == before.commits + 1)
+        assertCollapsedBubbleWithoutResult("MANUAL_INSERT_REOPENED_RESULT_PANEL")
+    }
+
+    private fun assertCollapsedBubbleWithoutResult(code: String) {
+        await(code) { ownId("collapsed_bubble")?.takeIf {
+            it.isEnabled && it.isClickable && ownId("ready_insert") == null &&
+                ownId("ready_copy") == null && ownId("ready_cancel") == null
+        } }
     }
 
     private fun assertNoWrite(before: State) {
@@ -406,6 +504,25 @@ class AutomaticInsertSmokeTest {
         }
     }
 
+    private fun seedUncertainFixture(text: String) {
+        instrumentation.runOnMainSync {
+            val activity = SmokeEditorActivity.current.get() ?: throw AssertionError("FIXTURE_ACTIVITY_MISSING")
+            val editor = activity.findViewById<EditText>(R.id.local_uncertain_editor)
+            editor.setText(text)
+            editor.setSelection(text.length)
+            editor.requestFocus()
+            val imm = activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.showSoftInput(editor, InputMethodManager.SHOW_IMPLICIT)
+        }
+        await("UNCERTAIN_FIXTURE_NOT_READY") { fixtureEditor("local_uncertain_editor")?.takeIf {
+            it.isFocused && fixtureText(it) == text &&
+                it.textSelectionStart == text.length && it.textSelectionEnd == text.length &&
+                focusedFixtureApp() && imeVisible()
+        } }
+        assertTrue("UNCERTAIN_FIXTURE_SWIFTKEY_NOT_SELECTED", selectedSwiftKey())
+        SystemClock.sleep(300)
+    }
+
     private fun selectFixtureRange(start: Int, end: Int) {
         instrumentation.runOnMainSync {
             val activity = SmokeEditorActivity.current.get() ?: throw AssertionError("FIXTURE_ACTIVITY_MISSING")
@@ -415,6 +532,17 @@ class AutomaticInsertSmokeTest {
             it.isFocused && it.textSelectionStart == start && it.textSelectionEnd == end
         } }
         SystemClock.sleep(250)
+    }
+
+    private fun setPausedFixtureCaret(caret: Int) {
+        var applied = false
+        instrumentation.runOnMainSync {
+            val activity = SmokeEditorActivity.current.get() ?: throw AssertionError("FIXTURE_ACTIVITY_MISSING")
+            val editor = activity.findViewById<EditText>(R.id.local_test_editor)
+            editor.setSelection(caret)
+            applied = editor.selectionStart == caret && editor.selectionEnd == caret
+        }
+        assertTrue("PAUSED_FIXTURE_CARET_MUTATION_NOT_APPLIED", applied)
     }
 
     private fun only(flag: String) = assumeTrue("AUTO_METHOD_REQUIRES_OWN_FLAG",
@@ -443,12 +571,14 @@ class AutomaticInsertSmokeTest {
             boolean("Speech input enabled"), boolean("Translation input enabled"),
             field("Original intent phase"), field("Original intent last reason"),
             count("Original intent captured count"),
-            count("Auto insert attempt count"), count("Auto insert fallback count"))
+            count("Auto insert attempt count"), count("Auto insert fallback count"),
+            count("Auto manual result renders"))
     }
 
-    private fun fixtureEditor(): AccessibilityNodeInfo? {
+    private fun fixtureEditor(name: String = "local_test_editor"): AccessibilityNodeInfo? {
+        require(name in listOf("local_test_editor", "local_uncertain_editor"))
         val matches = nodes(fixture).filter {
-            it.viewIdResourceName == "$fixture:id/local_test_editor" && it.isEditable
+            it.viewIdResourceName == "$fixture:id/$name" && it.isEditable
         }
         if (matches.size > 1) throw AssertionError("AMBIGUOUS_FIXTURE_EDITOR")
         return matches.singleOrNull()
@@ -456,7 +586,7 @@ class AutomaticInsertSmokeTest {
 
     private fun ownId(name: String): AccessibilityNodeInfo? {
         require(name in listOf("review_english", "review_confirm", "review_cancel",
-            "ready_insert", "ready_copy", "ready_cancel"))
+            "ready_insert", "ready_copy", "ready_cancel", "collapsed_bubble"))
         val matches = nodes(product).filter {
             it.viewIdResourceName == "$product:id/$name" && it.isVisibleToUser
         }
@@ -494,8 +624,6 @@ class AutomaticInsertSmokeTest {
         val editor = fixtureEditor() ?: throw AssertionError("FIXTURE_EDITOR_NOT_FOUND")
         assertTrue("SYNTHETIC_FIXTURE_TEXT_CHANGED", fixtureText(editor) == expected)
     }
-
-    private fun visibleOwnUi(): Boolean = nodes(product).any { it.isVisibleToUser }
 
     private fun nodes(requested: String): List<AccessibilityNodeInfo> {
         if (requested != product && requested != fixture) throw AssertionError("PACKAGE_NOT_ALLOWED")

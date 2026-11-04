@@ -30,6 +30,7 @@ class SmokeEditorActivity : Activity() {
         const val EXTRA_COMPOSED_FIXTURES = "com.koscribe.smoke.COMPOSED_FIXTURES"
         const val EXTRA_REVIEW_SURFACE_PROBE = "com.koscribe.smoke.REVIEW_SURFACE_PROBE"
         const val EXTRA_STABLE_AUTO_FIXTURE = "com.koscribe.smoke.STABLE_AUTO_FIXTURE"
+        const val EXTRA_MANUAL_RESULT_FIXTURE = "com.koscribe.smoke.MANUAL_RESULT_FIXTURE"
         const val COMPOSED_WRONG_RESULT = "Incorrect synthetic composed result."
         @Volatile
         var current = WeakReference<SmokeEditorActivity>(null)
@@ -64,6 +65,7 @@ class SmokeEditorActivity : Activity() {
     fun probeAlternateEditor(): EditText? = findViewById(R.id.local_probe_alternate_editor)
     fun stableAutoEditor(): EditText? = findViewById(R.id.stable_auto_editor)
     fun stableAutoAlternateEditor(): EditText? = findViewById(R.id.stable_auto_alternate_editor)
+    fun manualResultTargetEditor(): EditText? = findViewById(R.id.local_result_target_editor)
     /** Immutable fixture-only draft ownership for this view's entire lifetime. */
     fun stableAutoDraftToken(): Any? =
         (stableAutoEditor() as? StableAutoEditor)?.logicalDraft
@@ -142,6 +144,8 @@ class SmokeEditorActivity : Activity() {
             root.addView(stableAutoField(), LinearLayout.LayoutParams(-1, -2))
             root.addView(stableAutoAlternateField(), LinearLayout.LayoutParams(-1, -2))
         }
+        if (intent.getBooleanExtra(EXTRA_MANUAL_RESULT_FIXTURE, false))
+            root.addView(manualResultTargetField(), LinearLayout.LayoutParams(-1, -2))
         if (composedFixtures()) {
             root.addView(composedEditor(R.id.local_composed_match_editor, false),
                 LinearLayout.LayoutParams(-1, -2))
@@ -196,6 +200,11 @@ class SmokeEditorActivity : Activity() {
             if (stableAlternate != null) fixtureRoot.removeView(stableAlternate)
             if (stable != null) fixtureRoot.removeView(stable)
         }
+        val manualTarget = manualResultTargetEditor()
+        if (intent.getBooleanExtra(EXTRA_MANUAL_RESULT_FIXTURE, false)) {
+            if (manualTarget == null) fixtureRoot.addView(manualResultTargetField(),
+                LinearLayout.LayoutParams(-1, -2))
+        } else if (manualTarget != null) fixtureRoot.removeView(manualTarget)
         val protectedField = fixtureRoot.findViewById<EditText>(R.id.local_protected_editor)
         if (manual || intent.getBooleanExtra(EXTRA_OMIT_PROTECTED_EDITOR, false)) {
             if (protectedField != null) fixtureRoot.removeView(protectedField)
@@ -246,6 +255,13 @@ class SmokeEditorActivity : Activity() {
     private fun stableAutoAlternateField(): EditText = EditText(this).apply {
         id = R.id.stable_auto_alternate_editor
         hint = "Identical synthetic alternate"
+        inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+    }
+
+    private fun manualResultTargetField(): EditText = EditText(this).apply {
+        id = R.id.local_result_target_editor
+        hint = "Synthetic manually chosen destination"
         inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
         importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
     }

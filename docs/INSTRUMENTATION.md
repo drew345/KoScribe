@@ -474,7 +474,32 @@ attempt/recording-proof counters and unchanged SwiftKey. No screenshots, externa
 editor actions or Send. Stop on interruption or unexpected effects and inspect
 the result before continuing. Restore the saved secure MVP when the session ends.
 
+## Manual Korean result review (2026-11-05)
+
+Use secure manual REVIEW with its fixed Korean sample. Speech, translation,
+auto insertion, visual mode and all probes must be off. The existing recording
+path briefly checks microphone availability and then stops. Tests use fixed
+English and Korean, make no API requests and never press Copy or Send.
+
+Run one `com.koscribe.smoke.ManualResultEditSmokeTest` method at a time in the
+owned fixture, with its single flag set to `true`. Inspect the JUnit result,
+destination/commit deltas, microphone stop and cleanup before proceeding.
+
+| Case | Method | Flag |
+| --- | --- | --- |
+| Discard a Korean correction, retain original, cancel with zero writes | `discardKeepsPreparedKoreanWithoutWriting` | `manualResultDiscardReady` |
+| Read a long result and reach its actions above SwiftKey | `longKoreanPreviewCanBeReadAndControlsReached` | `manualResultLongReady` |
+| Explicit Insert uses the prepared Korean unchanged | `uneditedPreparedKoreanIsVisibleAndInsertsOnce` | `manualResultUneditedReady` |
+| Save corrected Korean, choose a different fixture field, Insert at its middle caret | `editedKoreanInsertsOnlyFinalResultIntoChosenField` | `manualResultEditedReady` |
+
+The tests edit only KoScribe's own result editor. Only the final manual Insert
+may open a destination transaction. The expected target string includes the
+original prefix and suffix. The source field must stay intact. Verify the Copy
+payload in source/unit checks without replacing the user's clipboard.
+
 ## Stable-editor automatic sample (2026-11-05)
+
+Deferred after the move to manual Korean result review.
 
 This is a separate **write-capable**, API-free debug candidate. The six-case
 review-surface comparison above remains hard no-write. Build the new arm with

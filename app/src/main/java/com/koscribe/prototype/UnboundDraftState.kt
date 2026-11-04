@@ -20,6 +20,14 @@ internal class UnboundDraftState(private val newId: () -> String = { UUID.random
 
     private var draft: Draft? = null
 
+    companion object {
+        const val MAX_KOREAN_LENGTH = 512
+        fun validKoreanResult(text: String): Boolean =
+            text.isNotBlank() && text.length <= MAX_KOREAN_LENGTH && text.none {
+                it == '\u2028' || it == '\u2029' || Character.isISOControl(it)
+            }
+    }
+
     fun begin(mode: OutputMode): Draft? {
         if (draft != null) return null
         return Draft(newId(), mode, OutputMode.SAMPLE_ENGLISH, null, Phase.REVIEW, Source.SAMPLE)
@@ -77,10 +85,17 @@ internal class UnboundDraftState(private val newId: () -> String = { UUID.random
         val old = draft ?: return false
         if (old.id != id || old.phase != Phase.TRANSLATING ||
             old.translationAttempt != attempt || old.source != Source.SPEECH ||
-            old.mode == OutputMode.ENGLISH || output.isBlank() || output.length > 512 ||
-            output.any { it == '\n' || it == '\r' || it == '\u2028' || it == '\u2029' ||
-                Character.isISOControl(it) }) return false
+            old.mode == OutputMode.ENGLISH || !validKoreanResult(output)) return false
         draft = old.copy(result = output, phase = Phase.READY)
+        return true
+    }
+
+    /** Replaces only the prepared Korean. An attempted draft can never become writable again. */
+    fun editKoreanResult(id: String, previous: String, edited: String): Boolean {
+        val old = draft ?: return false
+        if (old.id != id || old.phase != Phase.READY || old.mode == OutputMode.ENGLISH ||
+            old.result != previous || !validKoreanResult(edited)) return false
+        draft = old.copy(result = edited)
         return true
     }
 

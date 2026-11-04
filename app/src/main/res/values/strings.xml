@@ -2,5 +2,13 @@
     <string name="app_name">KoScribe</string>
     <string name="accessibility_service_name">KoScribe</string>
     <string name="collapsed_bubble_description">Open KoScribe</string>
+    <string name="result_edit">Edit</string>
+    <string name="result_edit_korean">Edit Korean</string>
+    <string name="result_editor_description">Edit Korean result</string>
+    <string name="result_done">Done</string>
+    <string name="result_discard_edits">Discard edits</string>
+    <string name="result_too_long">Use up to 512 characters.</string>
+    <string name="result_invalid">Use one nonblank line, up to 512 characters.</string>
+    <string name="result_editor_placement_failed">Could not place the editor. Your saved result is available.</string>
     <string name="accessibility_description">Shows a dictation bubble and inserts confirmed text into a verified editor. Never sends messages.</string>
 </resources>

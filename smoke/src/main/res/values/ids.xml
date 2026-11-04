@@ -7,4 +7,5 @@
     <item name="local_probe_alternate_editor" type="id" />
     <item name="stable_auto_editor" type="id" />
     <item name="stable_auto_alternate_editor" type="id" />
+    <item name="local_result_target_editor" type="id" />
 </resources>

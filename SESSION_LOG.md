@@ -1524,3 +1524,15 @@
   the Korean result for checking and allowing correction before Insert or Copy.
   Switched the active work to that MVP. Preserve automatic experiments for
   later. Karrot/OpenAI dot retain the explicit Copy & close / manual Paste path.
+- Implemented the preview in the same nonfocusable result panel. Only Edit
+  opens a focusable Korean editor. Done and Discard return to the panel and
+  leave destination choice to the next explicit Insert. The edited draft is
+  the shared payload for Copy and Insert. Preserve the last attempted result
+  after uncertainty. Added stale/invalid edit and exact-result regressions.
+- Astra independently cleared app E4BB7D07/draft 754C641C/tests 165F4017 and
+  harness 4CD5DFE5/fixture 39ABFE78. Both secure manual variants passed 159
+  unit tests; app lint 0 errors/50 warnings and smoke lint 0 errors/5 warnings.
+  Sample AE1D1C6B, live translation 3FE8BE0F and smoke 69A663B4 saved in the
+  ignored manual-korean-result-20261105 build directory. Both app signatures
+  match the normal MVP. Ordinary debug and release configurations are OFF.
+  Requested a new phone window for the manual tests and installation choice.

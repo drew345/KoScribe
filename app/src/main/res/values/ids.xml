@@ -7,6 +7,11 @@
     <item name="ready_insert" type="id" />
     <item name="ready_copy" type="id" />
     <item name="ready_cancel" type="id" />
+    <item name="ready_result_text" type="id" />
+    <item name="ready_edit" type="id" />
+    <item name="ready_result_editor" type="id" />
+    <item name="ready_result_done" type="id" />
+    <item name="ready_result_discard" type="id" />
     <item name="auto_return_cancel" type="id" />
     <item name="auto_overlay_english" type="id" />
     <item name="auto_overlay_confirm" type="id" />

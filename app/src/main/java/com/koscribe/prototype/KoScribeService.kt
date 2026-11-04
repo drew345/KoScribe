@@ -26,6 +26,7 @@ import android.os.PowerManager
 import android.os.SystemClock
 import android.os.UserHandle
 import android.text.InputType
+import android.text.InputFilter
 import android.text.Spanned
 import android.view.Gravity
 import android.view.Display
@@ -39,8 +40,10 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.LinearLayout
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import java.io.FileDescriptor
 import java.io.PrintWriter
@@ -164,6 +167,9 @@ class KoScribeService : AccessibilityService() {
     private val bubblePrefs by lazy { getSharedPreferences("bubble_position", Context.MODE_PRIVATE) }
     private var status = "Focus a text field, then choose a mode."
     private var compactResultNotice: String? = null
+    private class ResultEdit(val draftId: String, val original: String, val holder: LinearLayout,
+        val editor: EditText, val feedback: TextView)
+    private var resultEdit: ResultEdit? = null
     private var recoveryText: String? = null
     private var pendingId: String? = null
     private var reviewVisible = false
@@ -3193,6 +3199,7 @@ class KoScribeService : AccessibilityService() {
         forceRender: Boolean = false, reason: IdleRefreshReason = IdleRefreshReason.DIRECT
     ) {
         if (stableSession != null || (ReviewSurfaceProbeMode.enabled && surfaceProbe.active)) return
+        resultEdit?.let { placeResultEditor(it); return }
         var gate = IdleRefreshGate.NONE
         var stage = IdleCheckStage.NOT_CHECKED
         var ime = IdleBubblePolicy.Ime.UNKNOWN
@@ -4991,6 +4998,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     private fun clearDraftOwnership() {
+        resultEdit = null
         draftReviewOwner = null
         draftScreenReceiver?.let { runCatching { unregisterReceiver(it) } }
         draftScreenReceiver = null
@@ -5025,7 +5033,7 @@ class KoScribeService : AccessibilityService() {
 
     private fun copyDraft(id: String) {
         if (ReviewSurfaceProbeMode.block()) return
-        if (freshDestination != null) return
+        if (freshDestination != null || resultEdit != null) return
         val draft = unboundDraft.current() ?: return
         if (draft.id != id || draft.phase !in setOf(UnboundDraftState.Phase.READY,
                 UnboundDraftState.Phase.UNCERTAIN)) return
@@ -5048,9 +5056,128 @@ class KoScribeService : AccessibilityService() {
         }
     }
 
+    private fun manualKoreanResult(draft: UnboundDraftState.Draft): Boolean =
+        startupExperiment == StartupExperiment.REVIEW && draft.mode != OutputMode.ENGLISH &&
+            !BuildConfig.AUTO_INSERT && !BuildConfig.STABLE_OVERLAY_AUTO && !ReviewSurfaceProbeMode.enabled &&
+            !BuildConfig.KARROT_SERVICE_PROBE && !BuildConfig.KARROT_EMPTY_CONNECTION_PROBE &&
+            !BuildConfig.KARROT_NO_READ_PROBE && !VisualTestMode.enabled
+
+    private fun openResultEditor(draft: UnboundDraftState.Draft, holder: LinearLayout) {
+        val original = draft.result ?: return
+        if (!manualKoreanResult(draft) || draft.phase != UnboundDraftState.Phase.READY ||
+            unboundDraft.current() !== draft || resultEdit != null || freshDestination != null ||
+            draftReviewOwner != null || bubble !== holder || !holder.isShown || !serviceConnected ||
+            idleBubbleGeometry == null || bubbleParams == null ||
+            (getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked) return
+
+        val feedback = TextView(this).apply {
+            setText(R.string.result_edit_korean)
+            setTextColor(0xFF245D55.toInt())
+            accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
+        }
+        val editor = EditText(this).apply {
+            id = R.id.ready_result_editor
+            contentDescription = getString(R.string.result_editor_description)
+            isSaveEnabled = false
+            importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+            importantForContentCapture = View.IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            imeOptions = EditorInfo.IME_ACTION_NONE or EditorInfo.IME_FLAG_NO_EXTRACT_UI or
+                EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
+            gravity = Gravity.TOP or Gravity.START
+            setTextColor(Color.BLACK)
+            setText(original)
+            setSelection(length())
+            // Reject an oversized replacement as a whole, including paste over a selection.
+            filters = arrayOf(InputFilter { _, start, end, dest, dstStart, dstEnd ->
+                if (dest.length - (dstEnd - dstStart) + end - start <= UnboundDraftState.MAX_KOREAN_LENGTH)
+                    null
+                else {
+                    feedback.setText(R.string.result_too_long)
+                    dest.subSequence(dstStart, dstEnd)
+                }
+            })
+        }
+        val edit = ResultEdit(draft.id, original, holder, editor, feedback)
+        resultEdit = edit
+        val controls = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        controls.addView(feedback)
+        controls.addView(editor, LinearLayout.LayoutParams(-1, dp(88)))
+        val row = LinearLayout(this)
+        row.addView(bubbleButton(getString(R.string.result_done), 0xFF2E7569.toInt(), Color.WHITE) {
+            finishResultEdit(edit, save = true)
+        }.apply { id = R.id.ready_result_done }, LinearLayout.LayoutParams(0, dp(48), 1f))
+        row.addView(bubbleButton(getString(R.string.result_discard_edits), Color.WHITE, 0xFF43594D.toInt(), size = 12f) {
+            finishResultEdit(edit, save = false)
+        }.apply { id = R.id.ready_result_discard }, LinearLayout.LayoutParams(0, dp(48), 1f))
+        controls.addView(row)
+        holder.removeAllViews()
+        holder.addView(android.widget.ScrollView(this).apply { addView(controls) },
+            LinearLayout.LayoutParams(-1, -1))
+        editor.viewTreeObserver.addOnWindowFocusChangeListener { focused ->
+            if (focused && resultEdit === edit && editor.hasFocus())
+                (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
+                    .showSoftInput(editor, InputMethodManager.SHOW_IMPLICIT)
+        }
+        editor.requestFocus()
+        placeResultEditor(edit)
+    }
+
+    private fun placeResultEditor(edit: ResultEdit) {
+        if (resultEdit !== edit || bubble !== edit.holder) return
+        val params = bubbleParams ?: return
+        val geometry = idleBubbleGeometry ?: return
+        val placed = runCatching {
+            val frame = bubbleFrame()
+            val width = minOf(dp(300), frame.area.right - frame.area.left)
+            val height = minOf(dp(210), frame.area.bottom - frame.area.top)
+            if (width < dp(100) || height < dp(48)) return@runCatching false
+            val point = BubblePlacement.resolve(savedBubbleAnchor(), width, height, frame.area)
+            val x = point.x - geometry.screenOffset.x
+            val y = point.y - geometry.screenOffset.y
+            val flags = (params.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE.inv()) or
+                WindowManager.LayoutParams.FLAG_SECURE
+            if (params.flags != flags || params.width != width || params.height != height ||
+                params.x != x || params.y != y) {
+                params.flags = flags
+                params.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
+                    WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
+                params.width = width
+                params.height = height
+                params.x = x
+                params.y = y
+                windowManager.updateViewLayout(edit.holder, params)
+            }
+            true
+        }.getOrDefault(false)
+        if (!placed && resultEdit === edit) {
+            resultEdit = null
+            compactResultNotice = getString(R.string.result_editor_placement_failed)
+            refreshIdleBubble(forceRender = true)
+        }
+    }
+
+    private fun finishResultEdit(edit: ResultEdit, save: Boolean) {
+        if (resultEdit !== edit || bubble !== edit.holder || !edit.holder.isShown ||
+            freshDestination != null || draftReviewOwner != null || !serviceConnected ||
+            unboundDraft.current()?.let { it.id == edit.draftId && it.phase == UnboundDraftState.Phase.READY &&
+                it.result == edit.original } != true) return
+        if ((getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked) {
+            endDraft(edit.draftId, "LOCKED")
+            return
+        }
+        if (save && !unboundDraft.editKoreanResult(edit.draftId, edit.original, edit.editor.text.toString())) {
+            edit.feedback.setText(R.string.result_invalid)
+            return
+        }
+        resultEdit = null
+        refreshIdleBubble(forceRender = true) // Recreate the regular nonfocusable result panel.
+    }
+
     /** A click owns one short transaction; no prior recording/review target is inherited. */
     private fun insertDraft(draftId: String, automatic: OriginalWriteBinding? = null) {
         if (ReviewSurfaceProbeMode.block()) return
+        if (resultEdit != null) return
         if (automatic == null && autoForDraft(draftId) != null)
             clearAutoIntent("MANUAL_INSERT_SELECTED", renderReady = false)
         if (automatic == null && stableSession != null) return
@@ -6290,6 +6417,7 @@ class KoScribeService : AccessibilityService() {
 
     private fun renderBubble() {
         if (stableSession != null || (ReviewSurfaceProbeMode.enabled && surfaceProbe.active)) return
+        if (resultEdit != null) return // Preserve the focused editor and its unsaved SwiftKey text.
         if (!serviceConnected || !::windowManager.isInitialized) return
         if (unboundArm()) idleRenderCount++
         if (unboundArm() && unboundRecording.current() != null) {
@@ -6363,9 +6491,14 @@ class KoScribeService : AccessibilityService() {
         if (resultDraft?.phase == UnboundDraftState.Phase.READY &&
             (BuildConfig.STABLE_OVERLAY_AUTO || autoFallbackDraftId == resultDraft.id || autoForDraft(resultDraft.id) != null))
             autoManualReadyRenderCount++
+        val manualResult = resultDraft?.let(::manualKoreanResult) == true
+        val pinManualControls = manualResult && available != null &&
+            available.bottom - available.top >= dp(235)
         var resultDragHandle: Button? = null
         if (resultDraft != null) {
             val resultControls = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+            fun currentHost() = bubble === holder && holder.isShown && holder.isEnabled && resultEdit == null
+            fun currentPanel() = currentHost() && unboundDraft.current() === resultDraft && freshDestination == null
             val dragRow = LinearLayout(this).apply { gravity = Gravity.CENTER }
             val dragHandle = bubbleButton("Move", 0xFFF4F7F5.toInt(),
                 0xFF547267.toInt(), 0xFFDCE5E1.toInt(), 12f) {}.apply {
@@ -6376,8 +6509,23 @@ class KoScribeService : AccessibilityService() {
             }
             resultDragHandle = dragHandle
             dragRow.addView(dragHandle, LinearLayout.LayoutParams(dp(104), dp(48)))
+            if (manualResult && resultDraft.phase == UnboundDraftState.Phase.READY)
+                dragRow.addView(bubbleButton(getString(R.string.result_edit), 0xFFE9F4ED.toInt(), 0xFF245D55.toInt()) {
+                    if (currentPanel()) openResultEditor(resultDraft, holder)
+                }.apply { id = R.id.ready_edit; contentDescription = getString(R.string.result_edit_korean) },
+                    LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginStart = dp(8) })
             resultControls.addView(dragRow, LinearLayout.LayoutParams(-1, dp(48)))
-            resultControls.addView(TextView(this).apply {
+            val body = if (manualResult) LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+                else resultControls
+            if (manualResult) body.addView(TextView(this).apply {
+                id = R.id.ready_result_text
+                text = resultDraft.result
+                textSize = 16f
+                setTextColor(0xFF183F31.toInt())
+                isSaveEnabled = false
+                setPadding(dp(3), dp(5), dp(3), dp(5))
+            }, LinearLayout.LayoutParams(-1, -2))
+            else body.addView(TextView(this).apply {
                 text = if (VisualTestMode.enabled)
                     "VISUAL TEST · ${resultDraft.mode.label} · RESULT READY"
                     else "${resultDraft.mode.label} · RESULT READY"
@@ -6388,7 +6536,7 @@ class KoScribeService : AccessibilityService() {
                 setTextColor(0xFF245D55.toInt())
                 gravity = Gravity.CENTER_VERTICAL
             }, LinearLayout.LayoutParams(-1, dp(25)))
-            resultControls.addView(TextView(this).apply {
+            body.addView(TextView(this).apply {
                 text = if (resultDraft.phase == UnboundDraftState.Phase.READY)
                     "Check field and cursor before Insert."
                     else "Insert is unavailable. Use Copy & close or Cancel."
@@ -6397,7 +6545,7 @@ class KoScribeService : AccessibilityService() {
                 gravity = Gravity.CENTER_VERTICAL
             }, LinearLayout.LayoutParams(-1, dp(34)))
             compactResultNotice?.takeIf(String::isNotBlank)?.let { notice ->
-                resultControls.addView(TextView(this).apply {
+                val warning = TextView(this).apply {
                     text = notice
                     textSize = 12f
                     maxLines = 2
@@ -6406,24 +6554,39 @@ class KoScribeService : AccessibilityService() {
                     setTextColor(0xFF744E36.toInt())
                     setPadding(dp(7), 0, dp(7), 0)
                     background = bubbleSurface(0xFFFAF1E7.toInt(), 8)
-                }, LinearLayout.LayoutParams(-1, dp(44)).apply { bottomMargin = dp(4) })
+                }
+                body.addView(warning, if (manualResult) 0 else -1,
+                    LinearLayout.LayoutParams(-1, dp(44)).apply { bottomMargin = dp(4) })
+            }
+            if (manualResult) {
+                if (pinManualControls)
+                    resultControls.addView(android.widget.ScrollView(this).apply { addView(body) },
+                        LinearLayout.LayoutParams(-1, 0, 1f))
+                else resultControls.addView(body)
             }
             if (resultDraft.phase == UnboundDraftState.Phase.READY)
                 resultControls.addView(bubbleButton("Insert", 0xFF2E7569.toInt(),
-                    Color.WHITE, size = 14f) { insertDraft(resultDraft.id) }.apply {
+                    Color.WHITE, size = 14f) {
+                    if (!manualResult || currentPanel()) insertDraft(resultDraft.id)
+                }.apply {
                     id = R.id.ready_insert
                 }, LinearLayout.LayoutParams(-1, dp(48)).apply { bottomMargin = dp(6) })
             val secondaryRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
             secondaryRow.addView(bubbleButton("Copy & close", 0xFFE9F4ED.toInt(),
-                0xFF245D55.toInt(), size = 12f) { copyDraft(resultDraft.id) }.apply {
+                0xFF245D55.toInt(), size = 12f) {
+                if (!manualResult || currentPanel()) copyDraft(resultDraft.id)
+            }.apply {
                 id = R.id.ready_copy
             }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { rightMargin = dp(6) })
             secondaryRow.addView(bubbleButton("Cancel", Color.WHITE,
                 0xFF5C6C66.toInt(), 0xFFDCE6DF.toInt(), 12f) {
-                    endDraft(resultDraft.id, "USER_CANCELLED")
+                    // Cancel remains explicit even during this panel's capture or readback.
+                    if (!manualResult || (currentHost() && unboundDraft.current()?.id == resultDraft.id))
+                        endDraft(resultDraft.id, "USER_CANCELLED")
                 }.apply { id = R.id.ready_cancel }, LinearLayout.LayoutParams(0, dp(48), 1f))
             resultControls.addView(secondaryRow, LinearLayout.LayoutParams(-1, dp(48)))
-            holder.addView(android.widget.ScrollView(this).apply {
+            if (pinManualControls) holder.addView(resultControls, LinearLayout.LayoutParams(-1, -1))
+            else holder.addView(android.widget.ScrollView(this).apply {
                 isFillViewport = false
                 addView(resultControls)
             }, LinearLayout.LayoutParams(-1, -1))
@@ -6563,7 +6726,7 @@ class KoScribeService : AccessibilityService() {
                 minOf(dp(260), available!!.right - available.left)
             else if (expanded) dp(260) else WindowManager.LayoutParams.WRAP_CONTENT,
             if (resultDraft != null)
-                minOf(dp(if (compactResultNotice.isNullOrBlank()) 233 else 281),
+                minOf(dp(if (manualResult) 282 else if (compactResultNotice.isNullOrBlank()) 233 else 281),
                     available!!.bottom - available.top)
             else if (autoReturnDraft != null)
                 dp(60)

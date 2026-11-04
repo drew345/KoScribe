@@ -15,6 +15,18 @@ hash verified. Service PID 13370, REVIEW, speech/translation on, auto off, draft
 NONE, cleanup clear. SwiftKey is selected and the fixture was removed for user 0.
 This installed build predates the requested editable Korean result.
 
+**Manual revision:** the Korean preview and same-panel editor are implemented.
+Edit opens SwiftKey, Done saves locally, Discard edits retains the last saved
+text, and Cancel on the preview ends the draft. The result scrolls and an
+uncertain attempted write retains only recovery actions. Both Insert and Copy
+read the saved result; no translation request runs when saving an edit.
+Independent app review cleared service E4BB7D07, draft 754C641C, IDs A4EF0CB6,
+strings F74D355F and tests 165F4017. The secure fixed-sample and live-translation
+builds both passed 159 unit tests, assembly and app lint (0 errors, 50 warnings).
+The matching-signer APKs are archived in `app/build/manual-korean-result-20261105/`:
+sample AE1D1C6B and live 3FE8BE0F. The new result screen still needs its A35
+fixture checks.
+
 **Automatic checkpoint, November 5:** C and D passed the identical-field switch
 with usable manual recovery. Neither unchanged-middle test wrote any text. The
 fresh original field, caret and context matched twice. D's complete trace showed

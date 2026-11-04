@@ -7,6 +7,58 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class UnboundDraftStateTest {
+    @Test fun savedKoreanIsExactPreparedPayloadWithoutAnotherTranslation() {
+        val state = UnboundDraftState { "draft" }
+        state.beginSpeech(OutputMode.POLITE, "I'm coming.")
+        assertEquals(UnboundDraftState.Confirm.TRANSLATING, state.confirm("draft"))
+        assertFalse(state.editKoreanResult("draft", "", "아직"))
+        assertTrue(state.translationSucceeded("draft", 1, "갈게요."))
+        val approved = state.current()!!
+        val edited = "  곧 갈게요 🙂  "
+        assertTrue(state.editKoreanResult("draft", "갈게요.", edited))
+        assertEquals(approved.copy(result = edited), state.current())
+        assertFalse(state.translationSucceeded("draft", 1, "늦은 응답"))
+        val result = state.current()!!.result!!
+        val original = EditorSnapshot("fixture", 1, "node", "view", "EditText", 2, 1,
+            "앞뒤", 0, 1, 1, false)
+        val expected = CommitConfirmation.expected(original, result)!!
+        assertEquals("앞${edited}뒤", expected.text)
+        assertEquals(1 + edited.length, expected.caret)
+        assertTrue(state.markAttempted("draft"))
+        assertFalse(state.editKoreanResult("draft", edited, "다시"))
+        assertFalse(state.markAttempted("draft"))
+        assertEquals(edited, state.current()!!.result) // Available for explicit Copy after uncertainty.
+    }
+
+    @Test fun koreanEditsRejectInvalidTextOldVersionsAndStaleDrafts() {
+        val ids = ArrayDeque(listOf("first", "second"))
+        val state = UnboundDraftState { ids.removeFirst() }
+        state.begin(OutputMode.CASUAL)
+        assertEquals(UnboundDraftState.Confirm.READY, state.confirm("first"))
+        val original = state.current()!!.result!!
+        val limit = "가".repeat(510) + "🙂"
+        for (invalid in listOf("", "  ", "a\nb", "a\rb", "a\tb", "a\u2028b", "a\u2029b", limit + "가")) {
+            assertFalse(state.editKoreanResult("first", original, invalid))
+            assertEquals(original, state.current()!!.result)
+        }
+        assertTrue(state.editKoreanResult("first", original, limit))
+        assertFalse(state.editKoreanResult("first", original, "이전 편집"))
+        assertTrue(state.end("first"))
+        state.begin(OutputMode.CASUAL)
+        state.confirm("second")
+        assertFalse(state.editKoreanResult("first", original, "만료"))
+        assertEquals(original, state.current()!!.result)
+    }
+
+    @Test fun englishMultilineKeepsItsExistingCopyPayload() {
+        val state = UnboundDraftState { "en" }
+        state.begin(OutputMode.ENGLISH)
+        assertTrue(state.edit("en", "One\nTwo"))
+        assertEquals(UnboundDraftState.Confirm.READY, state.confirm("en"))
+        assertFalse(state.editKoreanResult("en", "One\nTwo", "교체"))
+        assertEquals("One\nTwo", state.current()!!.result)
+    }
+
     @Test fun englishEditsBecomeTheResultOnlyAfterConfirmation() {
         val state = UnboundDraftState { "draft" }
         assertEquals("draft", state.begin(OutputMode.ENGLISH)?.id)

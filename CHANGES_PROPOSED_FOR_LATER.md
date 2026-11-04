@@ -37,6 +37,9 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    First-null IME in both positive probes does not identify November4's historical
    missing root. Do not keep extending global exceptions or treat fingerprint
    equality as universal conversation identity. See DEVICE_TESTS for exact scope.
+   On the A35 the stable-editor overlay now passes the identical-field switch and
+   manual recovery check. The unchanged middle-caret case still refuses before
+   commit. PROGRESS tracks that gate before live translation or external trials.
 
 2. **Make recording and processing states more obvious.** Andrew initially did
    not realize tapping a language choice immediately started recording. Improve

@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import android.provider.Settings
+import android.view.Display
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import android.view.inputmethod.InputMethodManager
@@ -34,6 +35,7 @@ class StableOverlayAutoSmokeTest {
         "stableCancelReady", "stableCaretReady", "stableContextReady")
     private lateinit var instrumentation: Instrumentation
     private var sessionStarted = false
+    private var cleanupBaseline: State? = null
 
     private enum class Case { ALTERNATE, MIDDLE, EMPTY, CANCEL, CARET, CONTEXT }
     private data class State(
@@ -46,6 +48,12 @@ class StableOverlayAutoSmokeTest {
     )
     private data class Fixture(val activity: SmokeEditorActivity, val original: EditText,
         val alternate: EditText, val draftToken: Any, val text: String, val caret: Int)
+    private data class ReadyControls(
+        val insert: AccessibilityNodeInfo?, val copy: AccessibilityNodeInfo?,
+        val cancel: AccessibilityNodeInfo?, val code: String
+    ) {
+        val allReady: Boolean get() = insert != null && copy != null && cancel != null
+    }
 
     @Test fun changedIdenticalFieldFallsBackBeforeWrite() =
         runCase(Case.ALTERNATE, "stableAlternateReady")
@@ -57,9 +65,26 @@ class StableOverlayAutoSmokeTest {
 
     @After fun cancelOwnSessionOnFailure() {
         if (!::instrumentation.isInitialized || !sessionStarted) return
+        val baseline = cleanupBaseline ?: return
         runCatching {
-            (ownId("auto_overlay_cancel") ?: ownId("ready_cancel"))
-                ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+            val end = SystemClock.elapsedRealtime() + 2_000L
+            while (SystemClock.elapsedRealtime() < end) {
+                val current = state()
+                if (current.draft == "NONE" ||
+                    current.originalCaptures != baseline.originalCaptures + 1) return@runCatching
+                val cancel = when (current.draft) {
+                    "REVIEW" -> ownId("auto_overlay_cancel")?.takeIf {
+                        it.isVisibleToUser && it.isEnabled && it.isClickable
+                    }
+                    "READY", "UNCERTAIN" -> readyControls().cancel
+                    else -> null
+                }
+                if (cancel != null) {
+                    cancel.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                    return@runCatching // One dispatch even if the framework returns false.
+                }
+                SystemClock.sleep(100)
+            }
         }
     }
 
@@ -83,11 +108,12 @@ class StableOverlayAutoSmokeTest {
             initial.draft == "NONE" && !initial.cleanup && selectedSwiftKey())
         val fixture = launchAndSeed(case)
         val before = state()
+        cleanupBaseline = before
         assertNoWrite(initial) // Seeding an owned field cannot trigger a stale product write.
         assertTrue("ORIGINAL_INTENT_CAPTURED_DURING_FIXTURE_SEED",
             before.originalCaptures == initial.originalCaptures)
-        openReview()
         sessionStarted = true
+        openReview()
         val armed = await("STABLE_REVIEW_NOT_ARMED", 8_000) {
             val current = state()
             if (current.phase in setOf("FALLBACK", "REFUSED", "CANCELLED"))
@@ -180,13 +206,12 @@ class StableOverlayAutoSmokeTest {
                 assertNegativeFixture(case, fixture)
                 assertNoWrite(before)
                 assertOwnReviewGone()
-                assertTrue("MANUAL_FALLBACK_NOT_AVAILABLE", ownId("ready_insert") != null &&
-                    ownId("ready_copy") != null && ownId("ready_cancel") != null)
                 val targetSpecific = targetSpecificReason(case, fallback.reason)
                 report("outcome", "CASE_${case.name}_FALLBACK_REASON_${fallback.reason}_" +
                     "TIMING_${refusalTiming}_TARGET_SPECIFIC_${if (targetSpecific) 1 else 0}_" +
                     "NO_CAPTURE_COMMIT_ATTEMPT_1_MANUAL_READY_1")
                 assertTrue("FALLBACK_CAUSE_NOT_TARGET_SPECIFIC_${fallback.reason}", targetSpecific)
+                awaitManualControls(before)
                 // A later return to the old text/caret cannot silently rearm this intent.
                 instrumentation.runOnMainSync {
                     fixture.original.setText(fixture.text)
@@ -196,7 +221,10 @@ class StableOverlayAutoSmokeTest {
                 SystemClock.sleep(400)
                 assertNoWrite(before)
                 assertTrue("LATE_RESTORE_REARMED_AUTO", state().phase == "FALLBACK")
-                clickOwnId("ready_cancel")
+                val cancel = awaitManualControls(before).cancel
+                    ?: throw AssertionError("MANUAL_CANCEL_NOT_VISIBLE_AFTER_LATE_RESTORE")
+                assertTrue("MANUAL_CANCEL_CLICK_FAILED",
+                    cancel.performAction(AccessibilityNodeInfo.ACTION_CLICK))
                 await("FALLBACK_DRAFT_NOT_CLEANED") { state().takeIf {
                     it.draft == "NONE" && !it.cleanup
                 } }
@@ -392,6 +420,59 @@ class StableOverlayAutoSmokeTest {
             true.takeIf { listOf("auto_overlay_english", "auto_overlay_confirm",
                 "auto_overlay_cancel").none { "$product:id/$it" in ids } }
         }
+    }
+
+    /** One framework window/tree per sample; never combine controls from successive layouts. */
+    private fun readyControls(): ReadyControls {
+        val candidates = ArrayList<ReadyControls>()
+        var unavailableRoots = 0
+        for (window in automation().windows) {
+            if (window.type != AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY ||
+                window.displayId != Display.DEFAULT_DISPLAY) continue
+            val root = window.getRoot(0)
+            if (root == null) { unavailableRoots++; continue }
+            if (root.packageName?.toString() != product) continue
+            fun exact(name: String): Pair<String, AccessibilityNodeInfo?> {
+                val found = root.findAccessibilityNodeInfosByViewId("$product:id/$name")
+                    .filter { it.packageName?.toString() == product &&
+                        it.viewIdResourceName == "$product:id/$name" &&
+                        it.windowId == window.id }
+                val node = found.singleOrNull()
+                val present = found.size == 1
+                val visible = node?.isVisibleToUser == true
+                val usable = node != null && visible && node.isEnabled && node.isClickable
+                return "P${if (present) 1 else 0}V${if (visible) 1 else 0}" +
+                    "U${if (usable) 1 else 0}" to node?.takeIf { usable }
+            }
+            val (iCode, insert) = exact("ready_insert")
+            val (cCode, copy) = exact("ready_copy")
+            val (xCode, cancel) = exact("ready_cancel")
+            if (iCode != "P0V0U0" || cCode != "P0V0U0" || xCode != "P0V0U0")
+                candidates.add(ReadyControls(insert, copy, cancel,
+                    "I${iCode}_C${cCode}_X${xCode}"))
+        }
+        return when (candidates.size) {
+            1 -> candidates[0]
+            0 -> ReadyControls(null, null, null,
+                "NO_RESULT_WINDOW_ROOT_MISSING_${if (unavailableRoots > 0) 1 else 0}")
+            else -> ReadyControls(null, null, null, "MULTIPLE_RESULT_WINDOWS")
+        }
+    }
+
+    private fun awaitManualControls(before: State): ReadyControls {
+        val end = SystemClock.elapsedRealtime() + 2_500L
+        var last = "NOT_SAMPLED"
+        while (SystemClock.elapsedRealtime() < end) {
+            val current = state()
+            assertNoWrite(before)
+            assertTrue("MANUAL_FALLBACK_STATE_CHANGED_DURING_UI_WAIT",
+                current.phase == "FALLBACK" && current.draft == "READY" && !current.cleanup)
+            val sample = readyControls()
+            last = sample.code
+            if (sample.allReady) return sample
+            SystemClock.sleep(100)
+        }
+        throw AssertionError("MANUAL_FALLBACK_NOT_AVAILABLE_$last")
     }
 
     private fun assertNoWrite(before: State) {

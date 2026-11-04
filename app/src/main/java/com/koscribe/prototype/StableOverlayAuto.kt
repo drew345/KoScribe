@@ -17,7 +17,6 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -385,21 +384,19 @@ internal class StableOverlayAuto(
             if (!holder.isAttachedToWindow) { panel = null; editor = null; notice = null }
             throw failure
         }
-        var requested = false
-        fun offerKeyboard() {
-            if (!closed && !approved && !requested && edit.isAttachedToWindow && edit.isFocused && edit.hasWindowFocus()) {
-                requested = true
-                traceMark("IME_SHOW_REQUEST")
-                (service.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
-                    .showSoftInput(edit, InputMethodManager.SHOW_IMPLICIT)
+        var traced = false
+        fun traceShowOpportunity() {
+            if (!closed && !approved && !traced && edit.isAttachedToWindow && edit.isFocused && edit.hasWindowFocus()) {
+                traced = true
+                traceMark("IME_SHOW_SUPPRESSED")
             }
         }
         edit.viewTreeObserver.addOnWindowFocusChangeListener { focused ->
             if (!closed && stoppingReason == null) traceMark(if (focused) "WINDOW_FOCUS_GAIN" else "WINDOW_FOCUS_LOSS")
-            if (focused) offerKeyboard()
+            if (focused) traceShowOpportunity()
             else if (!closed && stoppingReason == null && !approved && ownToken != null) disarm("REVIEW_OWNER_LOST_FOCUS")
         }
-        edit.requestFocus(); edit.post { offerKeyboard() }
+        edit.requestFocus(); edit.post { traceShowOpportunity() }
     }
 
     private fun confirm() {

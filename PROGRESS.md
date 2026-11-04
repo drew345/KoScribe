@@ -2,29 +2,32 @@
 
 Updated: 2026-11-05 (Asia/Seoul).
 
-**Current action:** all six revised no-write comparison cases completed on the A35
-after fresh readiness. Andrew performed both SwiftKey edits and dismissed them;
-four changed-target cases used autonomous fixture mutations. Normal secure MVP
-D266E911 is restored, installed hash verified, servicePID24728 idle; SwiftKey
-unchanged and smoke removed from user0. Independent architecture and safety review
-support the next separate default-OFF owned-fixture overlay candidate: English
-approval prepares a fixed Korean result, then the existing guarded writer may try
-once after a verified return. Under the existing November4 authorization, the
-separate sample arm and six-case harness are implemented, reviewed and built. It admits
-only the stable owned editor, never the epoch-mutable diagnostic view. Reviewed
-contract: [PHASE3](docs/PHASE3.md#november5-overlay-candidate-first-owned-write-gate).
-Checkpoint `0c2c94b` preserves the finished no-write experiment. The first new
-phone gate is the changed-field negative, then middle-caret insertion only after
-that gate passes. On the first A35 run the adapter refused an input-session
-finish before the field switch. The 5.250-second test failed its armed-review
-precondition. The harness cancelled cleanly. All positive write cases remain pending.
-The reviewed diagnostic adds fixed categories for launch, focus, keyboard request
-and input callbacks. It saves the first refusal across cleanup. The new APK
-`stable-overlay-trace-v2.apk` has SHA-256
-053DD8DA0711328B1C0506203F78EB69A1EFD5BDA77C4EB750F4AAA168F460CA.
-Service AAEE3714, adapter 3FDC0E6B, trace 76F98BBC, trace tests 8C61741A.
-All 153 unit tests passed. Assembly and lint passed with 50 warnings. Use the
-same smoke APK and exact field-switch test. V2 preserves the v1 write guards.
+**Current action, November 5:** the changed-field safety gate passed on the A35.
+With system-managed keyboard display, SwiftKey opened for English review. After
+the fixture switched to an identical-looking field, KoScribe refused before
+writing. Insert, Copy and Cancel were usable together. Cancel cleared the draft.
+
+The unchanged middle-caret test reached the next stage. After one approval,
+KoScribe recovered the original editor, cursor and context and created one fresh
+transaction. Six accessibility notifications invalidated it before commit. The
+independent final editor checks passed, and the transaction guard refused the
+write. Commit requests were zero. Stop here in the gate sequence. Identify the
+first invalidating event and its timing before changing when the transaction starts.
+The empty, Cancel, caret and context cases on this path are pending, as are live
+translation and external acceptance. [Device record](docs/DEVICE_TESTS.md#system-managed-swiftkey-and-first-guarded-return-on-november-5)
+
+**Phone returned:** restored the secure manual MVP in place, verified installed
+SHA-256 D266E911, PID 5575 idle, speech/translation on, auto off, draft NONE,
+cleanup clear. SwiftKey is selected. The fixture was removed from user 0.
+
+**Tested candidate:** sample C and smoke v2 are in the ignored
+`app/build/stable-overlay-auto-20261105/` directory. C is
+`stable-overlay-system-show-C.apk` (636BD6CE), smoke is
+`smoke-stable-overlay-v2.apk` (FE40499D). Source hashes are AEFF4629 for the
+adapter and 311EE671 for the harness. C keeps the window visibility hint and
+lets Android show SwiftKey. The fixture uses a fixed Korean sample. Its English
+approval exercises routing without using the microphone or translation API.
+The earlier Activity/overlay no-write comparison is preserved at `0c2c94b`.
 
 **Reviewed stable sample:** `app/build/stable-overlay-auto-20261105/` contains
 `stable-overlay-sample-v1.apk` SHA-256

@@ -2353,3 +2353,40 @@ Restored the normal secure MVP and verified installed hash D266E911. Service
 PID 24728 was idle with normal speech/translation settings, SwiftKey selected
 and the owned fixture uninstalled for user 0. AppOps showed the previous 560ms
 recording. Only the exact negative method ran.
+
+## System-managed SwiftKey and first guarded return on November 5
+
+Andrew made the unlocked A35 available for up to ten minutes. Only the signed
+owned fixture ran. All builds used fixed English and Korean sample content.
+
+| App and harness | Test | Measured result |
+| --- | --- | --- |
+| A 053DD8DA, smoke 353EED3B, PID 28163 | Switch to an identical-looking field | Failed at 3.841s before the fixture switch. The explicit keyboard-show request occurred while the original editor was still served. Android started the review editor at G1, finished it before full focus attestation and started it again at G2 after fallback. Zero captures, attempts and commits. |
+| C 636BD6CE, smoke 353EED3B, PID 31375 | Same field switch | SwiftKey visible, review focus attested. The actual switch triggered RETURN_FIELD_CHANGED before approval. Zero captures, attempts and commits. JUnit failed at 3.859s while looking for the three recovery controls during layout. One-shot cleanup missed Cancel and left a sample READY. Reinstalled the same C in place for a clean session. |
+| C 636BD6CE, smoke FE40499D, PID 2225 | Same field switch | **Passed in 4.659s.** Review focus and IME present. RETURN_FIELD_CHANGED before Confirm, zero captures, attempts and commits. Insert, Copy and Cancel were enabled, visible and clickable in the same owned window. Restoring the fixture focus left eligibility revoked. Actual Cancel cleared the draft. |
+| Same C and harness, PID 2225 | Unchanged middle caret between emoji-bearing prefix and suffix | **Failed in 10.512s.** One approval. Trace showed the original editor return at G2. One fresh capture and automatic attempt. Six FRESH_TARGET_EVENT notifications invalidated the transaction. The precommit editor checks passed and the guard refused. Zero commit requests. Harness Cancel cleared the draft. |
+
+The recorded G0/G1/G2 labels are generations relative to the original input
+session. A never reached full review attestation before its restart, so the
+precondition for the separate visibility-hint control B3032F12 was absent and
+it stayed on disk. C removed the explicit keyboard-show call while retaining
+the window hint, focus requests and all writer checks. The newer harness waits
+up to 2.5s for usable controls together in a single owned window.
+
+On the middle run the service emitted OBS_READY_UNKNOWN, FRESH_INSERT_REFUSED
+and AUTO_GUARD_REFUSED. Source inspection narrows the refusal to an invalidated
+fresh transaction. The six events shared one log label. Their types, window
+roles and occurrence times remain unknown. Empty, review Cancel, caret change
+and context change were held after this failure. No insertion, Send, recording,
+network request or external-app test occurred during this window.
+
+Both APKs were checked against the installed bytes. C SHA-256
+636BD6CE9D1D2A7FB32202AE972594C77DAF65A49CF670AC51BFF908C5FF84A1;
+smoke v2 FE40499DE3DBBE223B2E237FEA5AFEF63F7D4DC56FEEA0F673D828206588D828.
+C passed 153 unit tests and app lint (0 errors, 50 warnings). Final smoke
+assembled and passed lint (0 errors, 5 warnings). Astra independently cleared
+the adapter AEFF4629 and harness 311EE671.
+
+Restored and verified the normal secure D266E911 in place inside the availability
+window. PID 5575, REVIEW, speech and translation on, auto off, draft NONE,
+cleanup clear. SwiftKey selected, smoke removed for user 0.

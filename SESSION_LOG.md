@@ -1485,3 +1485,24 @@
 - Built and independently reviewed v2 with a bounded callback trace retained
   across harness Cancel. APK 053DD8DA, unchanged smoke 353EED3B. All 153 tests
   passed and lint reported zero errors. The capture and write decisions match v1.
+- Saved A at local commit 490ce42. To use the next A35 window efficiently,
+  also built the one-line visibility-hint control B, independently reviewed
+  for the specific same-review input replacement described in PROGRESS. Saved
+  APK B3032F12, adapter 02F4C021, and its patch, then restored tracked source A.
+  B passed 153 tests and lint. Requested availability once both builds were ready.
+
+## 2026-11-05 — Changed-field recovery passed; unchanged return refused before write
+
+- On the A35, diagnostic A showed the explicit keyboard request preceded full
+  review focus. Reviewed C lets Android show SwiftKey using the existing window
+  hint. B's trigger was absent. On C the review opened with SwiftKey and the
+  actual field switch was detected. A one-shot harness check missed the recovery
+  panel before layout completed. Bounded same-window control checks fixed that.
+- C 636BD6CE and smoke FE40499D passed the changed-field test in 4.659s with
+  zero writes, usable manual recovery and clean Cancel. The middle-caret test
+  recovered the original editor at G2 after one approval. Six event notifications
+  invalidated the fresh transaction. Zero commit calls. The test failed at
+  10.512s. Stop the remaining cases until the first invalidating event is known.
+- Returned phone within Andrew's ten-minute window. Verified normal MVP
+  D266E911 installed in place, PID 5575 idle, fixture removed and SwiftKey
+  selected. Full measurements and hashes are in DEVICE_TESTS.

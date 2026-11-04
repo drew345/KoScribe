@@ -20,10 +20,29 @@ as a baseline; do not keep enlarging its exceptions. First design/review an API-
 no-write owned-fixture comparison against focusable TYPE_ACCESSIBILITY_OVERLAY
 English review, with the same target observer and actual SwiftKey editing. Compare
 target visibility/identity, fresh input-session return, caret/context and changed-
-destination negatives. Classify the baseline's first missing-root role from its
-existing read. This is a feasibility experiment, not approval of a replacement
+destination negatives. The Activity control uses the existing Activity/theme with
+isolated fixed review content; it does not rerun the old recording/global-ledger
+protocol. Classify a first missing root from this probe's own bounded sample;
+that cannot retroactively identify November4's missing root. Include same-view
+logical rebinding with fixture-only ground truth and no forced input restart:
+unchanged public evidence may expose a limit, not establish destination safety.
+This is a feasibility experiment, not approval of a replacement
 write policy or permission to bypass checks. Existing one-attempt/precommit/
 postcommit writer, manual recovery, credentials and external-app gates remain.
+
+November5 measured decision: all six no-write cases completed. The owned original
+root/node stayed accessible in the recorded overlay samples and disappeared in
+Activity samples. Both restored a fresh matching target and both missed hidden
+same-view semantic rebinding. Independent architecture and safety review support
+a separate default-OFF, fixture-only overlay candidate. Keep the diagnostic APK
+unchanged. Exercise English approval with a prepared fixed Korean result, exact
+owned overlay/input handoff, fresh original root/node/caret/context validation,
+and the existing one-commit/precommit/postcommit writer. Refuse observed changes
+or missing proof before writing; an uncertain attempted write is terminal. A
+source-controlled stable editor can bound this first gate. A matched accessibility
+node does not prove conversation identity in arbitrary third-party apps. Require
+empty/middle preservation, no intermediate Insert panel, changed-field/caret,
+Cancel, cleanup and no-Send evidence before actual translation or external use.
 
 October26 priority: defer the automatic Translate & insert/paired-occlusion
 experiment. Andrew selected the MVP with explicit manual Insert plus Copy & close.

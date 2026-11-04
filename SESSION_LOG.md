@@ -1416,3 +1416,45 @@
   source links and concrete success/stop conditions. Verified repository now public
   after Andrew's pasted account of his change; agent made no visibility change.
   Code/device results remain November4's135 tests and incomplete entry gate.
+
+## 2026-11-05 — Revised no-write comparison authorized and started
+
+- Andrew explicitly requested continuing the goal with today's revised plan,
+  ending the sleep pause. Ultra owns app/probe implementation, Sol/xhigh the owned
+  fixture/harness, and Astra/xhigh independent design/source review. Root owns
+  builds, phone operation and memory. No new writer policy or external trial.
+- Keep the experiment API-free and hard no-write, with default/release OFF and
+  the normal secure baseline preserved. Two positive arms need actual SwiftKey
+  edits; negative cases use only controlled fixture changes. Hidden same-view
+  rebinding is a limitation to measure, not an oracle the app may consume.
+- **Implemented/reviewed:** isolated Activity/overlay arms share a fixed editor,
+  original-target observer and Dismiss. Source review corrected Activity sizing,
+  input-connection wrapper assumptions, bubble placement readiness and late-return
+  reporting. One baseline capture, bounded500ms host preparation,120s review and
+  2s return; all legacy effects blocked build-wide. Final serviceB8B3E145/controller
+  266D6D7F cleared by Astra/xhigh; smoke31AF37FC independently cleared.
+- **Local validation:**144 unit tests passed; app lint0errors44warnings and both
+  assemblies passed; final smoke lint0errors4warnings/build passed. Initial compile
+  and harness indentation failures were corrected before final successful builds.
+  Saved Activity453F8C89, overlay1B615020 and smokeBAD61EC8 with configs. No phone
+  action or automatic success; fresh A35 availability requested after builds/review.
+
+## 2026-11-05 — Six A35 review comparisons completed
+
+- After fresh readiness, Andrew edited both fixed English reviews with SwiftKey
+  and tapped Dismiss. Both restored original identity/caret/context with fresh
+  TARGET input. The original root/node was available in both overlay positive
+  samples and neither Activity positive sample. Distinct identical fields were
+  detected; hidden same-view logical rebinding was indistinguishable in both arms.
+  This measures sampled introspection, not continuous semantic identity. Exact
+  times/counts and six-case table are in DEVICE_TESTS.
+- All six cases completed with clean UI/draft state,0 transaction captures,
+  commits, auto attempts and recording proofs. No mic/API/key/clipboard/Send.
+  First-null IME only in the two positives; the historical November4 null role
+  remains unknown. Normal D266E911 restored and installed hash checked, service
+  28713 idle, SwiftKey unchanged; removed only the smoke package from user0.
+  Ordinary debug/release verified OFF/allfalse. Andrew can use the phone normally.
+- Independent reviewers support a separate default-OFF stable-owned-editor
+  candidate integrating editable overlay approval with the existing guarded
+  writer. Preserve this no-write probe. Confirm-to-commit, actual translation
+  and any external support are unproven. No external trial is reopened.

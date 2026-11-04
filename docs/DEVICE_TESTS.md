@@ -2256,3 +2256,71 @@ Stop and Cancel worked on the owned Test message screen. He found the bars too
 large for decorative motion, but chose to keep this revision for now. Own trace
 showed proof1, USER_CANCELLED, draft NONE, translation requests0, commit0,
 cleanup false. No transcript, API call, insertion or real-app action was tested.
+
+## Review-surface comparison (2026-11-05)
+
+**Measured conclusion:** the focusable accessibility overlay kept the original
+owned window/root/node accessible in the recorded editable-review samples. The Activity
+control did not. Both restored the original middle caret and fixed context with
+a fresh input session, and both detected another identical-content field. Neither
+could detect the fixture's hidden logical rebinding of the same view. This supports
+an overlay review direction, not automatic insertion eligibility or external-app
+compatibility. Two review samples do not establish continuous availability during
+the entire105-second positive case, nor a return-correctness advantage over the
+Activity. No automatic phone insertion has passed.
+
+Andrew gave fresh readiness before installation and used SwiftKey for both
+positive edits, then personally tapped Dismiss probe. Four negatives changed only
+the owned fixture. Exact methods/sole flags are in INSTRUMENTATION. All six JUnit
+invocations completed, including the intentionally exposed indistinguishability
+cases; completion alone is not a favorable destination-safety result.
+
+| Arm/case | Seconds | Review samples/root available/node available | Return identity | Fixture oracle | Interpretation |
+| --- | ---: | --- | --- | --- | --- |
+| Activity middle | 26.412 | 2/0/0 | MATCH | UNCHANGED | Text/caret preserved; fresh target session |
+| Activity alternate | 5.018 | 4/0/0 | MISMATCH | CHANGED | Distinct identical-content field detected |
+| Activity same-view rebind | 4.777 | 4/0/0 | MATCH | CHANGED | Hidden logical change unobservable |
+| Overlay middle | 105.586 | 2/2/2 | MATCH | UNCHANGED | Text/caret preserved; fresh target session |
+| Overlay alternate | 4.844 | 2/2/2 | MISMATCH | CHANGED | Distinct identical-content field detected |
+| Overlay same-view rebind | 4.623 | 2/2/2 | MATCH | CHANGED | Hidden logical change unobservable |
+
+Activity target diagnostics were window ABSENT/root UNAVAILABLE/node UNAVAILABLE;
+overlay diagnostics were PRESENT/SAME/AVAILABLE while its own editor held focus.
+Original caret/context were not read through the review's input connection. On
+return every case had caret/context MATCH, generation FRESH and input TARGET.
+Same-view rebinding changed only the fixture's private logical epoch: no forced
+restartInput and no oracle exposed to the product. Semantic identity remained
+UNKNOWN. Sticky return mismatch was true only for the alternate-field cases.
+
+Both positive edits produced six TextWatcher changes. The overlay's longer time
+included Andrew's delay before typing, not a measured processing delay. Input
+start/finish/own/target/restarting counters were2/2/1/1/0 for positives and3/3/2/1/0
+for negatives, in both arms. First-null role was IME for both positives and NONE
+for negatives. This is the new probe's single bounded sample, not attribution of
+the November4 global-ledger failure. The positive samples show that one missing
+IME root can coexist with a subsequently correct owned-editor return.
+
+All cases ended COMPLETE/OBSERVATION_COMPLETE_NOT_ELIGIBILITY with visible probe
+controls gone, cleanup CLEAN, draft NONE, overlay cleanup false and blocked-effect
+counter0. Legacy destination-transaction captures, commits, automatic attempts
+and recording proofs remained0. The probe did perform its scoped read-only owned
+target observations. Microphone was NEVER_STARTED; AppOps still showed only the
+previous stopped560ms usage. No API call, credential operation, clipboard, Send,
+external-app interaction, screenshot or conversation inspection occurred.
+
+Reviewed source serviceB8B3E145/controller266D6D7F; policy5899D291/tests25D42213;
+smoke31AF37FC/fixtureAB074DC6/IDs83AEA44A. All144 unit tests passed, app lint0errors/
+44warnings, smoke lint0errors/4warnings. Secure REVIEW arms, other experimentsfalse;
+normal debug/release rebuilt and verified OFF/allfalse. Artifacts under ignored
+`app/build/review-surface-20261105/`:
+
+- Activity `review-activity-v1.apk`:453F8C8968D2AD643849B2323BB0EED4CD432BBDE51C77B609FB643F4357E939, servicePID14373.
+- Overlay `review-overlay-v1.apk`:1B61502046A4B75ED8E30D82E08A24B831DD15896615474849151D293C089FE9, servicePID20015.
+- Harness `smoke-review-surface-v1.apk`:BAD61EC848A10E41AE56C868B8D17CA662C89F6421AC6179AE1C6FFFCEC8760E.
+
+The first post-install Activity service dump timed out; the next bounded read
+succeeded before testing. No reinstall or readiness workaround was needed.
+After all cases, restored exact secure MVP D266E911F443B896C33E49DFCE9EDBA5705F50D1E4515956CF045DEB59DAD234
+and verified installed hash, servicePID28713, speech/translationtrue, autofalse,
+draftNONE and cleanupfalse. SwiftKey remained selected. Removed only the smoke
+package from user0; main app data and live credential were preserved.

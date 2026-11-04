@@ -28,6 +28,7 @@ class SmokeEditorActivity : Activity() {
         const val EXTRA_OMIT_PROTECTED_EDITOR = "com.koscribe.smoke.OMIT_PROTECTED_EDITOR"
         const val EXTRA_MANUAL_FIXTURE = "com.koscribe.smoke.MANUAL_FIXTURE"
         const val EXTRA_COMPOSED_FIXTURES = "com.koscribe.smoke.COMPOSED_FIXTURES"
+        const val EXTRA_REVIEW_SURFACE_PROBE = "com.koscribe.smoke.REVIEW_SURFACE_PROBE"
         const val COMPOSED_WRONG_RESULT = "Incorrect synthetic composed result."
         @Volatile
         var current = WeakReference<SmokeEditorActivity>(null)
@@ -54,6 +55,31 @@ class SmokeEditorActivity : Activity() {
     private lateinit var fixtureRoot: LinearLayout
     private lateinit var heading: TextView
     private lateinit var messageEditor: EditText
+    private var probeLogicalEpoch = 0
+
+    /** Fixture-only oracle; the product cannot read this logical target marker. */
+    fun probeLogicalEpoch(): Int = probeLogicalEpoch
+    fun probeOriginalEditor(): EditText = messageEditor
+    fun probeAlternateEditor(): EditText? = findViewById(R.id.local_probe_alternate_editor)
+
+    fun probeSelectIdenticalAlternate(): Boolean {
+        if (!intent.getBooleanExtra(EXTRA_REVIEW_SURFACE_PROBE, false)) return false
+        val alternate = probeAlternateEditor() ?: return false
+        if (alternate.text.toString() != messageEditor.text.toString() ||
+            alternate.selectionStart != messageEditor.selectionStart ||
+            alternate.selectionEnd != messageEditor.selectionEnd) return false
+        messageEditor.clearFocus()
+        return alternate.requestFocus() && alternate.isFocused
+    }
+
+    fun probeRebindSameView(): Boolean {
+        if (!intent.getBooleanExtra(EXTRA_REVIEW_SURFACE_PROBE, false) ||
+            !messageEditor.isAttachedToWindow) return false
+        // A new fixture-only logical message reuses the exact view, text and caret.
+        // No public editor restart is injected: indistinguishability is the point.
+        probeLogicalEpoch++
+        return true
+    }
 
     private fun manualFixture(): Boolean = intent.getBooleanExtra(EXTRA_MANUAL_FIXTURE, false)
     private fun composedFixtures(): Boolean = !manualFixture() &&
@@ -93,6 +119,8 @@ class SmokeEditorActivity : Activity() {
             importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
         }
         root.addView(messageEditor, LinearLayout.LayoutParams(-1, (160 * density + 0.5f).toInt()))
+        if (intent.getBooleanExtra(EXTRA_REVIEW_SURFACE_PROBE, false))
+            root.addView(probeAlternateField(), LinearLayout.LayoutParams(-1, -2))
         if (composedFixtures()) {
             root.addView(composedEditor(R.id.local_composed_match_editor, false),
                 LinearLayout.LayoutParams(-1, -2))
@@ -131,6 +159,11 @@ class SmokeEditorActivity : Activity() {
         heading.text = if (manual) "Test message" else "KoScribe synthetic editor test"
         messageEditor.hint = if (manual) "Tap here to choose this empty field" else "Synthetic text only"
         fixtureRoot.isFocusableInTouchMode = manual
+        val alternate = probeAlternateEditor()
+        if (intent.getBooleanExtra(EXTRA_REVIEW_SURFACE_PROBE, false)) {
+            if (alternate == null) fixtureRoot.addView(probeAlternateField(), 2,
+                LinearLayout.LayoutParams(-1, -2))
+        } else if (alternate != null) fixtureRoot.removeView(alternate)
         val protectedField = fixtureRoot.findViewById<EditText>(R.id.local_protected_editor)
         if (manual || intent.getBooleanExtra(EXTRA_OMIT_PROTECTED_EDITOR, false)) {
             if (protectedField != null) fixtureRoot.removeView(protectedField)
@@ -161,6 +194,13 @@ class SmokeEditorActivity : Activity() {
         id = R.id.local_protected_editor
         hint = "Synthetic protected field"
         inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+    }
+
+    private fun probeAlternateField(): EditText = EditText(this).apply {
+        id = R.id.local_probe_alternate_editor
+        hint = "Synthetic alternate editor"
+        inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
         importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
     }
 
@@ -236,6 +276,7 @@ class SmokeEditorActivity : Activity() {
         }
         super.onDestroy()
     }
+
 }
 
 /** Test-only editor: acknowledges a commit without changing its visible text. */

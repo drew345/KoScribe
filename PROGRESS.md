@@ -2,6 +2,52 @@
 
 Updated: 2026-11-05 (Asia/Seoul).
 
+**Current action:** all six revised no-write comparison cases completed on the A35
+after fresh readiness. Andrew performed both SwiftKey edits and dismissed them;
+four changed-target cases used autonomous fixture mutations. Normal secure MVP
+D266E911 is restored, installed hash verified, servicePID28713 idle; SwiftKey
+unchanged and smoke removed from user0. Independent architecture and safety review
+support the next separate default-OFF owned-fixture overlay candidate: English
+approval prepares a fixed Korean result, then the existing guarded writer may try
+once after a verified return. This is an implementation direction, not acceptance
+of a write on the phone.
+
+**Latest measured result (November5):** the original window/root/node was available
+in overlay review samples (2/2/2 in each case), absent in Activity samples (2/0/0
+positive,4/0/0 negatives). Both positive arms returned unchanged original identity,
+caret/context with a fresh target input session after actual editing. Both detected
+a different identical-content field. Both matched the same view after a hidden
+fixture logical rebind: public evidence cannot distinguish that change. These are
+sampled observations, not continuous availability or semantic identity proof.
+First-null IME appeared in both positive probes, NONE in the four negatives;
+November4's missing-root role remains unknown. All legacy transaction capture,
+commit, auto-attempt and recording-proof counters0; clean UI/draft cleanup; no
+microphone/API/key/clipboard/Send. Full table: [DEVICE_TESTS](docs/DEVICE_TESTS.md#review-surface-comparison-2026-11-05).
+
+**November5 local validation:** Astra Ultra implemented the app; Sol/xhigh the
+six-case harness; Astra/xhigh independently cleared exact final source for this
+hard no-write scope. All144 unit tests passed (nine new policy tests); app assembly
+and lint passed with0errors44warnings; smoke assembly/lint0errors4warnings. Both
+secure arms are REVIEW with all other experiments false. Final serviceB8B3E145,
+controller266D6D7F, policy5899D291, policy tests25D42213, ReviewActivityCB6ED629,
+ApiKeyActivity275147B7, GradleE4E89DCD; smoke31AF37FC, fixtureAB074DC6, IDs83AEA44A.
+The existing manual writer is unchanged when the probe is OFF. A single original
+capture precedes bounded500ms host preparation; review lasts at most120s and
+return observation2s. A late return read is discarded. No microphone/API/key,
+clipboard, draft or insertion authority exists in these probe sessions.
+
+**Saved comparison artifacts:** ignored `app/build/review-surface-20261105/`:
+
+- `review-activity-v1.apk`:453F8C8968D2AD643849B2323BB0EED4CD432BBDE51C77B609FB643F4357E939
+- `review-overlay-v1.apk`:1B61502046A4B75ED8E30D82E08A24B831DD15896615474849151D293C089FE9
+- `smoke-review-surface-v1.apk`:BAD61EC848A10E41AE56C868B8D17CA662C89F6421AC6179AE1C6FFFCEC8760E
+
+Matching arm BuildConfig files are saved beside them; both app signatures match
+the saved secure MVP. Exact methods/sole flags and evidence meanings are in
+[INSTRUMENTATION](docs/INSTRUMENTATION.md#review-surface-comparison-2026-11-05).
+Normal debug APK/release BuildConfig were rebuilt and verified OFF/allfalse.
+Keep diagnostic completion distinct from automatic eligibility.
+
 **Selected active goal:** automatic Korean translation and insertion after
 English approval, without the intermediate Insert action on the verified path.
 Andrew reopened this work on November4, superseding the October26 deferral.
@@ -17,12 +63,13 @@ is noneditable and its fallback/postcheck rules differ from KoScribe. A focusabl
 accessibility overlay still transfers keyboard/input ownership. KoScribe already
 uses the accessibility InputMethod/commitText route recommended by Claude.
 The next work is a reviewed no-write comparison described below, rather than
-another series of global-inventory exceptions. No app code or phone state changed.
+another series of global-inventory exceptions. That assessment itself changed no
+app code or phone state; the subsequent authorized probe work is tracked above.
 Reviewed source remains `80b1eb9`; consultation notes were published at `d4c0c84`
 on `codex/approve-translate-insert`. Repository visibility is now public, verified
 after Andrew's pasted account of making it public; the agent did not change it.
 
-**Latest measured result:** final sample9D5B00D6 passed retained-host preparation
+**Preserved November4 automatic-candidate result:** sample9D5B00D6 passed retained-host preparation
 and the new exact original focus-loss observation. It then safely refused
 `ENTRY_INVENTORY_WINDOW_ROOT_MISSING` on a passive POLL during entry. One remote
 window root was unavailable; **which window is unknown**. Do not infer it was
@@ -59,30 +106,20 @@ BA587844D1A4B9D8028CB92F360F6A0808B30DCEF59A6BEE65575075EEC339CD.
 Harness source hashes: AutomaticInsert5FACB13A / AutoLifecycle61BBF8DA.
 Saved APKs are ignored local build artifacts, not Git deliverables.
 
-**Revised next work (design/probe only, not accepted implementation):** specify
-and independently review an API-free, hard no-write comparison of the existing
-ReviewActivity and a focusable TYPE_ACCESSIBILITY_OVERLAY English editor in the
-owned fixture. Use the same destination observer and preserve normal SwiftKey
-editing. Record target root/node/window visibility, input-generation/EditorInfo
-roles, original caret/context equality and lifecycle/mic cleanup as fixed categories.
-The baseline arm should classify the FIRST missing root from its SAME deciding
-read (original/review/host/IME/baseline-other/unknown), without extra root retries,
-titles, identifiers or content logs. This diagnostic informs the comparison;
-it is not permission to ignore an unavailable root in the existing validator.
+**Next fixture gate:** preserve the no-write comparison unchanged. Use a separate
+opt-in flag and a source-controlled stable fixture editor. Pin original root/node,
+window and input session at deliberate selection; require the authenticated own
+overlay/editor handoff and fresh return. Original context is UNKNOWN while review
+owns input. Original disappearance, unexpected input start, target contradiction,
+timeout or missing evidence ends auto eligibility; never rearm it. Reuse fresh
+precommit, one-attempt consumption and exact postcommit confirmation. Show manual
+recovery before a write when proof fails; uncertainty after a write stays terminal.
+First gate: fixed Korean into an empty and a prefilled middle caret on approval,
+one confirmed commit, no manual Insert panel, adversarial changed-field/caret and
+Cancel cases, no Send. Do not consume the hidden fixture oracle or claim a generic
+conversation-identity guarantee. Live translation and external acceptance follow.
 
-Compare an unchanged prefilled middle caret, a different identical-content field,
-and same-view logical rebinding with independent fixture ground truth. Matching
-text/caret or two stable snapshots alone cannot prove the intended field.
-The overlay hypothesis succeeds only if it improves target introspectability and
-correct fresh-session return while preserving editable review; old-connection
-survival is not required or expected. No migration merely because an overlay renders.
-Keep the existing writer untouched and unreachable in the probe. Review/build
-before fresh phone-readiness confirmation; no real-app tests or clipboard changes.
-If no continuity advantage appears, reassess instead of adding global exceptions.
-Full implementation/insertion acceptance follows only a separately reviewed
-destination-specific proof and the existing guarded insertion tests.
-
-**Latest decisive frame:** POLL/BASELINE, launchageLT1000, metadata0, anchor0,
+**November4 decisive frame:** POLL/BASELINE, launchageLT1000, metadata0, anchor0,
 reviewProved0, hostProved1, preAnchorProved1, entryActive1; owner present/same,
 local review service/unlocked/own/local/input/wait1, remote/root/editor/sole/full/
 bound0. Membership counts are UNKNOWN because the inventory read failed.
@@ -97,17 +134,17 @@ In the saved candidate, RETURNING layer changes stay strict and no-removal revie
 paths remain unsupported.
 If evidence shows skipped epochs, late DOWN against current UP, or recurring
 undeclared transitions, reassess architecture instead of adding exceptions.
-An accessibility-overlay review is now the selected next no-write comparison,
-not an implemented or accepted product replacement (see RESEARCH).
+The completed accessibility-overlay comparison supports adapting the review
+surface for a separate fixture-only candidate; no product replacement is accepted.
 All trials remain fixture-only; real-app read/write scope is not renewed.
 
 **Phone left ready for normal use:** normal secure D266E911 build restored in
-place; installed APK hash verified exactly, service30001 idle, speech/translation
+place; installed APK hash verified exactly, service28713 idle, speech/translation
 enabled, auto/probes false and SwiftKey unchanged. Main app/key data preserved.
 Saved baseline: `app/build/design-install/KoScribe-0.2-translation-final.apk`, SHA-256
 D266E911F443B896C33E49DFCE9EDBA5705F50D1E4515956CF045DEB59DAD234.
 The owned `com.koscribe.smoke` package was removed from user0 after testing.
-Play Protect twice asked for a security check during restoration; Andrew selected
+On November4, Play Protect twice asked for a security check during restoration; Andrew selected
 Send this time himself both times. The second restoration completed successfully.
 The requested temporary system-prompt screenshot was deleted on phone and PC.
 No external-editor content read/write, conversation image, KoScribe speech or

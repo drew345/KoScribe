@@ -4,4 +4,5 @@
     <item name="local_uncertain_editor" type="id" />
     <item name="local_composed_match_editor" type="id" />
     <item name="local_composed_mismatch_editor" type="id" />
+    <item name="local_probe_alternate_editor" type="id" />
 </resources>

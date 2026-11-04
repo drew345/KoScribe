@@ -419,6 +419,61 @@ For subsequent authorized Kakao diagnostics on REVIEW, use the manual recording
 run KakaoReselectRecordingSmokeTest on REVIEW: it requires the RESELECT build.
 Keep focused-field privacy limits and the closed real-app insertion scope.
 
+## Review-surface comparison (2026-11-05)
+
+This is an API-free, hard no-write diagnostic. Build the product separately with
+`-PkoscribeStartupArm=REVIEW -PkoscribeReviewSurfaceProbe=ACTIVITY` and `OVERLAY`.
+Other experiment flags must be false; ordinary/release default to OFF. Save both
+APKs and their generated BuildConfig, plus the matching smoke APK, after source
+review. Preserve the secure installed MVP for restoration; never clear its data.
+The six November5 invocations completed; measurements and limitations are in
+[DEVICE_TESTS](DEVICE_TESTS.md#review-surface-comparison-2026-11-05).
+
+Both arms use fixed English, the same original-target observer and an unchanged
+collapsed bubble host. The Activity arm uses the existing ReviewActivity/theme
+through an isolated branch; it is not the November4 recording/global-ledger
+candidate. During review, the current input connection belongs to the review:
+original text/caret remain UNKNOWN. Read the original bounded context only after
+the owned target's input session, window, root and node agree again. The probe
+has no insertion permit, draft, microphone, API or clipboard path.
+
+After a fresh phone-readiness reply, install the reviewed matching arm and run
+one exact method with its sole readiness flag. Do not invoke the whole suite.
+All methods belong to `com.koscribe.smoke.ReviewSurfaceComparisonSmokeTest`:
+
+| Method | Sole flag | Human action |
+| --- | --- | --- |
+| `activityMiddleCaret` | `activityMiddleReady` | Append ` test` with SwiftKey, then tap Dismiss probe |
+| `overlayMiddleCaret` | `overlayMiddleReady` | Append ` test` with SwiftKey, then tap Dismiss probe |
+| `activityIdenticalAlternate` | `activityAlternateReady` | None |
+| `overlayIdenticalAlternate` | `overlayAlternateReady` | None |
+| `activitySameViewRebind` | `activityRebindReady` | None |
+| `overlaySameViewRebind` | `overlayRebindReady` | None |
+
+Example for the first case:
+
+```powershell
+adb -d shell am instrument --user 0 -w -r -e class 'com.koscribe.smoke.ReviewSurfaceComparisonSmokeTest#activityMiddleCaret' -e activityMiddleReady true com.koscribe.smoke/com.koscribe.smoke.KoScribeTestRunner
+```
+
+The positive cases wait for actual user typing and user-controlled dismissal;
+never simulate typing with ACTION_SET_TEXT or automatically dismiss on the first
+keystroke. The four negatives mutate only the owned fixture, then dismiss. Both
+fields contain identical fixed text/caret. Same-view rebinding changes only a
+private fixture epoch, without an artificial input restart; the app cannot read
+that oracle. Observer MATCH with oracle CHANGED exposes an indistinguishable
+logical destination, not automatic eligibility or a failed test harness.
+
+Record per-arm target-root/node availability while the review owns focus,
+input-session changes, returned identity/caret/context, oracle agreement and
+cleanup. First-null role describes this probe's bounded inventory sample; it
+cannot identify the historical missing root. JUnit completion means the diagnostic
+ran, not that its observed comparison passed. `microphone=NEVER_STARTED` is not
+a recording-cleanup result. Require zero destination-capture/commit/automatic-
+attempt/recording-proof counters and unchanged SwiftKey. No screenshots, external
+editor actions or Send. Stop on interruption or unexpected effects and inspect
+the result before continuing. Restore the saved secure MVP when the session ends.
+
 ## Authorized save-prompt dismissal (2026-10-24)
 
 Andrew explicitly authorized clicking the visible save prompt's negative action.

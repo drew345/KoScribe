@@ -1,6 +1,6 @@
 # Changes proposed for later
 
-Updated: 2026-11-04 (Asia/Seoul).
+Updated: 2026-11-05 (Asia/Seoul).
 
 Andrew is trying the current MVP and will report anything needing an immediate
 fix. This is the standing list of later improvements and unfinished acceptance
@@ -27,12 +27,16 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    does not reopen external automatic eligibility or treat missing proof as success.
    The November4 final run passed retained-host preparation and provisional
    original focus loss, but a passive poll could not read one remote window root.
-   November5 outside-advice assessment selected a no-write owned comparison of
-   ReviewActivity and focusable accessibility-overlay review, with the first
-   missing-root role classified in the baseline. Original introspection may improve;
-   SwiftKey/input ownership still transfers and return needs fresh proof. Include
-   identical-field/same-view-rebinding negatives. This is a probe direction, not
-   an implemented or accepted replacement; do not keep extending global exceptions.
+   November5's six owned no-write comparison cases completed. Editable overlay
+   review samples kept the original window/root/node accessible; Activity samples
+   showed them absent. Continuous availability was not measured.
+   Both restored text/caret with a fresh session and detected an identical-content
+   alternate field. Both missed hidden same-view logical rebinding, as expected
+   from indistinguishable public evidence. The overlay is now an evidence-backed
+   review direction; production migration/automatic eligibility remains unaccepted.
+   First-null IME in both positive probes does not identify November4's historical
+   missing root. Do not keep extending global exceptions or treat fingerprint
+   equality as universal conversation identity. See DEVICE_TESTS for exact scope.
 
 2. **Make recording and processing states more obvious.** Andrew initially did
    not realize tapping a language choice immediately started recording. Improve

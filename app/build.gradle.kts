@@ -61,6 +61,15 @@ require(karrotNoReadProbe != "true" ||
     (startupExperimentArm == "REVIEW" && visualTest == "false")) {
     "koscribeKarrotNoReadProbe requires secure REVIEW and koscribeVisualTest=false"
 }
+val reviewSurfaceProbe = providers.gradleProperty("koscribeReviewSurfaceProbe").orElse("OFF").get()
+require(reviewSurfaceProbe in setOf("OFF", "ACTIVITY", "OVERLAY")) {
+    "koscribeReviewSurfaceProbe must be OFF, ACTIVITY, or OVERLAY"
+}
+require(reviewSurfaceProbe == "OFF" || (startupExperimentArm == "REVIEW" &&
+    listOf(visualTest, speechInput, translationInput, autoInsert, karrotServiceProbe,
+        karrotEmptyConnectionProbe, karrotNoReadProbe).all { it == "false" })) {
+    "Review surface probe requires secure REVIEW with every other experiment disabled"
+}
 
 android {
     namespace = "com.koscribe.prototype"
@@ -86,6 +95,7 @@ android {
             buildConfigField("boolean", "KARROT_SERVICE_PROBE", karrotServiceProbe)
             buildConfigField("boolean", "KARROT_EMPTY_CONNECTION_PROBE", karrotEmptyConnectionProbe)
             buildConfigField("boolean", "KARROT_NO_READ_PROBE", karrotNoReadProbe)
+            buildConfigField("String", "REVIEW_SURFACE_PROBE", "\"$reviewSurfaceProbe\"")
         }
         getByName("release") {
             buildConfigField("String", "STARTUP_EXPERIMENT_ARM", "\"OFF\"")
@@ -96,6 +106,7 @@ android {
             buildConfigField("boolean", "KARROT_SERVICE_PROBE", "false")
             buildConfigField("boolean", "KARROT_EMPTY_CONNECTION_PROBE", "false")
             buildConfigField("boolean", "KARROT_NO_READ_PROBE", "false")
+            buildConfigField("String", "REVIEW_SURFACE_PROBE", "\"OFF\"")
         }
     }
 

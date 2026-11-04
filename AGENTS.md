@@ -9,6 +9,14 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
 
 ## Work authorization and model roles
 
+- On 2026-11-05 Andrew explicitly resumed the goal with the revised plan after
+  outside-advice review. The prior sleep pause no longer applies. Implement and
+  independently review the API-free, hard no-write owned-fixture comparison of
+  ReviewActivity and focusable accessibility-overlay English review described
+  in PROGRESS. Preserve actual SwiftKey editing, target/context/caret observations,
+  changed-field/rebinding negatives, and the existing writer/manual baseline.
+  This authorizes the probe, not a weaker insertion policy or external-app trials.
+  Build/review before fresh phone-readiness confirmation and device tests.
 - On 2026-11-04 Andrew reopened work on automatic insertion after English
   approval and compatibility with Karrot, OpenAI dot and other failed editors,
   asking us to choose one goal. The selected active goal is automatic

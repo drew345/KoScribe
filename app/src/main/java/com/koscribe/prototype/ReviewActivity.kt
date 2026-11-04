@@ -188,6 +188,11 @@ class ReviewActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (ReviewSurfaceProbeMode.enabled) {
+            if (savedInstanceState != null || KoScribeService.active()?.bindSurfaceProbe(this,
+                    intent.getStringExtra(ReviewSurfaceProbe.EXTRA)) != true) finish()
+            return
+        }
         draftId = intent.getStringExtra(EXTRA_DRAFT_ID) ?: ""
         val draft = if (savedInstanceState == null)
             KoScribeService.active()?.bindDraftReview(draftId, owner) else null
@@ -456,16 +461,27 @@ class ReviewActivity : Activity() {
     }
 
     override fun onPause() {
+        if (ReviewSurfaceProbeMode.enabled) {
+            KoScribeService.active()?.surfaceProbeActivityLost(this)
+            super.onPause()
+            return
+        }
         if (!handedOff) cancel()
         super.onPause()
     }
 
     override fun onStop() {
+        if (ReviewSurfaceProbeMode.enabled) { super.onStop(); return }
         if (handedOff) KoScribeService.active()?.reviewActivityFinished(draftId, owner)
         super.onStop()
     }
 
     override fun onDestroy() {
+        if (ReviewSurfaceProbeMode.enabled) {
+            KoScribeService.active()?.surfaceProbeActivityLost(this)
+            super.onDestroy()
+            return
+        }
         if (!handedOff) KoScribeService.active()?.cancelDraftReview(draftId, owner)
         if (active.get() === this) active = WeakReference<ReviewActivity>(null)
         super.onDestroy()

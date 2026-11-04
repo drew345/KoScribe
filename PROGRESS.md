@@ -2,7 +2,7 @@
 
 Updated: 2026-11-04 (Asia/Seoul).
 
-**Active goal, 2026-11-04:** Andrew reopened automatic translate-and-insert and
+**Selected goal, 2026-11-04:** Andrew reopened automatic translate-and-insert and
 unsupported-editor compatibility and asked us to choose one. Selected issue 1:
 English approval should translate and insert into the verified original field
 without the intermediate Insert screen on the supported path. The immediate
@@ -34,6 +34,10 @@ The secure speech/translation variant is also built and saved as
 `BA90AA2EE22ABE5A14106073AB7488977C4C5D247F1D2CF63233FAA3DAD28870`;
 use only after the sample gates pass. It has no live/API/device acceptance yet.
 Ordinary debug output and release BuildConfig have been restored to OFF/all false.
+Goal status is **blocked pending phone readiness** after three consecutive turns
+reached the same unanswered readiness gate. All local implementation, review and
+build work is complete for this candidate. Resume the owned-device tests when
+Andrew says the unlocked A35 is free; no phone action has been taken.
 
 **Native design upgrade installed, 2026-10-31:** Andrew approved installing the
 comparison design and replacing the visible Phase 1 name. Sol/xhigh implemented

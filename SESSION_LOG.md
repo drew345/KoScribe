@@ -1211,4 +1211,8 @@
 - **Pending device gate:** A35 is connected; readiness question sent because tests
   take the screen. No candidate installed, content read, API call, new insertion,
   screenshot or credential change. Run exact owned sample gates, then separate
-  actual translation gate; restore D266E911 after sample checks. Goal stays active.
+  actual translation gate; restore D266E911 after sample checks.
+- **Goal status:** marked blocked after the same unanswered phone-readiness gate
+  recurred across three goal turns. Clean local checkpoint and all saved APK
+  hashes were reverified; implementation/review agents are complete. Resume
+  when Andrew confirms the unlocked A35 is free. No device action occurred.

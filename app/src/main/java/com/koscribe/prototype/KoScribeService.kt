@@ -258,6 +258,11 @@ class KoScribeService : AccessibilityService() {
     private var stableSession: StableOverlayAuto? = null
     private var stableLastPhase = "IDLE"
     private var stableLastReason = "NONE"
+    @Volatile private var stableLastInputTrace = "NONE"
+
+    internal fun stableInputDiagnostic(session: StableOverlayAuto, summary: String) {
+        if (stableSession === session) stableLastInputTrace = summary
+    }
 
     private fun stableFieldResource(fieldId: Int): String? = runCatching {
         packageManager.getResourcesForApplication(StableFixtureField.PACKAGE).getResourceName(fieldId)
@@ -265,6 +270,7 @@ class KoScribeService : AccessibilityService() {
 
     private fun startStableSample(mode: OutputMode) {
         if (stableSession != null || freshDestination != null || unboundDraft.current() != null) return
+        stableLastInputTrace = "NONE"
         val started = SystemClock.uptimeMillis()
         val capturedAt = SystemClock.elapsedRealtime()
         val first = if (mode == OutputMode.ENGLISH) null else runCatching {
@@ -2224,6 +2230,7 @@ class KoScribeService : AccessibilityService() {
         "Stable overlay auto enabled: ${BuildConfig.STABLE_OVERLAY_AUTO}\n" +
         "Stable overlay auto phase: ${stableSession?.phase ?: stableLastPhase}\n" +
         "Stable overlay auto reason: $stableLastReason\n" +
+        (if (BuildConfig.STABLE_OVERLAY_AUTO) "Stable overlay input trace: $stableLastInputTrace\n" else "") +
         "Last observation: ${observationCode.name}\n" +
             "First invalidation: ${lastInvalidationCode ?: "none"}\n" +
             "First content timing: ${firstTargetContentTimeCode ?: "none"}\n" +
@@ -3057,7 +3064,7 @@ class KoScribeService : AccessibilityService() {
                 return
             }
             if (startupExperiment == StartupExperiment.REVIEW) {
-                stableSession?.inputFinished(generation)
+                stableSession?.inputFinished(generation, currentInputEditorInfo)
                 trackAutoInputFinished(generation)
                 composition.reset()
                 abortPostCommitProbe("INPUT_FINISHED")

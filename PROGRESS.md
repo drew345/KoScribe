@@ -5,7 +5,7 @@ Updated: 2026-11-05 (Asia/Seoul).
 **Current action:** all six revised no-write comparison cases completed on the A35
 after fresh readiness. Andrew performed both SwiftKey edits and dismissed them;
 four changed-target cases used autonomous fixture mutations. Normal secure MVP
-D266E911 is restored, installed hash verified, servicePID28713 idle; SwiftKey
+D266E911 is restored, installed hash verified, servicePID24728 idle; SwiftKey
 unchanged and smoke removed from user0. Independent architecture and safety review
 support the next separate default-OFF owned-fixture overlay candidate: English
 approval prepares a fixed Korean result, then the existing guarded writer may try
@@ -15,8 +15,16 @@ only the stable owned editor, never the epoch-mutable diagnostic view. Reviewed
 contract: [PHASE3](docs/PHASE3.md#november5-overlay-candidate-first-owned-write-gate).
 Checkpoint `0c2c94b` preserves the finished no-write experiment. The first new
 phone gate is the changed-field negative, then middle-caret insertion only after
-that gate passes. Fresh A35 availability was requested; no write-capable overlay
-phone result yet.
+that gate passes. On the first A35 run the adapter refused an input-session
+finish before the field switch. The 5.250-second test failed its armed-review
+precondition. The harness cancelled cleanly. All positive write cases remain pending.
+The reviewed diagnostic adds fixed categories for launch, focus, keyboard request
+and input callbacks. It saves the first refusal across cleanup. The new APK
+`stable-overlay-trace-v2.apk` has SHA-256
+053DD8DA0711328B1C0506203F78EB69A1EFD5BDA77C4EB750F4AAA168F460CA.
+Service AAEE3714, adapter 3FDC0E6B, trace 76F98BBC, trace tests 8C61741A.
+All 153 unit tests passed. Assembly and lint passed with 50 warnings. Use the
+same smoke APK and exact field-switch test. V2 preserves the v1 write guards.
 
 **Reviewed stable sample:** `app/build/stable-overlay-auto-20261105/` contains
 `stable-overlay-sample-v1.apk` SHA-256
@@ -31,7 +39,7 @@ STABLE_OVERLAY_AUTO=true; existing experiments false and review probe OFF. Signe
 matches the MVP. Ordinary debug/release verified OFF/allfalse after archiving.
 No microphone, speech API or actual translation in this first fixed-sample gate.
 
-**Latest measured result (November5):** the original window/root/node was available
+**No-write comparison result (November5):** the original window/root/node was available
 in overlay review samples (2/2/2 in each case), absent in Activity samples (2/0/0
 positive,4/0/0 negatives). Both positive arms returned unchanged original identity,
 caret/context with a fresh target input session after actual editing. Both detected
@@ -158,7 +166,7 @@ surface for a separate fixture-only candidate; no product replacement is accepte
 All trials remain fixture-only; real-app read/write scope is not renewed.
 
 **Phone left ready for normal use:** normal secure D266E911 build restored in
-place; installed APK hash verified exactly, service28713 idle, speech/translation
+place; installed APK hash verified exactly, service24728 idle, speech/translation
 enabled, auto/probes false and SwiftKey unchanged. Main app/key data preserved.
 Saved baseline: `app/build/design-install/KoScribe-0.2-translation-final.apk`, SHA-256
 D266E911F443B896C33E49DFCE9EDBA5705F50D1E4515956CF045DEB59DAD234.

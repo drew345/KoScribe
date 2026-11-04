@@ -2324,3 +2324,32 @@ After all cases, restored exact secure MVP D266E911F443B896C33E49DFCE9EDBA5705F5
 and verified installed hash, servicePID28713, speech/translationtrue, autofalse,
 draftNONE and cleanupfalse. SwiftKey remained selected. Removed only the smoke
 package from user0; main app data and live credential were preserved.
+
+## Stable-editor automatic sample on November 5
+
+Andrew confirmed the A35 was unlocked and available. Both installed hashes
+matched the reviewed artifacts in commit `2d25d1e`. Service PID 21822 started
+idle with stable overlay enabled. The original automatic experiment, speech,
+translation and recording were off for this run.
+
+The first case, `changedIdenticalFieldFallsBackBeforeWrite`, failed in 5.250s
+with `STABLE_AUTO_DISARMED_BEFORE_REVIEW_INPUT_UNEXPECTED_FINISH`. The test
+was still waiting for an eligible review when Android ended an input session.
+The fixture had yet to switch fields or approve English. This run establishes
+an early refusal. Testing the field switch and positive insertion is still pending.
+
+The trace recorded one fallback. Destination captures, automatic attempts,
+commit requests, recording proofs and manual result renders were all zero.
+The harness cancelled the review. The draft ended at NONE with cleanup complete.
+The v1 refusal code combines several possible phases and input sessions.
+Their identity and sequence require measurement.
+
+Android 16 calls the finish handler before clearing the ending editor metadata.
+This lets a diagnostic classify the ending session using the callback. A new
+session can follow the finish, or the input method can become idle. An ordered
+trace will distinguish those cases on this device. [Android 16 InputMethod source](https://github.com/aosp-mirror/platform_frameworks_base/blob/android16-release/core/java/android/accessibilityservice/InputMethod.java#L151-L175)
+
+Restored the normal secure MVP and verified installed hash D266E911. Service
+PID 24728 was idle with normal speech/translation settings, SwiftKey selected
+and the owned fixture uninstalled for user 0. AppOps showed the previous 560ms
+recording. Only the exact negative method ran.

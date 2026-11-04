@@ -76,14 +76,49 @@ internal class StableOverlayAuto(
     private var closed = false
     private var stoppingReason: String? = null
     private var fallbackReported = false
+    private val inputTrace = StableOverlayInputTrace(capturedUptime)
     val phase: String get() = if (policy.phase == OriginalDestinationIntent.Phase.ORIGINAL)
         "PREPARING" else policy.phase.name
     val windowAttached: Boolean get() = panel != null
 
-    fun start() { handler.post(pulse) }
+    fun start() { publishInputTrace(); handler.post(pulse) }
+
+    private fun publishInputTrace() = service.stableInputDiagnostic(this, inputTrace.summary())
+
+    private fun traceMark(code: String, atPhase: String = phase) {
+        inputTrace.mark(code, atPhase, SystemClock.uptimeMillis()); publishInputTrace()
+    }
+
+    private fun traceRefusal(code: String, atPhase: String) {
+        inputTrace.refuse(code, atPhase, SystemClock.uptimeMillis()); publishInputTrace()
+    }
+
+    private fun sessionCode(info: EditorInfo?, gen: Int): String {
+        val role = when {
+            info == null -> "UNKNOWN"
+            originalInfo(info) -> "TARGET_EXACT"
+            info.packageName == StableFixtureField.PACKAGE -> "TARGET_OTHER"
+            info.packageName == service.packageName && info.fieldId == R.id.auto_overlay_english &&
+                info.inputType == editor?.inputType -> "OWN_EXACT"
+            info.packageName == service.packageName -> "OWN_OTHER"
+            else -> "FOREIGN"
+        }
+        val relative = when (gen) {
+            generation -> "G0"
+            generation + 1 -> "G1"
+            generation + 2 -> "G2"
+            else -> "GX"
+        }
+        return "${role}_$relative"
+    }
 
     fun inputStarted(info: EditorInfo, gen: Int, restarting: Boolean) {
         if (closed || stoppingReason != null) return
+        val before = phase
+        val code = "START_${sessionCode(info, gen)}_${if (restarting) "RESTART" else "NEW"}"
+        if (fallbackReported) {
+            inputTrace.followingStart(code, before, SystemClock.uptimeMillis()); publishInputTrace()
+        } else traceMark(code, before)
         if (info.packageName !in setOf(service.packageName, StableFixtureField.PACKAGE)) {
             interrupt("FOREIGN_INPUT"); return
         }
@@ -92,21 +127,28 @@ internal class StableOverlayAuto(
             OriginalDestinationIntent.Phase.ENTERING_REVIEW -> {
                 if (info.packageName != service.packageName || info.fieldId != R.id.auto_overlay_english ||
                     info.inputType != editor?.inputType || !policy.reviewInputStarted(gen, restarting, true))
-                    disarm("INPUT_REVIEW_CHANGED")
+                    disarm("INPUT_REVIEW_CHANGED", before)
             }
             OriginalDestinationIntent.Phase.RETURNING -> {
                 if (!originalInfo(info)) { disarm("RETURN_FIELD_CHANGED"); return }
-                if (!policy.originalInputReturned(gen, restarting)) disarm("INPUT_RETURN_CHANGED")
+                if (!policy.originalInputReturned(gen, restarting)) disarm("INPUT_RETURN_CHANGED", before)
                 else sawReturnInput = true
             }
             else -> disarm("INPUT_EXTRA_START")
         }
     }
 
-    fun inputFinished(gen: Int) {
+    fun inputFinished(gen: Int, endedInfo: EditorInfo?) {
         if (closed || stoppingReason != null || fallbackReported) return
-        if (policy.phase == OriginalDestinationIntent.Phase.REVIEW || !policy.inputFinished(gen, false))
-            disarm("INPUT_UNEXPECTED_FINISH")
+        val before = phase
+        val ending = sessionCode(endedInfo, gen)
+        val refused = policy.phase == OriginalDestinationIntent.Phase.REVIEW || !policy.inputFinished(gen, false)
+        traceMark("FINISH_${ending}_${if (refused) "REFUSED" else "ACCEPTED"}", before)
+        if (refused) {
+            // Preserve the actual terminating callback even if the bounded prefix was already full.
+            traceRefusal("INPUT_UNEXPECTED_FINISH_$ending", before)
+            disarm("INPUT_UNEXPECTED_FINISH", before)
+        }
     }
 
     fun selection(gen: Int, start: Int, end: Int, composingStart: Int, composingEnd: Int) {
@@ -249,6 +291,7 @@ internal class StableOverlayAuto(
                     if (first == null) hostSeenAt = now
                     else if (now - first >= 50 && policy.beginReview(draftId, SystemClock.elapsedRealtime())) {
                         launchedAt = now
+                        traceMark("LAUNCH")
                         open()
                     }
                 }
@@ -258,8 +301,8 @@ internal class StableOverlayAuto(
                 if (SystemClock.uptimeMillis() - (launchedAt ?: capturedUptime) >= 2_000) {
                     disarm("REVIEW_FOCUS_UNPROVED"); return
                 }
-                if (proved && !policy.reviewFocusAttested)
-                    policy.reviewFocused(draftId, SystemClock.elapsedRealtime())
+                if (proved && !policy.reviewFocusAttested && policy.reviewFocused(draftId, SystemClock.elapsedRealtime()))
+                    traceMark("OWN_FOCUS_ATTESTED")
             }
             OriginalDestinationIntent.Phase.REVIEW -> if (!ownFocused(windows)) disarm("REVIEW_OWNER_CHANGED")
             OriginalDestinationIntent.Phase.RETURNING -> {
@@ -329,6 +372,9 @@ internal class StableOverlayAuto(
         }
         holder.addView(edit, LinearLayout.LayoutParams(-1, 0, 1f))
         editor = edit; panel = holder
+        edit.setOnFocusChangeListener { _, focused ->
+            if (!closed && stoppingReason == null) traceMark(if (focused) "LOCAL_FOCUS_GAIN" else "LOCAL_FOCUS_LOSS")
+        }
         val params = WindowManager.LayoutParams(-1, -1, WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_SECURE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             PixelFormat.TRANSLUCENT).apply {
@@ -343,11 +389,13 @@ internal class StableOverlayAuto(
         fun offerKeyboard() {
             if (!closed && !approved && !requested && edit.isAttachedToWindow && edit.isFocused && edit.hasWindowFocus()) {
                 requested = true
+                traceMark("IME_SHOW_REQUEST")
                 (service.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
                     .showSoftInput(edit, InputMethodManager.SHOW_IMPLICIT)
             }
         }
         edit.viewTreeObserver.addOnWindowFocusChangeListener { focused ->
+            if (!closed && stoppingReason == null) traceMark(if (focused) "WINDOW_FOCUS_GAIN" else "WINDOW_FOCUS_LOSS")
             if (focused) offerKeyboard()
             else if (!closed && stoppingReason == null && !approved && ownToken != null) disarm("REVIEW_OWNER_LOST_FOCUS")
         }
@@ -379,8 +427,9 @@ internal class StableOverlayAuto(
         if (fallbackReported) finishFallback()
     }
 
-    fun disarm(reason: String) {
+    fun disarm(reason: String, atPhase: String = phase) {
         if (closed || fallbackReported) return
+        traceRefusal(reason, atPhase)
         fallbackReported = true
         policy.invalidate(reason)
         service.stableDisarmed(this, reason)
@@ -396,6 +445,7 @@ internal class StableOverlayAuto(
     fun interrupt(reason: String) {
         if (closed) return
         val terminal = stoppingReason ?: reason
+        if (terminal != "USER_CANCELLED") traceRefusal(terminal, phase)
         stoppingReason = terminal // Removing a focused panel can synchronously notify local focus loss.
         policy.invalidate(terminal)
         if (!removePanel()) { service.stableRemovalFailed(this); return }

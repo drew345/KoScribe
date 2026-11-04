@@ -1472,3 +1472,16 @@
   smoke lint0/5; assemblies passed. Saved app8D8F27BC/smoke353EED3B. Verified
   ordinary/release OFF/allfalse. Fresh phone availability requested for the first
   changed-field negative; this build has no device-success claim yet.
+
+## 2026-11-05 — First stable-editor write gate
+
+- Ran v1 app 8D8F27BC and smoke 353EED3B after Andrew's readiness reply.
+  The first negative stopped before mutation in 5.250s, INPUT_UNEXPECTED_FINISH.
+  Fallback count 1, transaction captures/attempts/commits/recording proofs 0.
+  Harness Cancel cleared the draft. Positive cases remain pending.
+- Restored and verified secure MVP D266E911, service PID 24728 idle, SwiftKey
+  selected, smoke removed from user 0. Reviewing a bounded trace to identify the
+  session and phase at refusal. Further phone work follows reviewed evidence.
+- Built and independently reviewed v2 with a bounded callback trace retained
+  across harness Cancel. APK 053DD8DA, unchanged smoke 353EED3B. All 153 tests
+  passed and lint reported zero errors. The capture and write decisions match v1.

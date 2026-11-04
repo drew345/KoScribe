@@ -27,10 +27,12 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    does not reopen external automatic eligibility or treat missing proof as success.
    The November4 final run passed retained-host preparation and provisional
    original focus loss, but a passive poll could not read one remote window root.
-   Identify that role before any rule change. If complete snapshot/event alignment
-   proves unreliable, evaluate focusable accessibility-overlay review as a separate
-   architecture; original introspection may improve, but SwiftKey/input ownership
-   and return still need proof. This alternative is not implemented or accepted.
+   November5 outside-advice assessment selected a no-write owned comparison of
+   ReviewActivity and focusable accessibility-overlay review, with the first
+   missing-root role classified in the baseline. Original introspection may improve;
+   SwiftKey/input ownership still transfers and return needs fresh proof. Include
+   identical-field/same-view-rebinding negatives. This is a probe direction, not
+   an implemented or accepted replacement; do not keep extending global exceptions.
 
 2. **Make recording and processing states more obvious.** Andrew initially did
    not realize tapping a language choice immediately started recording. Improve
@@ -76,6 +78,13 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    normal Paste as the MVP route. Any future integration needs preservation and
    destination evidence; a blinking cursor alone is not sufficient reason to
    remove the safeguards.
+
+   November5 source research verified ThumbFree's same-input-session virtual-field
+   tests, a useful future adapter test reference. Its noneditable-host fallback
+   and contextual postcheck are weaker than KoScribe's current destination/caret
+   contract, so they are not accepted compatibility fixes. Ramblr's whole-field
+   replacement and Verbally's unverified-write retries are unsuitable. No verified
+   Karrot/dot results were found in this research; current scopes remain unchanged.
 
    On 2026-10-29 Andrew tried Insert into an empty Karrot chat and then tapped
    the field and tried again. Both were refused; KoScribe's own counters show no

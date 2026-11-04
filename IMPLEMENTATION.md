@@ -14,6 +14,17 @@ that scope. Default/release OFF, existing manual recovery and all insertion
 safeguards remain. External automatic acceptance is a later explicit gate;
 compatibility with Karrot/OpenAI dot is not implied by this flow change.
 
+November5 assessment update: outside suggestions and primary-source review changed
+the next investigation. Preserve the reviewed Activity/global-inventory candidate
+as a baseline; do not keep enlarging its exceptions. First design/review an API-free
+no-write owned-fixture comparison against focusable TYPE_ACCESSIBILITY_OVERLAY
+English review, with the same target observer and actual SwiftKey editing. Compare
+target visibility/identity, fresh input-session return, caret/context and changed-
+destination negatives. Classify the baseline's first missing-root role from its
+existing read. This is a feasibility experiment, not approval of a replacement
+write policy or permission to bypass checks. Existing one-attempt/precommit/
+postcommit writer, manual recovery, credentials and external-app gates remain.
+
 October26 priority: defer the automatic Translate & insert/paired-occlusion
 experiment. Andrew selected the MVP with explicit manual Insert plus Copy & close.
 Fix same-editor reuse after completion without requiring SwiftKey to close.

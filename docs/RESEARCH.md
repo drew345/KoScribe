@@ -678,3 +678,85 @@ A focusable accessibility-overlay review could preserve original-window
 introspection and reduce replacement churn, but editable review would still
 transfer SwiftKey/input generation and need independent ownership/return proof.
 It remains a proposed fallback architecture, not an accepted path.
+
+## November5 outside-advice assessment and revised experiment
+
+Andrew supplied OpenAI-sidechat, Gemini and Claude suggestions and asked whether
+they should change the plan. The following are verified source findings and the
+overseer's decision, not new phone results. No third-party apps were installed,
+code copied, real-editor contents read or insertion attempted during this review.
+
+### API claims checked
+
+- Android documents that [`AccessibilityWindowInfo.getRoot(int)`](https://developer.android.com/reference/android/view/accessibility/AccessibilityWindowInfo#getRoot(int))
+  may return null for an invalid connection. Our null result does not identify
+  its window or establish Knox, secure-window, SwiftKey or Samsung-specific cause.
+  [`getWindows()`](https://developer.android.com/reference/android/accessibilityservice/AccessibilityService#getWindows())
+  reports interactive windows; describing it as every visible window is inaccurate.
+- [`TYPE_ACCESSIBILITY_OVERLAY`](https://developer.android.com/reference/android/view/WindowManager.LayoutParams#TYPE_ACCESSIBILITY_OVERLAY)
+  preserves introspection of covered windows. It is distinct from
+  TYPE_APPLICATION_OVERLAY. Editable focusable review still needs key/IME focus;
+  FLAG_NOT_TOUCH_MODAL concerns outside pointer routing, not preservation of the
+  underlying editor's input connection. Gemini's continuity guarantee is unsupported.
+- [`android.accessibilityservice.InputMethod`](https://developer.android.com/reference/android/accessibilityservice/InputMethod)
+  exposes the currently served editor. KoScribe already enables flagInputMethodEditor,
+  uses TrackingInputMethod generations, surrounding-text reads and one commitText
+  followed by verification. Claude's suggested API is not a missing implementation.
+- Neither a package/focus match, a recreated-field fingerprint nor two identical
+  reads proves the originally intended destination. Empty fields can share all
+  those values; the same composer view can be rebound to another conversation.
+  Our global ledger also cannot universally prove semantic conversation identity.
+  This reinforces explicit support boundaries, not omission of target checks.
+
+### Open-source comparisons verified
+
+ThumbFree was inspected at `b79ce24c87bbdefcf0a5d3ccc3e30a36bef760f2`:
+[`EditorPort.kt`](https://github.com/kabrapratik28/ThumbFree/blob/b79ce24c87bbdefcf0a5d3ccc3e30a36bef760f2/android/app/src/main/kotlin/io/github/kabrapratik28/thumbfree/a11y/EditorPort.kt),
+[`Inserter.kt`](https://github.com/kabrapratik28/ThumbFree/blob/b79ce24c87bbdefcf0a5d3ccc3e30a36bef760f2/android/app/src/main/kotlin/io/github/kabrapratik28/thumbfree/a11y/Inserter.kt), and
+[`VirtualNodePinTest.kt`](https://github.com/kabrapratik28/ThumbFree/blob/b79ce24c87bbdefcf0a5d3ccc3e30a36bef760f2/android/app/src/test/kotlin/io/github/kabrapratik28/thumbfree/a11y/VirtualNodePinTest.kt).
+Its explicit session/node separation and adversarial shared-connection tests are
+useful references. They include focus changes during a blocking read and delayed
+focus events; these are source-level tests, not verified Karrot/dot device results.
+The noneditable-host fallback skips exact editable-node focus refresh, so copying
+that policy would weaken KoScribe's field evidence. Its
+[`InsertionJudge.kt`](https://github.com/kabrapratik28/ThumbFree/blob/b79ce24c87bbdefcf0a5d3ccc3e30a36bef760f2/android/app/src/main/kotlin/io/github/kabrapratik28/thumbfree/core/insert/InsertionJudge.kt)
+accepts broader contextual/unknown-offset or old-plus-payload matching than our
+exact original-caret/context requirement. Its
+[`PreviewPanel.kt`](https://github.com/kabrapratik28/ThumbFree/blob/b79ce24c87bbdefcf0a5d3ccc3e30a36bef760f2/android/app/src/main/kotlin/io/github/kabrapratik28/thumbfree/a11y/PreviewPanel.kt)
+uses nonfocusable TextView-based preview; it avoids the editable-review handoff
+rather than demonstrating that handoff works. Borrow test ideas, not its policy wholesale.
+
+Ramblr at `10b38344dce1450758a786f2f3ba707cbc045f9b` explicitly treats a WebView
+selection0..1 as select-all and accepts collateral first-character-selection
+replacement. Its whole-field ACTION_SET_TEXT path is incompatible with our
+preservation requirement. [WebViewInjectionRules.kt](https://github.com/trevornk/ramblr/blob/10b38344dce1450758a786f2f3ba707cbc045f9b/app/src/main/kotlin/com/trevornk/ramblr/WebViewInjectionRules.kt),
+[AccessibilityTextDestination.kt](https://github.com/trevornk/ramblr/blob/10b38344dce1450758a786f2f3ba707cbc045f9b/app/src/main/kotlin/com/trevornk/ramblr/AccessibilityTextDestination.kt).
+Verbally at `8aadd6089b0c6a19e5c78721dc9e0c7a2a0f4111` can commit three times
+after surrounding-text contains checks fail; that conflicts with no retry after
+an ambiguous write. [AndroidInsertion.kt](https://github.com/chswei/verbally/blob/8aadd6089b0c6a19e5c78721dc9e0c7a2a0f4111/app/src/main/java/com/verbally/app/insertion/AndroidInsertion.kt).
+
+### Decision and discriminating experiment
+
+Pause expansion of the complete-window ledger. Preserve the reviewed candidate
+as the control. Design/review a hard no-write owned-fixture comparison of its
+ReviewActivity and focusable TYPE_ACCESSIBILITY_OVERLAY English review, using
+the same destination observer and normal SwiftKey edits. Fold the first-null-root
+role classifier into the control; record fixed role/identity/generation/caret-
+match categories from deciding reads, never titles, raw identifiers or user text.
+No missing-root success, terminal rearming, automatic Copy, extra read-as-write
+fallback, or unchanged-fingerprint retargeting follows from the advice.
+
+Observe whether the overlay preserves original-window introspection, whether the
+correct fresh input session returns, and whether original text/caret stay intact.
+Do not demand that the old connection survive editable review. Include a second
+identical-content field and same-view logical rebinding with fixture-only ground
+truth; the fixture oracle must not become production identity evidence. Any
+indistinguishable changed destination remains an explicit limitation, not a pass.
+If there is no continuity advantage, do not migrate the UI. A rendering success
+or successful blind write would not establish architectural correctness.
+
+Only a separately reviewed destination-specific proof and unchanged one-attempt
+writer may progress to actual automatic insertion tests. Existing precommit/
+postcommit requirements, manual Copy & close and external-app gates remain.
+The user's editable-English requirement rules out silently substituting a
+noneditable preview. No prototype has yet been implemented or accepted.

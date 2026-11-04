@@ -9,14 +9,18 @@ Karrot/OpenAI dot compatibility remains a separate follow-up; old real-app
 read/write trial scopes are not reopened. Automatic eligibility remains owned
 fixture only, debug opt-in and default/release OFF.
 
-**November5 restart:** Andrew returned and requested a question plus GitHub links
-for independent Claude/Gemini architectural advice before further implementation.
-Reviewed source checkpoint `80b1eb9` has been pushed to the separate
-`codex/approve-translate-insert` branch of the existing private GitHub repository.
-Main is unchanged. No phone action, code change or new device result on November5.
-The consultation should challenge implementation assumptions, especially complete
-window-inventory requirements, while preserving the product's safety outcomes.
-This file remains the restart entry point; the next diagnostic below is pending.
+**November5 decision after outside advice:** Andrew requested assessment of
+OpenAI-sidechat, Gemini and Claude suggestions. Primary-source/code review supports
+reassessing the complete-window validator; no suggested weaker write predicate
+is accepted. ThumbFree's session/virtual-field tests are useful, but its preview
+is noneditable and its fallback/postcheck rules differ from KoScribe. A focusable
+accessibility overlay still transfers keyboard/input ownership. KoScribe already
+uses the accessibility InputMethod/commitText route recommended by Claude.
+The next work is a reviewed no-write comparison described below, rather than
+another series of global-inventory exceptions. No app code or phone state changed.
+Reviewed source remains `80b1eb9`; consultation notes were published at `d4c0c84`
+on `codex/approve-translate-insert`. Repository visibility is now public, verified
+after Andrew's pasted account of making it public; the agent did not change it.
 
 **Latest measured result:** final sample9D5B00D6 passed retained-host preparation
 and the new exact original focus-loss observation. It then safely refused
@@ -55,16 +59,28 @@ BA587844D1A4B9D8028CB92F360F6A0808B30DCEF59A6BEE65575075EEC339CD.
 Harness source hashes: AutomaticInsert5FACB13A / AutoLifecycle61BBF8DA.
 Saved APKs are ignored local build artifacts, not Git deliverables.
 
-**Exact restart action:** inspect `readEntryInventory` / `autoSystemWindowMetadata`
-in KoScribeService. Add a diagnostic-only fixed category for the FIRST missing
-root from the SAME deciding read: ORIGINAL, EXPECTED_REVIEW, RETAINED_HOST,
-CAPTURED_IME, BASELINE_OTHER or UNKNOWN, plus minimal type/focus/membership bits.
-Do not reread/retry the root, print identifiers/content, or allow missing metadata.
-Review/build before installing. After fresh phone-readiness confirmation, reinstall
-the owned smoke APK and run only
-`AutoLifecycleDiagnosticSmokeTest#originalWindowReviewCancelReturnIsObservedWithoutInsertion`
-with sole `autoLifecycleReady=true` (runner `com.koscribe.smoke/.KoScribeTestRunner`).
-An OK harness result is NOT automatic-entry acceptance; inspect own counters/reason.
+**Revised next work (design/probe only, not accepted implementation):** specify
+and independently review an API-free, hard no-write comparison of the existing
+ReviewActivity and a focusable TYPE_ACCESSIBILITY_OVERLAY English editor in the
+owned fixture. Use the same destination observer and preserve normal SwiftKey
+editing. Record target root/node/window visibility, input-generation/EditorInfo
+roles, original caret/context equality and lifecycle/mic cleanup as fixed categories.
+The baseline arm should classify the FIRST missing root from its SAME deciding
+read (original/review/host/IME/baseline-other/unknown), without extra root retries,
+titles, identifiers or content logs. This diagnostic informs the comparison;
+it is not permission to ignore an unavailable root in the existing validator.
+
+Compare an unchanged prefilled middle caret, a different identical-content field,
+and same-view logical rebinding with independent fixture ground truth. Matching
+text/caret or two stable snapshots alone cannot prove the intended field.
+The overlay hypothesis succeeds only if it improves target introspectability and
+correct fresh-session return while preserving editable review; old-connection
+survival is not required or expected. No migration merely because an overlay renders.
+Keep the existing writer untouched and unreachable in the probe. Review/build
+before fresh phone-readiness confirmation; no real-app tests or clipboard changes.
+If no continuity advantage appears, reassess instead of adding global exceptions.
+Full implementation/insertion acceptance follows only a separately reviewed
+destination-specific proof and the existing guarded insertion tests.
 
 **Latest decisive frame:** POLL/BASELINE, launchageLT1000, metadata0, anchor0,
 reviewProved0, hostProved1, preAnchorProved1, entryActive1; owner present/same,
@@ -72,13 +88,17 @@ local review service/unlocked/own/local/input/wait1, remote/root/editor/sole/ful
 bound0. Membership counts are UNKNOWN because the inventory read failed.
 Use this to classify the gap before deciding any next implementation.
 
-**Acceptance still required:** full entry inventory COMPLETE and review proof,
-then owned automatic empty return/insertion, middle preservation and adversarial
-cases, actual translation, and separately authorized external acceptance.
-RETURNING layer changes remain strict; no-removal review paths remain unsupported.
+**Acceptance still required:** the saved candidate needs full entry inventory
+COMPLETE and review proof; any replacement needs its own separately reviewed
+entry/return proof rather than inheriting this implementation requirement.
+Both still need owned automatic empty return/insertion, middle preservation and
+adversarial cases, actual translation, and separately authorized external acceptance.
+In the saved candidate, RETURNING layer changes stay strict and no-removal review
+paths remain unsupported.
 If evidence shows skipped epochs, late DOWN against current UP, or recurring
 undeclared transitions, reassess architecture instead of adding exceptions.
-An accessibility-overlay review is only a proposed fallback (see RESEARCH).
+An accessibility-overlay review is now the selected next no-write comparison,
+not an implemented or accepted product replacement (see RESEARCH).
 All trials remain fixture-only; real-app read/write scope is not renewed.
 
 **Phone left ready for normal use:** normal secure D266E911 build restored in

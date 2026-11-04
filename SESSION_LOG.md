@@ -1393,3 +1393,26 @@
 - PROGRESS updated for this consultation. Supply pinned GitHub links and a
   source-only archive for models without access to the private repository.
   Await independent advice; the exact diagnostic restart step remains pending.
+
+## 2026-11-05 — Outside advice assessed; next experiment changed
+
+- **User request:** evaluate pasted OpenAI-sidechat/Gemini/Claude advice and decide
+  whether it changes today's plan. No implementation or phone action in this review.
+- **Verified findings:** all three cited open-source apps/files exist. ThumbFree
+  has real input-session/node tests and one automatic commit, but noneditable
+  preview and weaker host/postcheck fallbacks. Ramblr uses whole-field replacement;
+  Verbally can retry unverified commits. Android docs contradict Gemini's promise
+  that editable focusable overlays preserve the original input connection.
+  KoScribe already implements Claude's accessibility InputMethod/commitText route.
+  The missing-root role and alleged Samsung/Knox/Karrot/dot causes remain unknown.
+- **Overseer decision:** preserve the current candidate; stop growing global
+  inventory exceptions. Next design/review a hard no-write owned comparison of
+  Activity versus focusable accessibility-overlay English review, using the same
+  target observer, real SwiftKey edits and changed-destination negatives. Fold the
+  first-root role diagnostic into the baseline. Matching text/caret is insufficient;
+  keep the existing writer unchanged and unreachable in the probe. No production
+  migration, automatic clipboard action or external trial has been accepted.
+- **Memory:** updated PROGRESS, IMPLEMENTATION, standing backlog and RESEARCH with
+  source links and concrete success/stop conditions. Verified repository now public
+  after Andrew's pasted account of his change; agent made no visibility change.
+  Code/device results remain November4's135 tests and incomplete entry gate.

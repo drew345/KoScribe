@@ -607,3 +607,33 @@ token: [AOSP InputMethod](https://android.googlesource.com/platform/frameworks/b
 creates a fresh wrapper on access. Any future adapter must retain actual input
 generation, editor/window/root/node continuity and exact postcommit evidence.
 No new real-app content read or write was performed in this research pass.
+
+The November4 owned automatic test subsequently accepted original-window removal
+but refused a nonfocused SYSTEM LAYER-only event. [AOSP Android16 window-manager code](https://raw.githubusercontent.com/aosp-mirror/platform_frameworks_base/android16-release/services/accessibility/java/com/android/server/accessibility/AccessibilityWindowManager.java)
+recalculates accessibility layers from the window list and dispatches removals
+before other changes. Renumbering is a plausible explanation, not a measured
+Samsung cause. TYPE_SYSTEM also covers alerts, overlays and other interrupting
+windows, so it is not a benign category by itself. Compare the exact event with
+mode-click identity/focus/region metadata before proposing a narrow exception.
+Android's [window Region contract](https://developer.android.com/reference/android/view/accessibility/AccessibilityWindowInfo#getRegionInScreen(android.graphics.Region))
+describes touchable region; equal rectangular bounds alone are insufficient.
+No guard exception follows from this documentation finding.
+
+After the narrow bottom-SystemUI experiment accepted its measured event, a
+second unchanged SYSTEM window also moved down. Its owner remains unmeasured.
+The selected next experiment removes a known source of topology churn instead
+of adding owner exceptions: retain KoScribe's exact existing overlay host through
+review and return. `OverlayRecordingPanel.close()` releases the microphone but
+leaves the host attached; `beginDraftReview` currently removes it via rendering.
+AOSP assigns layer ranks from the resulting ordered list, so that deletion can
+shift surviving windows. This is a source-backed hypothesis for the A35 trace.
+
+The same AOSP file's `windowMattersToAccessibilityLocked` excludes a nonfocused,
+non-touchable window. The retained host therefore needs a visible, tightly
+bounded, useful control with ordinary touchability and no focus, placed outside
+the owned review editor/actions/IME. Making it NOT_TOUCHABLE or GONE would defeat
+the window-inventory experiment. Keep the same host through return, and prove
+identity/placement in an owned Cancel-only run with SYSTEM allowances disabled.
+If that does not eliminate churn, a future complete finite inventory/order proof
+would need to account for every survivor and only declared own-window changes;
+the current per-window diagnostic does not establish that global invariant.

@@ -40,7 +40,8 @@ class AutomaticInsertSmokeTest {
 
     private data class State(
         val arm: String, val phase: String, val captures: Int, val commits: Int,
-        val confirmation: String, val proofs: Int, val cleanup: Boolean,
+        val confirmation: String, val proofs: Int, val hostReviewProofs: Int,
+        val cleanup: Boolean,
         val autoEnabled: Boolean, val speechEnabled: Boolean, val translationEnabled: Boolean,
         val intentPhase: String, val intentReason: String, val intentCaptures: Int,
         val autoAttempts: Int, val autoFallbacks: Int, val manualResultRenders: Int,
@@ -305,6 +306,20 @@ class AutomaticInsertSmokeTest {
         } }
         assertTrue("FIXED_SAMPLE_NOT_IN_REVIEW", ownId("review_english")?.text?.toString() == fixedEnglish)
         assertTrue("MIC_CLEANUP_PENDING_AT_REVIEW", !state().cleanup)
+        if (expectArmed) await("AUTO_REVIEW_HOST_PROOF_NOT_READY", 2_000) {
+            val current = state()
+            if (current.captures != before.captures || current.commits != before.commits ||
+                current.autoAttempts != before.autoAttempts)
+                throw AssertionError("WRITE_BEFORE_REVIEW_CONFIRM")
+            if (current.intentPhase == "FALLBACK" || current.autoFallbacks > before.autoFallbacks)
+                throw AssertionError("AUTO_REVIEW_FELL_BACK_BEFORE_CONFIRM")
+            if (current.intentCaptures != before.intentCaptures + 1 ||
+                current.intentPhase !in setOf("ENTERING_REVIEW", "REVIEW") ||
+                current.phase != "REVIEW")
+                throw AssertionError("AUTO_REVIEW_STATE_CHANGED_BEFORE_CONFIRM")
+            current.takeIf { it.hostReviewProofs == before.hostReviewProofs + 1 &&
+                it.intentPhase == "REVIEW" }
+        }
         assertReviewActionGeometry()
         val review = state()
         if (expectArmed) {
@@ -559,6 +574,12 @@ class AutomaticInsertSmokeTest {
             ?: throw AssertionError("PRODUCT_DIAGNOSTIC_UNAVAILABLE_$label")
         fun count(label: String): Int = field(label).toIntOrNull()
             ?.takeIf { it in 0..100_000 } ?: throw AssertionError("BAD_PRODUCT_COUNT_$label")
+        val hostCounts = lines.firstOrNull {
+            it.startsWith("Auto retained host acquired/review/return: ")
+        }?.substringAfter(": ")?.split('/')?.map { it.toIntOrNull() }
+        val hostReviewProofs = hostCounts?.takeIf { it.size == 3 && it.all { value ->
+            value != null && value in 0..100_000
+        } }?.get(1) ?: throw AssertionError("BAD_PRODUCT_HOST_REVIEW_COUNT")
         fun boolean(label: String): Boolean = when (field(label)) {
             "true" -> true
             "false" -> false
@@ -567,6 +588,7 @@ class AutomaticInsertSmokeTest {
         return State(field("Experiment arm"), field("Draft phase"),
             count("Destination capture count"), count("Commit request count"),
             field("Commit confirmation"), count("Unbound recording proof count"),
+            hostReviewProofs,
             boolean("Overlay cleanup pending"), boolean("Auto insert enabled"),
             boolean("Speech input enabled"), boolean("Translation input enabled"),
             field("Original intent phase"), field("Original intent last reason"),

@@ -18,6 +18,11 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    disappearance/reappearance and removes the intermediate manual controls on
    the automatic path. Phone acceptance remains pending. See
    [Phase 3](docs/PHASE3.md#october25-proposal-reopened-november4).
+   The current retained-host/keyboard-readiness candidate is still undergoing
+   owned-fixture acceptance. Also retain the separate no-removal-path liveness
+   check: core proof may bind after the last layout callback, requiring a
+   deliberate readiness observation after binding. This does not reopen external
+   automatic eligibility or allow a missing proof to be treated as success.
 
 2. **Make recording and processing states more obvious.** Andrew initially did
    not realize tapping a language choice immediately started recording. Improve

@@ -14,6 +14,7 @@ import android.graphics.Color
 import android.graphics.Insets
 import android.graphics.PixelFormat
 import android.graphics.Rect
+import android.graphics.Region
 import android.graphics.drawable.GradientDrawable
 import android.os.Handler
 import android.os.Build
@@ -177,6 +178,15 @@ class KoScribeService : AccessibilityService() {
         var checks: Int = 0,
         var callback: Runnable? = null
     )
+    /** Process-only window metadata. No SYSTEM node text, descendants, or coordinates are logged. */
+    private data class AutoSystemWindowMetadata(
+        val id: Int, val type: Int, val displayId: Int, val layer: Int,
+        val focused: Boolean, val active: Boolean, val accessibilityFocused: Boolean,
+        val pictureInPicture: Boolean,
+        val root: AccessibilityNodeInfo?, val rootPackage: String?, val rootClass: String?,
+        val bounds: Rect?, val region: Region?, val parentId: Int?,
+        val childIds: List<Int>?
+    )
     private data class AutoDestinationIntent(
         val nonce: String,
         val mode: OutputMode,
@@ -186,6 +196,12 @@ class KoScribeService : AccessibilityService() {
         val root: AccessibilityNodeInfo,
         val generation: Int,
         val benignWindowIds: MutableSet<Int>,
+        val systemWindowsAtCapture: List<AutoSystemWindowMetadata>,
+        val systemBaselineComplete: Boolean,
+        val originalWindowBoundsAtCapture: Rect?,
+        var systemRefusalRecorded: Boolean = false,
+        var removalRefusalRecorded: Boolean = false,
+        var removalAttestationStep: String = "NOT_CALLED",
         var recordingId: String? = null,
         var draftId: String? = null,
         var reviewOwner: Any? = null,
@@ -206,6 +222,24 @@ class KoScribeService : AccessibilityService() {
     private var autoAttemptCount = 0
     private var autoFallbackCount = 0
     private var autoManualReadyRenderCount = 0
+    private enum class OwnHostPhase { SETTLING, REVIEW, RETURN }
+    private data class OwnHostLease(
+        val draftId: String, val holder: LinearLayout,
+        val params: WindowManager.LayoutParams, val token: IBinder, val windowId: Int,
+        val desired: Rect, val startedUptimeMs: Long,
+        var phase: OwnHostPhase = OwnHostPhase.SETTLING,
+        var reviewGeometryVerified: Boolean = false,
+        var returnSameLogged: Boolean = false,
+        var releasePending: Boolean = false,
+        var imeReadiness: ReviewImeReadiness? = null,
+        var imeCheck: Runnable? = null,
+        var check: Runnable? = null,
+        var onSettled: ((Boolean) -> Unit)? = null
+    )
+    private var ownHostLease: OwnHostLease? = null
+    private var ownHostAcquiredCount = 0
+    private var ownHostReviewProofCount = 0
+    private var ownHostReturnSameCount = 0
     private enum class DestinationPhase { PRECOMMIT, OBSERVING }
     private data class FreshDestination(
         val draftId: String,
@@ -265,6 +299,21 @@ class KoScribeService : AccessibilityService() {
         BuildConfig.AUTO_INSERT && startupExperiment == StartupExperiment.REVIEW &&
         !VisualTestMode.enabled && mode != OutputMode.ENGLISH
 
+    private fun autoSystemWindowMetadata(window: AccessibilityWindowInfo): AutoSystemWindowMetadata? =
+        runCatching {
+            val root = window.getRoot(0)
+            val bounds = Rect().also(window::getBoundsInScreen)
+            val region = Region().also(window::getRegionInScreen)
+            val children = if (window.childCount in 0..16) {
+                (0 until window.childCount).map { window.getChild(it)?.id ?: return@runCatching null }
+            } else null
+            AutoSystemWindowMetadata(window.id, window.type, window.displayId, window.layer,
+                window.isFocused, window.isActive, window.isAccessibilityFocused,
+                window.isInPictureInPictureMode,
+                root, root?.packageName?.toString(), root?.className?.toString(),
+                bounds, region, window.parent?.id, children)
+        }.getOrNull()
+
     /** Read-only intent at the mode click; no InputConnection or insertion session is retained. */
     private fun captureAutoIntent(mode: OutputMode) {
         if (!autoEnabled(mode) || pendingId != null || unboundRecording.current() != null ||
@@ -291,14 +340,26 @@ class KoScribeService : AccessibilityService() {
             return
         }
         val ownBubbleId = ownHostWindowId()
-        val benignWindows = windows.filter {
+        val captureWindows = windows
+        val systemWindows = captureWindows.filter {
+            it.type == AccessibilityWindowInfo.TYPE_SYSTEM
+        }
+        val systemBaseline = systemWindows.take(16).mapNotNull(::autoSystemWindowMetadata)
+        val systemBaselineComplete = systemWindows.size <= 16 &&
+            systemBaseline.size == systemWindows.size &&
+            systemBaseline.map { it.id }.distinct().size == systemBaseline.size
+        val originalWindowBounds = captureWindows.singleOrNull {
+            it.id == observed.snapshot.windowId
+        }?.let { window -> runCatching { Rect().also(window::getBoundsInScreen) }.getOrNull() }
+        val benignWindows = captureWindows.filter {
             it.displayId == Display.DEFAULT_DISPLAY && !it.isFocused &&
                 (it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD ||
                     (it.type == AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY &&
                         it.id == ownBubbleId))
         }.mapTo(mutableSetOf()) { it.id }
         val binding = AutoDestinationIntent(UUID.randomUUID().toString(), mode, policy,
-            observed.snapshot, observed.node, observed.root, observed.generation, benignWindows)
+            observed.snapshot, observed.node, observed.root, observed.generation, benignWindows,
+            systemBaseline, systemBaselineComplete, originalWindowBounds)
         autoDestination = binding
         autoFallbackDraftId = null
         val expiry = Runnable {
@@ -315,6 +376,7 @@ class KoScribeService : AccessibilityService() {
     private fun clearAutoIntent(reason: String, fallback: Boolean = true,
         renderReady: Boolean = true) {
         val binding = autoDestination ?: return
+        var showReadyAfterRelease = false
         clearReviewEntryWait(binding)
         binding.expiry?.let(main::removeCallbacks)
         binding.expiry = null
@@ -336,15 +398,17 @@ class KoScribeService : AccessibilityService() {
             if (ready != null) {
                 status = "Check the intended field and cursor, then tap Insert."
                 compactResultNotice = "Automatic insertion unavailable. Choose the field, then tap Insert."
-                if (renderReady && draftReviewOwner == null)
-                    refreshIdleBubble(forceRender = true)
+                showReadyAfterRelease = renderReady && draftReviewOwner == null
             }
         } else {
             autoLastPhase = binding.policy.phase.name
             autoLastReason = reason
         }
         autoDestination = null
+        if (fallback) releaseOwnHostLease("AUTO_FALLBACK")
         binding.draftId?.let(ReviewActivity::autoUnavailable)
+        if (showReadyAfterRelease && freshDestination == null)
+            refreshIdleBubble(forceRender = true)
     }
 
     private fun clearReviewEntryWait(binding: AutoDestinationIntent) {
@@ -365,6 +429,251 @@ class KoScribeService : AccessibilityService() {
         if (autoDestination?.recordingId == null) clearAutoIntent(reason)
     }
 
+    private fun ownHostRect(host: View): Rect? = if (!host.isAttachedToWindow ||
+        host.width <= 0 || host.height <= 0) null else {
+        val point = IntArray(2)
+        host.getLocationOnScreen(point)
+        Rect(point[0], point[1], point[0] + host.width, point[1] + host.height)
+    }
+
+    private fun ownHostStable(lease: OwnHostLease): Boolean =
+        ownHostLease === lease && bubble === lease.holder && bubbleParams === lease.params &&
+            lease.holder.isAttachedToWindow && lease.holder.isShown && lease.holder.isEnabled &&
+            lease.holder.windowToken == lease.token &&
+            runCatching { lease.holder.createAccessibilityNodeInfo().windowId }
+                .getOrDefault(-1) == lease.windowId &&
+            lease.params.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE != 0 &&
+            lease.params.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE == 0 &&
+            ownHostRect(lease.holder) == lease.desired
+
+    /** The framework's actual overlay/touch region must have shrunk with the visible chip. */
+    private fun ownHostInventoryTight(lease: OwnHostLease,
+        currentWindows: List<AccessibilityWindowInfo>): Boolean = runCatching {
+        val overlay = currentWindows.singleOrNull {
+            it.id == lease.windowId && it.type == AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY &&
+                it.displayId == Display.DEFAULT_DISPLAY && !it.isFocused
+        } ?: return@runCatching false
+        val bounds = Rect().also(overlay::getBoundsInScreen)
+        val region = Region().also(overlay::getRegionInScreen)
+        val touchBounds = Rect().also { region.getBounds(it) }
+        bounds == lease.desired && !region.isEmpty &&
+            !touchBounds.isEmpty && lease.desired.contains(touchBounds)
+    }.getOrDefault(false)
+
+    private fun releaseOwnHostLease(reason: String) {
+        val lease = ownHostLease ?: return
+        lease.check?.let(main::removeCallbacks)
+        lease.check = null
+        lease.imeCheck?.let(main::removeCallbacks)
+        lease.imeCheck = null
+        val pendingLaunch = lease.onSettled
+        lease.onSettled = null
+        if (freshDestination?.host === lease.holder) {
+            lease.releasePending = true
+            note("AUTO_HOST_RELEASE_DEFERRED_$reason")
+            return
+        }
+        ownHostLease = null
+        if (bubble === lease.holder) {
+            val removed = try { windowManager.removeView(lease.holder); true }
+            catch (_: Exception) {
+                lease.holder.visibility = View.GONE
+                lease.holder.isEnabled = false
+                false
+            }
+            if (removed) {
+                bubble = null
+                bubbleParams = null
+                idleBubbleGeometry = null
+            }
+        }
+        note("AUTO_HOST_RELEASED_$reason")
+        pendingLaunch?.invoke(false)
+    }
+
+    /** Shrink and place the exact recording host before starting the own review Activity. */
+    private fun prepareOwnHostLease(draftId: String, settled: (Boolean) -> Unit): Boolean {
+        val host = bubble ?: return false
+        val params = bubbleParams ?: return false
+        val token = host.windowToken ?: return false
+        val windowId = runCatching { host.createAccessibilityNodeInfo().windowId }
+            .getOrDefault(-1)
+        if (!host.isAttachedToWindow || !host.isShown || windowId < 0 ||
+            ownHostLease != null || freshDestination != null || overlayCleanupPending != null ||
+            params.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE == 0 ||
+            params.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE != 0) return false
+        val frame = bubbleFrame()
+        val targetLeft = frame.bounds.left + frame.bars.left + dp(16)
+        val targetTop = frame.area.top
+        val desired = Rect(targetLeft, targetTop, targetLeft + dp(88), targetTop + dp(48))
+        if (desired.left < frame.area.left || desired.right > frame.area.right ||
+            desired.bottom > frame.area.bottom || desired.top < frame.bounds.top + frame.bars.top)
+            return false
+        val oldPoint = ownHostRect(host) ?: return false
+        val lease = OwnHostLease(draftId, host, params, token, windowId, desired,
+            SystemClock.uptimeMillis(), onSettled = settled)
+        ownHostLease = lease
+        return try {
+            host.removeAllViews()
+            host.background = null
+            host.elevation = 0f
+            host.setPadding(0, 0, 0, 0)
+            host.addView(bubbleButton("Cancel", Color.WHITE,
+                0xFF5C6C66.toInt(), 0xFFDCE6DF.toInt(), 12f) {
+                    if (ownHostLease === lease && unboundDraft.current()?.id == draftId)
+                        endDraft(draftId, "USER_CANCELLED")
+                }.apply {
+                    id = R.id.auto_return_cancel
+                    contentDescription = "Cancel KoScribe review"
+                }, LinearLayout.LayoutParams(dp(88), dp(48)))
+            params.width = dp(88)
+            params.height = dp(48)
+            params.x = targetLeft - (oldPoint.left - params.x)
+            params.y = targetTop - (oldPoint.top - params.y)
+            windowManager.updateViewLayout(host, params)
+            fun poll() {
+                if (ownHostLease !== lease || unboundDraft.current()?.id != draftId ||
+                    freshDestination != null) return
+                if (ownHostStable(lease) && ownHostInventoryTight(lease, windows)) {
+                    lease.phase = OwnHostPhase.REVIEW
+                    ownHostAcquiredCount++
+                    note("AUTO_HOST_LEASE_ACQUIRED")
+                    lease.onSettled?.also { lease.onSettled = null; it(true) }
+                } else if (SystemClock.uptimeMillis() - lease.startedUptimeMs >= 500L) {
+                    lease.onSettled?.also { lease.onSettled = null; it(false) }
+                } else {
+                    val next = Runnable { poll() }
+                    lease.check = next
+                    main.postDelayed(next, 16L)
+                }
+            }
+            val first = Runnable { poll() }
+            lease.check = first
+            main.post(first)
+            true
+        } catch (_: Exception) {
+            lease.onSettled = null
+            releaseOwnHostLease("PREPARE_FAILED")
+            false
+        }
+    }
+
+    private fun ownHostReviewEvidence(draftId: String, owner: Any,
+        currentWindows: List<AccessibilityWindowInfo>): ReviewImeReadiness.Evidence {
+        val refused = ReviewImeReadiness.Evidence.CONTRADICTION
+        val lease = ownHostLease?.takeIf {
+            it.draftId == draftId && it.phase == OwnHostPhase.REVIEW
+        } ?: return refused
+        if (!ReviewActivity.ownsFocusedReview(draftId, owner)) return refused
+        if (!ownHostStable(lease)) return refused
+        if (!ownHostInventoryTight(lease, currentWindows)) return refused
+        val geometry = ReviewActivity.ownGeometry(draftId, owner) ?: return refused
+        val hostRect = ownHostRect(lease.holder) ?: return refused
+        if (!geometry.slot.contains(hostRect) ||
+            Rect.intersects(hostRect, geometry.card) ||
+            Rect.intersects(hostRect, geometry.editor) ||
+            Rect.intersects(hostRect, geometry.actions)) return refused
+        val imeWindows = currentWindows.filter { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
+        if (imeWindows.size > 1 || imeWindows.any { ime ->
+                if (ime.displayId != Display.DEFAULT_DISPLAY || ime.isFocused) true else
+                    !runCatching {
+                        val bounds = Rect().also(ime::getBoundsInScreen)
+                        val region = Region().also(ime::getRegionInScreen)
+                        !bounds.isEmpty && !region.isEmpty && !Rect.intersects(hostRect, bounds) &&
+                            !Region(region).op(hostRect, Region.Op.INTERSECT)
+                    }.getOrDefault(false)
+            }) return refused
+        if (geometry.imeTop != null && hostRect.bottom <= geometry.imeTop)
+            return ReviewImeReadiness.Evidence.READY
+        return if (geometry.imeVisible && geometry.imeBottom == 0 && imeWindows.isEmpty())
+            ReviewImeReadiness.Evidence.MEASURED_ENTRY_GAP else refused
+    }
+
+    /** A measured keyboard gap never weakens the separate destination/window identity proof. */
+    private fun checkOwnHostReview(binding: AutoDestinationIntent, owner: Any,
+        currentWindows: List<AccessibilityWindowInfo>, allowInitialGap: Boolean = false
+    ): ReviewImeReadiness.Verdict {
+        val id = binding.draftId ?: return ReviewImeReadiness.Verdict.FALLBACK
+        val lease = ownHostLease?.takeIf { it.draftId == id }
+            ?: return ReviewImeReadiness.Verdict.FALLBACK
+        val readiness = lease.imeReadiness ?: return ReviewImeReadiness.Verdict.FALLBACK
+        val wasPending = readiness.pending
+        val pendingProof = !wasPending || autoReviewProof(binding, currentWindows).fullyBound
+        if (!pendingProof) note("AUTO_HOST_REVIEW_PENDING_PROOF_LOST")
+        val evidence = if (pendingProof) ownHostReviewEvidence(id, owner, currentWindows)
+            else ReviewImeReadiness.Evidence.CONTRADICTION
+        val verdict = readiness.check(evidence, SystemClock.elapsedRealtime(), allowInitialGap)
+        if (verdict == ReviewImeReadiness.Verdict.READY) {
+            lease.imeCheck?.let(main::removeCallbacks)
+            lease.imeCheck = null
+            if (!lease.reviewGeometryVerified) {
+                lease.reviewGeometryVerified = true
+                ownHostReviewProofCount++
+                note("AUTO_HOST_REVIEW_GEOMETRY_AND_INVENTORY_VERIFIED")
+            }
+        } else if (verdict == ReviewImeReadiness.Verdict.WAIT) {
+            if (!wasPending) note("AUTO_HOST_REVIEW_IME_PENDING")
+            if (lease.imeCheck == null) {
+                val callback = Runnable {
+                    if (autoDestination !== binding || ownHostLease !== lease) return@Runnable
+                    lease.imeCheck = null
+                    if (binding.reviewOwner !== owner || draftReviewOwner !== owner ||
+                        lease.phase != OwnHostPhase.REVIEW || freshDestination != null) {
+                        clearAutoIntent("AUTO_HOST_REVIEW_OWNER_CHANGED")
+                        return@Runnable
+                    }
+                    val current = windows
+                    if (checkOwnHostReview(binding, owner, current) == ReviewImeReadiness.Verdict.FALLBACK)
+                        clearAutoIntent(if (readiness.expired(SystemClock.elapsedRealtime()))
+                            "AUTO_HOST_REVIEW_IME_TIMEOUT" else "AUTO_HOST_REVIEW_GEOMETRY_LOST")
+                }
+                lease.imeCheck = callback
+                if (!main.postDelayed(callback, 50L)) {
+                    lease.imeCheck = null
+                    return ReviewImeReadiness.Verdict.FALLBACK
+                }
+            }
+        }
+        return verdict
+    }
+
+    private fun ownHostReviewSafe(draftId: String, owner: Any,
+        currentWindows: List<AccessibilityWindowInfo>): Boolean {
+        val binding = autoForDraft(draftId) ?: return false
+        return checkOwnHostReview(binding, owner, currentWindows) == ReviewImeReadiness.Verdict.READY
+    }
+
+    internal fun autoReviewGeometryChanged(draftId: String, owner: Any) {
+        val lease = ownHostLease?.takeIf {
+            it.draftId == draftId && it.phase == OwnHostPhase.REVIEW
+        } ?: return
+        val binding = autoForDraft(draftId) ?: return
+        if (freshDestination != null || binding.reviewOwner !== owner) return
+        if (!ReviewActivity.ownsFocusedReview(draftId, owner)) return
+        val readiness = lease.imeReadiness ?: return
+        val current = windows
+        // An ancillary layout callback cannot reject an incomplete initial transition.
+        // It may establish full readiness only after the exact review is bound. The
+        // REMOVED handler alone may admit the measured provisional keyboard gap.
+        if (readiness.initial && (!autoReviewProof(binding, current).fullyBound ||
+                ownHostReviewEvidence(draftId, owner, current) !=
+                    ReviewImeReadiness.Evidence.READY)) return
+        if (checkOwnHostReview(binding, owner, current) == ReviewImeReadiness.Verdict.FALLBACK)
+            clearAutoIntent(if (readiness.expired(SystemClock.elapsedRealtime()))
+                "AUTO_HOST_REVIEW_IME_TIMEOUT" else "AUTO_HOST_REVIEW_GEOMETRY_LOST")
+    }
+
+    private fun ownHostReturnSame(draftId: String): Boolean {
+        val lease = ownHostLease?.takeIf {
+            it.draftId == draftId && it.phase == OwnHostPhase.RETURN
+        } ?: return false
+        val area = bubbleFrame().area
+        val safeArea = lease.desired.left >= area.left && lease.desired.top >= area.top &&
+            lease.desired.right <= area.right && lease.desired.bottom <= area.bottom
+        return ownHostStable(lease) && safeArea && ownHostInventoryTight(lease, windows) &&
+            lease.holder.findViewById<Button>(R.id.auto_return_cancel)?.isEnabled == true
+    }
+
     private fun autoGenerationClass(binding: AutoDestinationIntent, generation: Int): String =
         when (generation) {
             binding.generation -> "ORIGINAL"
@@ -382,14 +691,278 @@ class KoScribeService : AccessibilityService() {
         else -> "OTHER"
     }
 
+    private data class AutoReviewProof(
+        val code: String, val fullyBound: Boolean, val window: AccessibilityWindowInfo?
+    )
+
+    /** Read-only local/remote proof; never binds an owner or advances the policy. */
+    private fun autoReviewProof(binding: AutoDestinationIntent,
+        currentWindows: List<AccessibilityWindowInfo>): AutoReviewProof {
+        fun bit(value: Boolean) = if (value) 1 else 0
+        val id = binding.draftId
+        val owner = binding.reviewOwner
+        val ownerReady = id != null && owner != null && draftReviewOwner === owner &&
+            ReviewActivity.ownsFocusedReview(id, owner) &&
+            unboundDraft.current()?.takeIf {
+                it.id == id && it.phase == UnboundDraftState.Phase.REVIEW
+            } != null
+        val views = if (ownerReady) ReviewActivity.focusedReviewViews(id!!, owner!!) else null
+        val decor = views?.first
+        val editor = views?.second
+        val token = decor?.windowToken
+        val localId = decor?.let {
+            runCatching { it.createAccessibilityNodeInfo().windowId }.getOrNull()
+        }
+        val editorNode = editor?.let { runCatching { it.createAccessibilityNodeInfo() }.getOrNull() }
+        val localReady = views != null && token != null && editor?.windowToken == token &&
+            localId != null && localId >= 0 && localId != binding.original.windowId &&
+            editorNode?.windowId == localId &&
+            (binding.reviewWindowId == null || binding.reviewWindowId == localId)
+        val inputReady = editor != null && reviewEntryInputMatches(binding, editor)
+        val wait = binding.entryWait
+        val waitReady = wait == null || (id == wait.draftId && owner === wait.owner &&
+            decor === wait.decor && editor === wait.editor && token == wait.token &&
+            localId == wait.windowId && SystemClock.elapsedRealtime().let {
+                it >= wait.startedMs && it - wait.startedMs < 1_000L
+            })
+        val remote = if (localReady) currentWindows.singleOrNull {
+            it.id == localId && it.type == AccessibilityWindowInfo.TYPE_APPLICATION &&
+                it.displayId == Display.DEFAULT_DISPLAY && it.isFocused
+        } else null
+        val root = remote?.getRoot(0)
+        val focused = root?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+        val rootReady = root != null && root.packageName?.toString() == packageName &&
+            (binding.reviewRoot == null || root == binding.reviewRoot)
+        val editorReady = focused != null && focused == editorNode && focused.isFocused &&
+            focused.isEditable && focused.packageName?.toString() == packageName &&
+            focused.viewIdResourceName == "$packageName:id/review_english" &&
+            (binding.reviewNode == null || focused == binding.reviewNode)
+        val uniqueFocus = currentWindows.count { it.isFocused } == 1
+        val unlocked = runCatching {
+            !(getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked
+        }.getOrDefault(false)
+        val full = serviceConnected && unlocked && ownerReady && localReady && inputReady && waitReady &&
+            remote != null && rootReady && editorReady && uniqueFocus
+        val bound = full && binding.reviewWindowId != null && binding.reviewRoot != null &&
+            binding.reviewNode != null && binding.reviewWindowId == localId &&
+            binding.reviewRoot == root && binding.reviewNode == focused &&
+            binding.policy.reviewFocusAttested
+        val code = "SERVICE_${bit(serviceConnected)}_UNLOCKED_${bit(unlocked)}" +
+            "_OWN_${bit(ownerReady)}_LOCAL_${bit(localReady)}_INPUT_${bit(inputReady)}" +
+            "_WAIT_${bit(waitReady)}_REMOTE_${bit(remote != null)}" +
+            "_ROOT_${bit(rootReady)}_EDITOR_${bit(editorReady)}" +
+            "_SOLE_FOCUS_${bit(uniqueFocus)}_FULL_${bit(full)}_BOUND_${bit(bound)}"
+        return AutoReviewProof(code, bound, remote)
+    }
+
+    /** One refusal snapshot. All geometry and identity values stay in process memory. */
+    private fun noteOriginalRemovalRefusal(binding: AutoDestinationIntent,
+        currentWindows: List<AccessibilityWindowInfo>, phaseAtEvent: OriginalDestinationIntent.Phase,
+        exact: Boolean, absent: Boolean, attested: Boolean) {
+        if (binding.removalRefusalRecorded) return
+        binding.removalRefusalRecorded = true
+        try {
+            fun bit(value: Boolean) = if (value) "1" else "0"
+            fun tri(value: Boolean?) = when (value) { true -> "YES"; false -> "NO"; null -> "UNKNOWN" }
+            val wait = binding.entryWait
+            val waitAge = wait?.let {
+                val delta = SystemClock.elapsedRealtime() - it.startedMs
+                when { delta < 0 -> "FUTURE"; delta < 250 -> "LT250";
+                    delta < 1_000 -> "LT1000"; else -> "EXPIRED" }
+            } ?: "NONE"
+            note("AUTO_REMOVAL_REFUSAL_V1_PHASE_${phaseAtEvent.name}" +
+                "_EXACT_${bit(exact)}_ABSENT_${bit(absent)}_ATTESTED_${bit(attested)}" +
+                "_STEP_${binding.removalAttestationStep}_WAIT_AGE_$waitAge" +
+                "_REVIEW_${autoReviewProof(binding, currentWindows).code}")
+            val lease = ownHostLease
+            val host = lease?.holder
+            val localRect = host?.let(::ownHostRect)
+            val localId = host?.let {
+                runCatching { it.createAccessibilityNodeInfo().windowId }.getOrNull()
+            }
+            val sameDraft = lease != null && lease.draftId == binding.draftId
+            val localSame = lease != null && ownHostLease === lease && bubble === lease.holder &&
+                bubbleParams === lease.params
+            val localToken = lease != null && host?.windowToken == lease.token
+            val localWindow = lease != null && localId == lease.windowId
+            val localFlags = lease != null &&
+                lease.params.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE != 0 &&
+                lease.params.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE == 0
+            val overlays = if (lease == null) emptyList() else currentWindows.filter {
+                it.id == lease.windowId
+            }
+            val remote = overlays.singleOrNull()
+            val remoteBounds = remote?.let {
+                runCatching { Rect().also(it::getBoundsInScreen) }.getOrNull()
+            }
+            val remoteRegion = remote?.let {
+                runCatching { Region().also(it::getRegionInScreen) }.getOrNull()
+            }
+            val regionBounds = remoteRegion?.let {
+                Rect().also { bounds -> it.getBounds(bounds) }
+            }
+            note("AUTO_REMOVAL_HOST_V1_LEASE_${bit(lease != null)}" +
+                "_DRAFT_${bit(sameDraft)}_PHASE_${lease?.phase?.name ?: "NONE"}" +
+                "_LOCAL_SAME_${bit(localSame)}_ATTACHED_${bit(host?.isAttachedToWindow == true)}" +
+                "_SHOWN_${bit(host?.isShown == true)}_ENABLED_${bit(host?.isEnabled == true)}" +
+                "_TOKEN_${bit(localToken)}_WINDOW_${bit(localWindow)}_FLAGS_${bit(localFlags)}" +
+                "_RECT_${bit(lease != null && localRect == lease.desired)}" +
+                "_REMOTE_COUNT_${when { overlays.isEmpty() -> "ZERO"; overlays.size == 1 -> "ONE"; else -> "MULTIPLE" }}" +
+                "_TYPE_${bit(remote?.type == AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY)}" +
+                "_DEFAULT_${bit(remote?.displayId == Display.DEFAULT_DISPLAY)}" +
+                "_UNFOCUSED_${bit(remote?.isFocused == false)}" +
+                "_BOUNDS_${bit(lease != null && remoteBounds == lease.desired)}" +
+                "_REGION_NONEMPTY_${bit(remoteRegion?.isEmpty == false)}" +
+                "_REGION_CONFINED_${bit(lease != null && regionBounds != null &&
+                    !regionBounds.isEmpty && lease.desired.contains(regionBounds))}")
+            val id = binding.draftId
+            val owner = binding.reviewOwner
+            val geometry = if (id != null && owner != null)
+                ReviewActivity.ownGeometryProbe(id, owner) else null
+            val desired = lease?.desired
+            fun contains(rect: Rect?) = if (rect == null || desired == null) null
+                else rect.contains(desired)
+            fun overlaps(rect: Rect?) = if (rect == null || desired == null) null
+                else Rect.intersects(rect, desired)
+            val imeTop = geometry?.imeTop
+            val aboveIme = if (imeTop == null || desired == null) null
+                else desired.bottom <= imeTop
+            val imes = currentWindows.filter {
+                it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD &&
+                    it.displayId == Display.DEFAULT_DISPLAY
+            }
+            val ime = imes.singleOrNull()
+            val imeBounds = ime?.let { runCatching {
+                Rect().also(it::getBoundsInScreen)
+            }.getOrNull() }
+            val imeRegion = ime?.let { runCatching {
+                Region().also(it::getRegionInScreen)
+            }.getOrNull() }
+            val imeRegionBounds = imeRegion?.let { region ->
+                Rect().also { bounds -> region.getBounds(bounds) }
+            }
+            note("AUTO_REMOVAL_GEOMETRY_V1_${geometry?.code ?: "ACTIVITY_OR_OWNER"}" +
+                "_SLOT_CONTAINS_${tri(contains(geometry?.slot))}" +
+                "_ABOVE_INSET_IME_${tri(aboveIme)}" +
+                "_CARD_OVERLAP_${tri(overlaps(geometry?.card))}" +
+                "_EDITOR_OVERLAP_${tri(overlaps(geometry?.editor))}" +
+                "_ACTIONS_OVERLAP_${tri(overlaps(geometry?.actions))}" +
+                "_IME_COUNT_${when { imes.isEmpty() -> "ZERO"; imes.size == 1 -> "ONE"; else -> "MULTIPLE" }}" +
+                "_IME_BOUNDS_NONEMPTY_${bit(imeBounds?.isEmpty == false)}" +
+                "_IME_REGION_NONEMPTY_${bit(imeRegion?.isEmpty == false)}" +
+                "_IME_BOUNDS_DISJOINT_${tri(if (imeBounds == null || desired == null) null
+                    else !Rect.intersects(imeBounds, desired))}" +
+                "_IME_REGION_DISJOINT_${tri(if (imeRegionBounds == null || desired == null) null
+                    else !Rect.intersects(imeRegionBounds, desired))}")
+        } catch (_: Exception) {
+            note("AUTO_REMOVAL_REFUSAL_V1_SNAPSHOT_UNAVAILABLE")
+        }
+    }
+
+    /** First terminal SYSTEM event only; raw IDs, packages, geometry and nodes stay in RAM. */
+    private fun noteAutoSystemRefusal(binding: AutoDestinationIntent, event: AccessibilityEvent,
+        current: AccessibilityWindowInfo?, currentWindows: List<AccessibilityWindowInfo>,
+        phaseAtEvent: OriginalDestinationIntent.Phase?) {
+        if (binding.systemRefusalRecorded || event.eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
+            (current?.type != AccessibilityWindowInfo.TYPE_SYSTEM &&
+                binding.systemWindowsAtCapture.none { it.id == event.windowId })) return
+        binding.systemRefusalRecorded = true
+        try {
+            val before = binding.systemWindowsAtCapture.singleOrNull { it.id == event.windowId }
+            val now = current?.let(::autoSystemWindowMetadata)
+            fun bit(value: Boolean) = if (value) 1 else 0
+            fun compare(a: Any?, b: Any?): String = when {
+                a == null || b == null -> "UNKNOWN"
+                a == b -> "SAME"
+                else -> "CHANGED"
+            }
+            fun knownSystemUi(value: String?): String = when (value) {
+                null -> "UNKNOWN"
+                "com.android.systemui" -> "YES"
+                else -> "NO"
+            }
+            fun coverage(bounds: Rect?, target: Rect?): String = when {
+                bounds == null || target == null || target.isEmpty -> "UNKNOWN"
+                !Rect.intersects(bounds, target) -> "NONE"
+                bounds.contains(target) -> "FULL"
+                else -> "PARTIAL"
+            }
+            val screen = runCatching { windowManager.currentWindowMetrics.bounds }.getOrNull()
+            fun edgeCode(bounds: Rect?): String = if (bounds == null || screen == null)
+                "UNKNOWN" else "T_${bit(bounds.top <= screen.top)}" +
+                    "_B_${bit(bounds.bottom >= screen.bottom)}" +
+                    "_L_${bit(bounds.left <= screen.left)}" +
+                    "_R_${bit(bounds.right >= screen.right)}"
+            val reviewWindowId = binding.reviewWindowId ?: binding.draftId?.let { id ->
+                binding.reviewOwner?.let { owner -> ReviewActivity.expectedWindowId(id, owner) }
+            }
+            val reviewBounds = currentWindows.singleOrNull { it.id == reviewWindowId }
+                ?.let { window -> runCatching { Rect().also(window::getBoundsInScreen) }.getOrNull() }
+            val membership = when {
+                before != null -> "PRESENT"
+                binding.systemBaselineComplete -> "ABSENT"
+                else -> "UNKNOWN"
+            }
+            val layer = when {
+                before == null || now == null -> "UNKNOWN"
+                now.layer > before.layer -> "UP"
+                now.layer < before.layer -> "DOWN"
+                else -> "SAME"
+            }
+            val rootIdentity = when {
+                before?.root == null || now?.root == null -> "UNKNOWN"
+                before.root == now.root -> "SAME"
+                else -> "CHANGED"
+            }
+            fun focusCode(value: AutoSystemWindowMetadata): String =
+                "F_${bit(value.focused)}_A_${bit(value.active)}_AF_${bit(value.accessibilityFocused)}"
+            val previousFocus = before?.let(::focusCode)
+                ?: "UNKNOWN"
+            val currentFocus = now?.let(::focusCode)
+                ?: "UNKNOWN"
+            note("AUTO_SYSTEM_REFUSAL_V1_PHASE_${phaseAtEvent?.name ?: binding.policy.phase.name}" +
+                "_MASK_LAYER_ONLY_${bit(event.windowChanges == AccessibilityEvent.WINDOWS_CHANGE_LAYER)}" +
+                "_BASELINE_${membership}_BASELINE_COMPLETE_${bit(binding.systemBaselineComplete)}" +
+                "_WINDOW_PRESENT_${bit(current != null)}_METADATA_${bit(now != null)}" +
+                "_TYPE_${compare(before?.type, now?.type)}" +
+                "_DISPLAY_${compare(before?.displayId, now?.displayId)}" +
+                "_CURRENT_DEFAULT_${bit(now?.displayId == Display.DEFAULT_DISPLAY)}" +
+                "_LAYER_${layer}_ROOT_ID_${rootIdentity}" +
+                "_BASE_PIP_${before?.let { bit(it.pictureInPicture) } ?: "UNKNOWN"}" +
+                "_NOW_PIP_${now?.let { bit(it.pictureInPicture) } ?: "UNKNOWN"}" +
+                "_PIP_${compare(before?.pictureInPicture, now?.pictureInPicture)}" +
+                "_ROOT_PACKAGE_${compare(before?.rootPackage, now?.rootPackage)}" +
+                "_ROOT_CLASS_${compare(before?.rootClass, now?.rootClass)}" +
+                "_BOUNDS_${compare(before?.bounds, now?.bounds)}" +
+                "_REGION_${compare(before?.region, now?.region)}" +
+                "_BASE_EDGE_${edgeCode(before?.bounds)}_NOW_EDGE_${edgeCode(now?.bounds)}" +
+                "_BASE_ORIGINAL_BBOX_${coverage(before?.bounds, binding.originalWindowBoundsAtCapture)}" +
+                "_NOW_ORIGINAL_BBOX_${coverage(now?.bounds, binding.originalWindowBoundsAtCapture)}" +
+                "_NOW_REVIEW_BBOX_${coverage(now?.bounds, reviewBounds)}" +
+                "_PARENT_${if (before == null || now == null) "UNKNOWN" else
+                    if (before.parentId == now.parentId) "SAME" else "CHANGED"}" +
+                "_CHILDREN_${compare(before?.childIds, now?.childIds)}" +
+                "_BASE_${previousFocus}_NOW_${currentFocus}" +
+                "_BASE_SYSTEMUI_${knownSystemUi(before?.rootPackage)}" +
+                "_NOW_SYSTEMUI_${knownSystemUi(now?.rootPackage)}" +
+                "_EVENT_SYSTEMUI_${knownSystemUi(event.packageName?.toString())}" +
+                "_REVIEW_${autoReviewProof(binding, currentWindows).code}")
+        } catch (_: Exception) {
+            note("AUTO_SYSTEM_REFUSAL_V1_UNAVAILABLE")
+        }
+    }
+
     /** One code-only snapshot at the first terminal event. Never reads node text or context. */
     private fun noteAutoEventRefusal(binding: AutoDestinationIntent, reason: String,
         event: AccessibilityEvent, expectedReviewWindowId: Int?,
         rootWasRead: Boolean = false, checkedRoot: AccessibilityNodeInfo? = null,
-        sourceWasRead: Boolean = false, checkedSource: AccessibilityNodeInfo? = null) {
+        sourceWasRead: Boolean = false, checkedSource: AccessibilityNodeInfo? = null,
+        eventWindows: List<AccessibilityWindowInfo>? = null,
+        phaseAtEvent: OriginalDestinationIntent.Phase? = null) {
         try {
-        val currentWindows = windows
+        val currentWindows = eventWindows ?: windows
         val current = currentWindows.firstOrNull { it.id == event.windowId }
+        noteAutoSystemRefusal(binding, event, current, currentWindows, phaseAtEvent)
         val localReviewWindowId = binding.draftId?.let { id ->
             binding.reviewOwner?.let { owner -> ReviewActivity.expectedWindowId(id, owner) }
         }
@@ -460,7 +1033,7 @@ class KoScribeService : AccessibilityService() {
             first == second -> "YES"
             else -> "NO"
         }
-        note("AUTO_REFUSE_${reason}_PHASE_${binding.policy.phase.name}" +
+        note("AUTO_REFUSE_${reason}_PHASE_${phaseAtEvent?.name ?: binding.policy.phase.name}" +
             "_SNAP_POST_DECISION" +
             "_WAIT_${bit(wait != null)}_WAIT_C_${wait?.checks ?: 0}" +
             "_WAIT_MS_${waitAgeMs ?: "NONE"}_REVIEW_BOUND_${bit(binding.reviewWindowId != null)}" +
@@ -578,43 +1151,52 @@ class KoScribeService : AccessibilityService() {
     /** Full own-review proof at the original REMOVED callback; no destination text is read. */
     private fun attestReviewAtRemoval(binding: AutoDestinationIntent,
         currentWindows: List<AccessibilityWindowInfo>): Boolean {
-        val id = binding.draftId ?: return false
-        val owner = binding.reviewOwner ?: return false
+        fun fail(step: String): Boolean { binding.removalAttestationStep = step; return false }
+        binding.removalAttestationStep = "START"
+        val id = binding.draftId ?: return fail("DRAFT_ID")
+        val owner = binding.reviewOwner ?: return fail("OWNER")
         if (draftReviewOwner !== owner || !ReviewActivity.ownsFocusedReview(id, owner) ||
             !serviceConnected ||
             (getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked ||
             unboundDraft.current()?.takeIf {
                 it.id == id && it.phase == UnboundDraftState.Phase.REVIEW
-            } == null) return false
-        val (decor, editor) = ReviewActivity.focusedReviewViews(id, owner) ?: return false
-        if (!reviewEntryInputMatches(binding, editor)) return false
-        val token = decor.windowToken ?: return false
-        if (editor.windowToken != token) return false
+            } == null) return fail("OWNER_OR_LIVE_DRAFT")
+        val (decor, editor) = ReviewActivity.focusedReviewViews(id, owner)
+            ?: return fail("LOCAL_FOCUSED_VIEWS")
+        if (!reviewEntryInputMatches(binding, editor)) return fail("INPUT_CALLBACK")
+        val token = decor.windowToken ?: return fail("LOCAL_TOKEN")
+        if (editor.windowToken != token) return fail("EDITOR_TOKEN")
         val windowId = runCatching { decor.createAccessibilityNodeInfo().windowId }
             .getOrDefault(-1)
         val editorNode = runCatching { editor.createAccessibilityNodeInfo() }.getOrNull()
         if (windowId < 0 || windowId == binding.original.windowId ||
             editorNode?.windowId != windowId ||
-            (binding.reviewWindowId != null && binding.reviewWindowId != windowId)) return false
+            (binding.reviewWindowId != null && binding.reviewWindowId != windowId))
+            return fail("LOCAL_WINDOW_OR_EDITOR")
         binding.entryWait?.let { wait ->
             val now = SystemClock.elapsedRealtime()
             if (wait.draftId != id || wait.owner !== owner || wait.decor !== decor ||
                 wait.editor !== editor || wait.token != token || wait.windowId != windowId ||
-                now < wait.startedMs || now - wait.startedMs >= 1_000L) return false
+                now < wait.startedMs || now - wait.startedMs >= 1_000L)
+                return fail("ENTRY_WAIT")
         }
         val ownWindow = currentWindows.singleOrNull {
             it.id == windowId && it.type == AccessibilityWindowInfo.TYPE_APPLICATION &&
                 it.displayId == Display.DEFAULT_DISPLAY && it.isFocused
-        } ?: return false
-        if (currentWindows.count { it.isFocused } != 1) return false
-        val root = ownWindow.getRoot(0) ?: return false
-        val focused = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) ?: return false
+        } ?: return fail("REMOTE_OWN_WINDOW")
+        if (currentWindows.count { it.isFocused } != 1) return fail("SOLE_FOCUS")
+        val root = ownWindow.getRoot(0) ?: return fail("REMOTE_ROOT")
+        val focused = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+            ?: return fail("REMOTE_EDITOR")
         if (root.packageName?.toString() != packageName ||
             (binding.reviewRoot != null && binding.reviewRoot != root) ||
             focused != editorNode || !focused.isFocused || !focused.isEditable ||
             focused.packageName?.toString() != packageName ||
             focused.viewIdResourceName != "$packageName:id/review_english" ||
-            (binding.reviewNode != null && binding.reviewNode != focused)) return false
+            (binding.reviewNode != null && binding.reviewNode != focused))
+            return fail("REMOTE_ROOT_OR_EDITOR_MATCH")
+        if (checkOwnHostReview(binding, owner, currentWindows, allowInitialGap = true) ==
+            ReviewImeReadiness.Verdict.FALLBACK) return fail("OWN_HOST_PROOF")
         binding.reviewWindowId = windowId
         binding.reviewRoot = root
         binding.reviewNode = focused
@@ -622,9 +1204,12 @@ class KoScribeService : AccessibilityService() {
         // The Activity focus callback may already have supplied this proof before g+1.
         // Reattest the same live views above, but record the policy focus edge once.
         if (!binding.policy.reviewFocusAttested &&
-            !binding.policy.reviewFocused(id, SystemClock.elapsedRealtime())) return false
-        return binding.policy.phase in setOf(OriginalDestinationIntent.Phase.ENTERING_REVIEW,
+            !binding.policy.reviewFocused(id, SystemClock.elapsedRealtime()))
+            return fail("POLICY_REVIEW_FOCUS")
+        val permitted = binding.policy.phase in setOf(OriginalDestinationIntent.Phase.ENTERING_REVIEW,
             OriginalDestinationIntent.Phase.REVIEW)
+        binding.removalAttestationStep = if (permitted) "PASSED" else "POLICY_PHASE"
+        return permitted
     }
 
     private fun addedOriginalEvidence(binding: AutoDestinationIntent,
@@ -686,7 +1271,7 @@ class KoScribeService : AccessibilityService() {
                 event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED ||
                 event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED)) {
             noteAutoEventRefusal(binding, "ORIGINAL_CONTENT_OR_SELECTION_EVENT", event,
-                expectedReviewWindowId)
+                expectedReviewWindowId, eventWindows = currentWindows)
             clearAutoIntent("ORIGINAL_CONTENT_OR_SELECTION_EVENT")
             return
         }
@@ -713,7 +1298,7 @@ class KoScribeService : AccessibilityService() {
                             focused.getRoot(0) == binding.reviewRoot)))
             if (focusedApps.size > 1 || !expectedFocus) {
                 noteAutoEventRefusal(binding, "UNEXPECTED_FOCUSED_APP", event,
-                    expectedReviewWindowId)
+                    expectedReviewWindowId, eventWindows = currentWindows)
                 clearAutoIntent("UNEXPECTED_FOCUSED_APP")
                 return
             }
@@ -721,7 +1306,8 @@ class KoScribeService : AccessibilityService() {
             val originalRoot = originalWindow?.getRoot(0)
             if (originalRoot != null && originalRoot != binding.root) {
                 noteAutoEventRefusal(binding, "ORIGINAL_ROOT_CHANGED", event,
-                    expectedReviewWindowId, rootWasRead = true, checkedRoot = originalRoot)
+                    expectedReviewWindowId, rootWasRead = true, checkedRoot = originalRoot,
+                    eventWindows = currentWindows)
                 clearAutoIntent("ORIGINAL_ROOT_CHANGED")
                 return
             }
@@ -730,13 +1316,16 @@ class KoScribeService : AccessibilityService() {
             AccessibilityEvent.TYPE_WINDOWS_CHANGED -> {
                 if (event.windowId == binding.original.windowId &&
                     event.windowChanges and AccessibilityEvent.WINDOWS_CHANGE_REMOVED != 0) {
+                    val phaseAtEvent = binding.policy.phase
                     val exact = event.windowChanges == AccessibilityEvent.WINDOWS_CHANGE_REMOVED
                     val absent = currentWindows.none { it.id == binding.original.windowId }
                     val attested = exact && absent && attestReviewAtRemoval(binding, currentWindows)
                     if (autoDestination !== binding || !binding.policy.originalRemoved(
-                            SystemClock.elapsedRealtime(), exact, absent, attested))
+                            SystemClock.elapsedRealtime(), exact, absent, attested)) {
+                        noteOriginalRemovalRefusal(binding, currentWindows, phaseAtEvent,
+                            exact, absent, attested)
                         clearAutoIntent("ORIGINAL_REMOVAL_UNVERIFIED")
-                    else note("AUTO_ORIGINAL_REMOVED_ONCE")
+                    } else note("AUTO_ORIGINAL_REMOVED_ONCE")
                     return
                 }
                 if (event.windowId == binding.original.windowId &&
@@ -782,7 +1371,8 @@ class KoScribeService : AccessibilityService() {
                     (phase == OriginalDestinationIntent.Phase.RETURNING &&
                         event.windowId == binding.reviewWindowId && current == null)) return
                 noteAutoEventRefusal(binding, "UNEXPECTED_WINDOW_CHANGE", event,
-                    expectedReviewWindowId)
+                    expectedReviewWindowId, eventWindows = currentWindows,
+                    phaseAtEvent = phase)
                 clearAutoIntent("UNEXPECTED_WINDOW_CHANGE")
             }
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
@@ -800,7 +1390,7 @@ class KoScribeService : AccessibilityService() {
                         phase == OriginalDestinationIntent.Phase.RETURNING &&
                         windows.none { it.id == event.windowId })) return
                 noteAutoEventRefusal(binding, "UNEXPECTED_WINDOW_STATE", event,
-                    expectedReviewWindowId)
+                    expectedReviewWindowId, eventWindows = currentWindows)
                 clearAutoIntent("UNEXPECTED_WINDOW_STATE")
             }
             AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
@@ -1005,6 +1595,8 @@ class KoScribeService : AccessibilityService() {
             "Auto insert attempt count: $autoAttemptCount\n" +
             "Auto insert fallback count: $autoFallbackCount\n" +
             "Auto manual result renders: $autoManualReadyRenderCount\n" +
+            "Auto retained host acquired/review/return: $ownHostAcquiredCount/$ownHostReviewProofCount/$ownHostReturnSameCount\n" +
+            "Auto retained host phase: ${ownHostLease?.phase?.name ?: "NONE"}\n" +
             "Speech Stop to review created ms: ${speechLastStopToReviewMs ?: "none"}\n" +
             "Translation requests/success/errors/cancels: $translationRequests/$translationSuccesses/$translationErrors/$translationCancels\n" +
             "Last translation request duration ms: ${translationLastDurationMs ?: "none"}\n" +
@@ -2506,6 +3098,9 @@ class KoScribeService : AccessibilityService() {
         freshDestination = null
         stopOverlayOwnership()
         overlayCleanupPending?.close()
+        ownHostLease?.check?.let(main::removeCallbacks)
+        ownHostLease?.imeCheck?.let(main::removeCallbacks)
+        ownHostLease = null
         capturedTargetChildWindows = null
         capturedHostWindowId = null
         pendingId?.let { guard.cancel(it); guard.end(it) }
@@ -2991,7 +3586,6 @@ class KoScribeService : AccessibilityService() {
         idleBubbleVisible = false
         expanded = false
         experimentPhase = "REVIEW_EDITING"
-        renderBubble()
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 if (intent.action == Intent.ACTION_SCREEN_OFF) endDraft(draft.id, "SCREEN_OFF")
@@ -3009,13 +3603,43 @@ class KoScribeService : AccessibilityService() {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             putExtra(ReviewActivity.EXTRA_DRAFT_ID, draft.id)
         }
-        if (originalIntent != null) {
-            originalIntent.draftId = draft.id
-            if (!originalIntent.policy.beginReview(draft.id, SystemClock.elapsedRealtime()))
-                clearAutoIntent("REVIEW_BEGIN_REFUSED")
+        var launched = false
+        fun launchReview() {
+            if (launched || unboundDraft.current()?.takeIf {
+                    it.id == draft.id && it.phase == UnboundDraftState.Phase.REVIEW
+                } == null) return
+            if (!serviceConnected ||
+                (getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked) {
+                endDraft(draft.id, "REVIEW_LAUNCH_UNAVAILABLE")
+                return
+            }
+            launched = true
+            if (originalIntent != null && autoForDraft(draft.id) === originalIntent) {
+                val launchedAt = SystemClock.elapsedRealtime()
+                ownHostLease?.takeIf { it.draftId == draft.id }?.imeReadiness =
+                    ReviewImeReadiness(launchedAt)
+                if (!originalIntent.policy.beginReview(draft.id, launchedAt))
+                    clearAutoIntent("REVIEW_BEGIN_REFUSED")
+            }
+            try { startActivity(intent) }
+            catch (_: Exception) { endDraft(draft.id, "REVIEW_LAUNCH_FAILED") }
         }
-        try { startActivity(intent) }
-        catch (_: Exception) { endDraft(draft.id, "REVIEW_LAUNCH_FAILED") }
+        if (originalIntent != null && autoDestination === originalIntent) {
+            originalIntent.draftId = draft.id
+            val preparing = prepareOwnHostLease(draft.id) { ready ->
+                if (!ready && autoForDraft(draft.id) === originalIntent)
+                    clearAutoIntent("AUTO_HOST_LEASE_NOT_SETTLED")
+                if (unboundDraft.current()?.id == draft.id) {
+                    if (!ready) renderBubble()
+                    launchReview()
+                }
+            }
+            if (preparing) return
+            if (autoForDraft(draft.id) === originalIntent)
+                clearAutoIntent("AUTO_HOST_LEASE_UNAVAILABLE")
+        }
+        renderBubble()
+        launchReview()
     }
 
     internal fun bindDraftReview(id: String, owner: Any): UnboundDraftState.Draft? {
@@ -3285,7 +3909,7 @@ class KoScribeService : AccessibilityService() {
         if (unboundDraft.current()?.takeIf {
                 it.id == id && it.phase == UnboundDraftState.Phase.READY
             } == null || binding.reviewOwner !== owner ||
-            !authenticatedAutoReview(binding)) {
+            !authenticatedAutoReview(binding) || !ownHostReviewSafe(id, owner, windows)) {
             clearAutoIntent("RETURN_OWNER_UNVERIFIED")
             return
         }
@@ -3311,6 +3935,8 @@ class KoScribeService : AccessibilityService() {
             note("AUTO_REVIEW_ENTRY_EARLY_CONFIRM")
             clearAutoIntent("REVIEW_NOT_ATTESTED")
         }
+        if (autoForDraft(id) != null && !ownHostReviewSafe(id, owner, windows))
+            clearAutoIntent("AUTO_HOST_REVIEW_NOT_READY_AT_CONFIRM")
         val result = unboundDraft.confirm(id)
         if (result == UnboundDraftState.Confirm.READY) experimentPhase = "REVIEW_HANDOFF"
         if (result == UnboundDraftState.Confirm.TRANSLATING) {
@@ -3439,6 +4065,21 @@ class KoScribeService : AccessibilityService() {
         if (originalIntent != null &&
             originalIntent.policy.phase != OriginalDestinationIntent.Phase.RETURNING)
             clearAutoIntent("REVIEW_RETURN_NOT_ARMED")
+        if (autoForDraft(id) === originalIntent && originalIntent != null) {
+            val lease = ownHostLease?.takeIf {
+                it.draftId == id && it.phase == OwnHostPhase.REVIEW &&
+                    it.reviewGeometryVerified && ownHostStable(it)
+            }
+            val cancel = lease?.holder?.findViewById<Button>(R.id.auto_return_cancel)
+            if (lease == null || cancel == null)
+                clearAutoIntent("AUTO_HOST_RETURN_UNVERIFIED")
+            else {
+                lease.phase = OwnHostPhase.RETURN
+                cancel.text = "Checking\nCancel"
+                cancel.textSize = 10f
+                cancel.contentDescription = "Checking original field. Cancel automatic insertion"
+            }
+        }
         experimentPhase = "REVIEW_READY"
         val automaticFallback = autoFallbackDraftId == id
         status = if (automaticFallback)
@@ -3518,10 +4159,12 @@ class KoScribeService : AccessibilityService() {
                 return
             }
         }
-        val host = bubble
-        val hostReady = host != null && host.isAttachedToWindow && host.isShown &&
-            host.isEnabled && host.windowToken != null && idleBubbleGeometry != null &&
-            !expanded && host.findViewById<Button>(R.id.auto_return_cancel)?.isEnabled == true
+        val hostReady = !expanded && ownHostReturnSame(id)
+        if (hostReady) ownHostLease?.takeIf { it.draftId == id && !it.returnSameLogged }?.let {
+            it.returnSameLogged = true
+            ownHostReturnSameCount++
+            note("AUTO_HOST_SAME_ON_RETURN")
+        }
         if (returnedInput && originalWindow && hostReady &&
             binding.policy.phase == OriginalDestinationIntent.Phase.RETURNING &&
             binding.policy.returnWindowProved) {
@@ -3553,6 +4196,7 @@ class KoScribeService : AccessibilityService() {
         freshDestination?.takeIf { it.draftId == id }?.let { guard.cancel(it.id); guard.end(it.id) }
         freshDestination = null
         resetFreshComposition()
+        releaseOwnHostLease("DRAFT_ENDED")
         clearDraftOwnership()
         experimentPhase = if (completed) "REVIEW_COMPLETED" else "REVIEW_CANCELLED"
         note("REVIEW_ENDED_$reason")
@@ -3709,6 +4353,7 @@ class KoScribeService : AccessibilityService() {
             guard.end(transaction.id)
             freshDestination = null
             resetFreshComposition()
+            releaseOwnHostLease("DRAFT_CHANGED")
             return refuseFreshInsertion("DRAFT_CHANGED")
         }
         transaction.phase = DestinationPhase.OBSERVING
@@ -3812,6 +4457,7 @@ class KoScribeService : AccessibilityService() {
         guard.end(transaction.id)
         freshDestination = null
         resetFreshComposition()
+        releaseOwnHostLease("INSERT_UNCERTAIN")
         commitConfirmation = "UNCERTAIN"
         experimentPhase = "REVIEW_UNCERTAIN"
         note("FRESH_COMMIT_UNCERTAIN_$code")
@@ -4784,6 +5430,8 @@ class KoScribeService : AccessibilityService() {
             if (unboundArm()) idleRenderOutcome = IdleRenderOutcome.BLOCKED_DESTINATION
             return // Preserve the ready host through capture and proof.
         }
+        if (ownHostLease?.releasePending == true) releaseOwnHostLease("DEFERRED")
+        if (ownHostLease != null) return // The draft owns this exact attached window.
         if (startupExperiment == StartupExperiment.OVERLAY && pendingId != null &&
             overlayPanel != null) return // Keep the captured host window unchanged until terminal cleanup.
         bubble?.let {

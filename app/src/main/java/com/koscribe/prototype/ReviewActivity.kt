@@ -2,6 +2,7 @@ package com.koscribe.prototype
 
 import android.app.Activity
 import android.graphics.Color
+import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -24,6 +25,15 @@ import java.lang.ref.WeakReference
 /** Own editor for one unbound draft. Only its opaque ID crosses the Intent. */
 class ReviewActivity : Activity() {
     companion object {
+        data class OwnGeometry(
+            val slot: Rect, val card: Rect, val editor: Rect, val actions: Rect,
+            val imeTop: Int?, val imeVisible: Boolean, val imeBottom: Int
+        )
+        /** Read-only, code-only breakdown for a refused automatic review transition. */
+        data class OwnGeometryProbe(
+            val code: String, val slot: Rect?, val card: Rect?, val editor: Rect?,
+            val actions: Rect?, val imeTop: Int?
+        )
         const val EXTRA_DRAFT_ID = "draft_id"
         private var active = WeakReference<ReviewActivity>(null)
 
@@ -71,6 +81,74 @@ class ReviewActivity : Activity() {
                 decor to edit else null
         }
 
+        /** Only owned view rectangles and keyboard inset; no editor contents. */
+        fun ownGeometry(id: String, owner: Any): OwnGeometry? {
+            val activity = active.get()?.takeIf {
+                it.draftId == id && it.owner === owner && !it.isFinishing && !it.isDestroyed &&
+                    it::editor.isInitialized && it::hostSlot.isInitialized
+            } ?: return null
+            val decorOrigin = IntArray(2).also(activity.window.decorView::getLocationOnScreen)
+            fun bounds(view: View): Rect? = Rect().takeIf {
+                view.isAttachedToWindow && view.isShown && view.getGlobalVisibleRect(it) && !it.isEmpty
+            }?.apply { offset(decorOrigin[0], decorOrigin[1]) }
+            val slot = bounds(activity.hostSlot) ?: return null
+            val card = bounds(activity.contentCard) ?: return null
+            val editor = bounds(activity.editor) ?: return null
+            val actions = bounds(activity.actionsDock) ?: return null
+            val insets = activity.window.decorView.rootWindowInsets ?: return null
+            val imeVisible = insets.isVisible(WindowInsets.Type.ime())
+            val imeBottom = insets.getInsets(WindowInsets.Type.ime()).bottom
+            val screen = activity.windowManager.currentWindowMetrics.bounds
+            val imeTop = if (imeVisible && imeBottom > 0) screen.bottom - imeBottom else null
+            return OwnGeometry(slot, card, editor, actions, imeTop, imeVisible, imeBottom)
+        }
+
+        fun ownGeometryProbe(id: String, owner: Any): OwnGeometryProbe {
+            val activity = active.get()?.takeIf {
+                it.draftId == id && it.owner === owner && !it.isFinishing && !it.isDestroyed
+            } ?: return OwnGeometryProbe("ACTIVITY_OR_OWNER", null, null, null, null, null)
+            val decor = activity.window.decorView
+            val origin = IntArray(2).also(decor::getLocationOnScreen)
+            fun inspect(view: View?): Pair<String, Rect?> {
+                if (view == null) return "000" to null
+                val attached = view.isAttachedToWindow
+                val shown = view.isShown
+                val visible = Rect()
+                val nonempty = attached && shown && view.getGlobalVisibleRect(visible) &&
+                    !visible.isEmpty
+                if (nonempty) visible.offset(origin[0], origin[1])
+                return "${if (attached) 1 else 0}${if (shown) 1 else 0}" +
+                    "${if (nonempty) 1 else 0}" to visible.takeIf { nonempty }
+            }
+            val (slotBits, slot) = inspect(if (activity::hostSlot.isInitialized)
+                activity.hostSlot else null)
+            val (cardBits, card) = inspect(if (activity::contentCard.isInitialized)
+                activity.contentCard else null)
+            val (editorBits, editor) = inspect(if (activity::editor.isInitialized)
+                activity.editor else null)
+            val (actionsBits, actions) = inspect(if (activity::actionsDock.isInitialized)
+                activity.actionsDock else null)
+            val insets = decor.rootWindowInsets
+            val imeVisible = insets?.isVisible(WindowInsets.Type.ime()) == true
+            val imeBottom = insets?.getInsets(WindowInsets.Type.ime())?.bottom ?: 0
+            val imeTop = if (imeVisible && imeBottom > 0)
+                activity.windowManager.currentWindowMetrics.bounds.bottom - imeBottom else null
+            val stage = when {
+                slot == null -> "SLOT_NOT_READY"
+                card == null -> "CARD_NOT_READY"
+                editor == null -> "EDITOR_NOT_READY"
+                actions == null -> "ACTIONS_NOT_READY"
+                insets == null -> "INSETS_MISSING"
+                !imeVisible -> "IME_HIDDEN"
+                imeBottom <= 0 -> "IME_ZERO"
+                else -> "READY"
+            }
+            return OwnGeometryProbe("${stage}_S${slotBits}_C${cardBits}_E${editorBits}" +
+                "_A${actionsBits}_INSETS_${if (insets != null) 1 else 0}" +
+                "_IME_VISIBLE_${if (imeVisible) 1 else 0}_POSITIVE_${if (imeBottom > 0) 1 else 0}",
+                slot, card, editor, actions, imeTop)
+        }
+
         fun translationFailed(id: String, message: String): Boolean {
             val activity = active.get()?.takeIf { it.draftId == id && !it.isFinishing }
                 ?: return false
@@ -95,6 +173,9 @@ class ReviewActivity : Activity() {
     private lateinit var editor: EditText
     private lateinit var instructions: TextView
     private lateinit var confirmButton: Button
+    private lateinit var hostSlot: View
+    private lateinit var contentCard: View
+    private lateinit var actionsDock: View
     private var autoRequested = false
     private var translationReview = false
     private var koreanSampleReview = false
@@ -135,6 +216,7 @@ class ReviewActivity : Activity() {
             importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
             importantForContentCapture = View.IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS
         }
+        contentCard = content
         content.addView(TextView(this).apply {
             text = if (VisualTestMode.enabled) "VISUAL TEST · ENGLISH REVIEW"
                 else "ENGLISH REVIEW"
@@ -150,6 +232,7 @@ class ReviewActivity : Activity() {
             setPadding(dp(10), dp(6), dp(10), dp(6))
             background = rounded(Color.WHITE, 12)
         }
+        actionsDock = actions
         confirmButton = action(confirmLabel()) {
             val service = KoScribeService.active()
             service?.updateDraftEnglish(draftId, owner, editor.text.toString())
@@ -238,11 +321,24 @@ class ReviewActivity : Activity() {
             importantForContentCapture = View.IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS
             addView(scrollContent)
         }
+        if (autoRequested) {
+            hostSlot = View(this).apply {
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                isClickable = false
+            }
+            root.addView(hostSlot, LinearLayout.LayoutParams(-1, dp(56)))
+        }
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         root.addView(actions, LinearLayout.LayoutParams(-1, dp(64)).apply {
             bottomMargin = dp(8)
         })
         setContentView(root)
+        if (autoRequested) root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            root.post {
+                if (!isFinishing && !isDestroyed)
+                    KoScribeService.active()?.autoReviewGeometryChanged(draftId, owner)
+            }
+        }
         // Dialog themes default to wrap-content; weight needs a bounded viewport.
         window.setLayout(WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT)
@@ -340,9 +436,11 @@ class ReviewActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        if (BuildConfig.AUTO_INSERT && ::editor.isInitialized && window.decorView.hasWindowFocus())
+        if (BuildConfig.AUTO_INSERT && ::editor.isInitialized && window.decorView.hasWindowFocus()) {
             KoScribeService.active()?.autoReviewFocused(draftId, owner, window.decorView, editor,
                 fromResume = true)
+            editor.post { KoScribeService.active()?.autoReviewGeometryChanged(draftId, owner) }
+        }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -350,6 +448,8 @@ class ReviewActivity : Activity() {
         if (BuildConfig.AUTO_INSERT && ::editor.isInitialized)
             KoScribeService.active()?.autoReviewWindowFocus(draftId, owner, hasFocus,
                 window.decorView, editor)
+        if (hasFocus && autoRequested && ::editor.isInitialized)
+            editor.post { KoScribeService.active()?.autoReviewGeometryChanged(draftId, owner) }
     }
 
     override fun onPause() {

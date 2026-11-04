@@ -2,42 +2,55 @@
 
 Updated: 2026-11-04 (Asia/Seoul).
 
-**Selected goal, 2026-11-04:** Andrew reopened automatic translate-and-insert and
-unsupported-editor compatibility and asked us to choose one. Selected issue 1:
-English approval should translate and insert into the verified original field
-without the intermediate Insert screen on the supported path. The immediate
-implementation is the bounded own-review removal/addition protocol previously
-measured in the owned fixture. Independent review and owned A35 empty/middle
-insertion plus adversarial fallback checks precede external acceptance. The
-October26 deferral is superseded for this work; no previous real-app read/write
-trial is reopened. Karrot's invalid node metadata and unknown absolute offset
-are separate unresolved compatibility gaps. OpenAI dot is newly reported by
-Andrew as another failing destination; its cause has not been measured.
-**Reviewed candidate ready:** Sol/xhigh implemented one authenticated original
-window removal/addition, preserving the existing input-generation, fresh capture,
-precommit and postcommit checks. Return uses status plus Cancel; manual Insert
-appears only on prewrite fallback. Translation keeps the reviewed editor session
-focused while blocking edits. Astra/xhigh cleared app/policy/UI and smoke diffs
-after fixes for callback ordering, pending-review identity and conflicting focus.
-All 97 unit tests pass; app/smoke lint has 0 errors (38/4 warnings), both APKs
-assemble, and the candidate signer matches the baseline. Saved API-free secure
-REVIEW/auto candidate `app/build/auto-insert-20261104/AUTO-sample-v1.apk` SHA-256
-`9F5EC233D0F310BE736F7E1FFF64C6F186FFE71199D971244E03A1CA9C9112BB` and
-`smoke-auto-v1.apk` SHA-256
-`987D40B162C56884D279CDC362412E6544FFCC13D89320DA3F9062D2A77DF9CD`.
-Speech/translation/visual/Karrot flags are false; auto eligibility is fixture-only.
-No November4 candidate has been installed or phone-tested yet. Awaiting Andrew's
-phone-readiness reply before exact owned tests. The secure D266E911 build below
-remains the last verified installed baseline; restore it after sample checks.
-The secure speech/translation variant is also built and saved as
-`app/build/auto-insert-20261104/AUTO-translation-v1.apk`, SHA-256
-`BA90AA2EE22ABE5A14106073AB7488977C4C5D247F1D2CF63233FAA3DAD28870`;
-use only after the sample gates pass. It has no live/API/device acceptance yet.
-Ordinary debug output and release BuildConfig have been restored to OFF/all false.
-Goal status is **blocked pending phone readiness** after three consecutive turns
-reached the same unanswered readiness gate. All local implementation, review and
-build work is complete for this candidate. Resume the owned-device tests when
-Andrew says the unlocked A35 is free; no phone action has been taken.
+**Selected active goal:** automatic Korean translation and insertion after
+English approval, without the intermediate Insert action on the verified path.
+Andrew reopened this work on November4, superseding the October26 deferral.
+Karrot/OpenAI dot compatibility remains a separate follow-up; old real-app
+read/write trial scopes are not reopened. Automatic eligibility remains owned
+fixture only, debug opt-in and default/release OFF.
+
+**Latest measured result:** retained-host/IME candidate v2 accepted the original
+window removal and entered the bounded keyboard-readiness wait. It then refused
+an unchanged bottom SystemUI window's LAYER_DOWN event during ENTERING_REVIEW.
+Full bound review proof passed. Exact Cancel-only harness completed6.702s;
+host acquired/review/return1/0/0, attempts/captures/commits0, manual renders0,
+original identity stable after1removed/1added, microphone803ms stopped and draft
+cleaned up. This is a safe refusal, not automatic-insertion acceptance.
+
+**Implemented/reviewed:** one authenticated original removal/addition; retained
+same view/token/window through review and return; visible Cancel in a reserved
+owned slot; bounded IME readiness without deadline extension; all destination,
+precommit, one-attempt and postcommit safeguards. INITIAL layout callbacks cannot
+admit incomplete evidence. No SYSTEM exception remains. Astra Ultra implemented
+the latest readiness fixes with Astra/xhigh independent review. Andrew explicitly
+authorized Ultra coding/checking when useful.101 unit tests pass; app/smoke lint
+0 errors (41/4 warnings), both assemble. Ordinary debug/release outputs restored
+OFF/all optional flags false.
+
+**Saved current candidate:** app/build/auto-insert-20261104/AUTO-retained-ime-v2.apk
+SHA-256 00C115A895FBCFAB69B704A02464089C4D389603EF34572D7EBF39DDB1F75168.
+Source service70F9508B/reviewA3DBFC08/gateEB5DBD4E/testsC5C946B1.
+Harness smoke-retained-readiness-v1.apk SHA-256
+C84BD6FE79DF29E04FF8B75A4398C0603891BB958F1B88FD27894C1DBD8DC708.
+The readiness-aware harness waits for full geometry before normal Confirm;
+Cancel-only still makes no confirmation or write.
+
+**Next work:** review and implement a complete bounded window-inventory/order
+proof for only the declared original/review and known keyboard transitions.
+Retaining KoScribe's host alone does not eliminate keyboard disappearance or
+possible restoration layer changes. No package/edge-specific exceptions.
+Then repeat exact Cancel-only gate before empty/middle/adversarial automatic
+checks. Actual translation and separately authorized external acceptance remain
+open. No automatic phone insertion has passed. Detailed evidence and prior
+candidates: docs/DEVICE_TESTS.md; rationale: docs/RESEARCH.md.
+
+**Current phone:** normal secure D266E911 build restored in place; service9686
+idle, speech/translation enabled, auto/probes false and SwiftKey unchanged.
+Play Protect twice asked for a security check during restoration; Andrew selected
+Send this time himself both times. The second restoration completed successfully.
+The requested temporary system-prompt screenshot was deleted on phone and PC.
+No real-app content read/write, conversation image, API request, credential change,
+Copy or Send occurred. Live credential/backup remain untouched.
 
 **Native design upgrade installed, 2026-10-31:** Andrew approved installing the
 comparison design and replacing the visible Phase 1 name. Sol/xhigh implemented

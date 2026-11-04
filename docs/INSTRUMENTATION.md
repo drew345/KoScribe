@@ -31,6 +31,15 @@ accepts a single commit call without applying it; the draft must remain terminal
 with no Insert retry. A sample pass is not proof of live translation processing
 or external-app automatic eligibility; those are separate acceptance gates.
 
+The retained-host harness additionally waits for the service's full retained
+review proof before normal automatic Confirm. Policy REVIEW alone proves the
+input/focus phase, not settled keyboard geometry. The ineligible selected-range
+case still follows its manual fallback path. The Cancel-only lifecycle diagnostic
+waits at most two seconds for full retained review proof or terminal fallback,
+reports READY/FALLBACK/TIMEOUT, then Cancels without Confirm or a write. This
+observational wait does not extend the app's entry deadline. A harness pass alone
+is not hypothesis acceptance: inspect readiness, refusal and no-write counters.
+
 ## Existing instrumentation architecture
 
 The dedicated `:smoke` debug APK targets its **own** package, `com.koscribe.smoke`. Android restarts an instrumentation target process; self-targeting prevents the test command from restarting KoScribe's accessibility service. The smoke APK has no launcher, runtime permission, credential, or product code. AndroidX Test currently merges a normal `REORDER_TASKS` permission and test helper activities into its APK. Its one nonexported fixture Activity contains a standard EditText and no Send control. This creates a synthetic cross-app destination in a separate process from KoScribe. Do not use the earlier app-targeted AndroidTest command: on the A35 it stopped the service before any test action.

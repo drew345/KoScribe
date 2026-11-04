@@ -349,4 +349,5 @@ class OriginalDestinationIntentTest {
         assertEquals(OriginalDestinationIntent.ReturnVerdict.FALLBACK,
             mismatch.resolvePendingAddition(302, OriginalDestinationIntent.AdditionEvidence.MATCH))
     }
+
 }

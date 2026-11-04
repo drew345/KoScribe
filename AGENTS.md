@@ -96,6 +96,9 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
   `gpt-6-sol` / `xhigh` (Extra High), and independent checking with
   `gpt-6-astra` / `xhigh`. Explicit model overrides require fresh-context
   subagents; provide their task, constraints, and authoritative file paths.
+- On 2026-11-04 Andrew additionally authorized Astra Ultra for coding or
+  checking when useful. Use it for difficult work at the overseer's discretion;
+  this permits upgrading those roles without another permission request.
 - Main agent is planner and overseer. Andrew requested Astra Ultra for that
   role; do not claim the active runtime setting was verified or changed
   merely because it is requested. Do not silently substitute GPT-6.1 Sol.

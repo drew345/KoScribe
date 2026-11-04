@@ -46,6 +46,7 @@ class AutoLifecycleDiagnosticSmokeTest {
         val arm: String, val auto: Boolean, val speech: Boolean, val translation: Boolean,
         val phase: String, val cleanup: Boolean, val proofs: Int, val captures: Int,
         val commits: Int, val autoCaptures: Int, val autoAttempts: Int, val autoFallbacks: Int,
+        val hostReviewProofs: Int,
         val intentPhase: String, val intentReason: String,
     )
 
@@ -215,6 +216,27 @@ class AutoLifecycleDiagnosticSmokeTest {
         report("review_owner", "FOCUSED_1_EDITOR_1_CANCEL_1_ORIGINAL_ABSENT_${bit(!inReview.originalWindowPresent)}")
         reportCounts("review_counts", before, counts())
         assertNoWrite(before)
+
+        // Observe the bounded provisional keyboard interval without Confirm or a write.
+        val readiness = awaitOrNull(2_000) {
+            discoverReviewOwner()?.let { observed ->
+                if (observed.windowId != review.windowId || observed.root != review.root ||
+                    observed.node != review.node)
+                    throw AssertionError("OWN_REVIEW_OWNER_CHANGED_DURING_READINESS")
+            }
+            val now = counts()
+            if (now.captures != before.captures || now.commits != before.commits ||
+                now.autoAttempts != before.autoAttempts)
+                throw AssertionError("UNEXPECTED_WRITE_DURING_REVIEW_READINESS")
+            now.takeIf { it.hostReviewProofs > before.hostReviewProofs ||
+                it.intentPhase == "FALLBACK" || it.autoFallbacks > before.autoFallbacks }
+        }
+        report("pre_cancel_readiness", when {
+            readiness == null -> "TIMEOUT"
+            readiness.intentPhase == "FALLBACK" || readiness.autoFallbacks > before.autoFallbacks ->
+                "AUTO_FALLBACK"
+            else -> "HOST_REVIEW_PROVED"
+        })
 
         val preCancel = discoverReviewOwner() ?: throw AssertionError("OWN_REVIEW_OWNER_LOST_BEFORE_CANCEL")
         report("pre_cancel", "WINDOW_${bit(preCancel.windowId == review.windowId)}_" +
@@ -482,7 +504,8 @@ class AutoLifecycleDiagnosticSmokeTest {
                 val node = queue.removeFirst()
                 if (node.packageName?.toString() != product) continue
                 if (node.className?.toString() == "android.widget.Button" &&
-                    matchesOwnButtonLabel(node.text, label) &&
+                    (matchesOwnButtonLabel(node.text, label) ||
+                        (label == "Ko" && node.viewIdResourceName == "$product:id/collapsed_bubble")) &&
                     node.isVisibleToUser && node.isEnabled && node.isClickable) matches.add(node)
                 for (index in 0 until node.childCount) node.getChild(index)?.let(queue::addLast)
             }
@@ -507,6 +530,12 @@ class AutoLifecycleDiagnosticSmokeTest {
             ?: throw AssertionError("OWN_DIAGNOSTIC_UNAVAILABLE_$label")
         fun count(label: String): Int = field(label).toIntOrNull()
             ?.takeIf { it in 0..100_000 } ?: throw AssertionError("BAD_OWN_COUNT_$label")
+        val hostCounts = lines.firstOrNull {
+            it.startsWith("Auto retained host acquired/review/return: ")
+        }?.substringAfter(": ")?.split('/')?.map { it.toIntOrNull() }
+        val hostReviewProofs = hostCounts?.takeIf { it.size == 3 && it.all { value ->
+            value != null && value in 0..100_000
+        } }?.get(1) ?: throw AssertionError("BAD_OWN_HOST_REVIEW_COUNT")
         fun boolean(label: String): Boolean = when (field(label)) {
             "true" -> true
             "false" -> false
@@ -518,6 +547,7 @@ class AutoLifecycleDiagnosticSmokeTest {
             count("Unbound recording proof count"), count("Destination capture count"),
             count("Commit request count"), count("Original intent captured count"),
             count("Auto insert attempt count"), count("Auto insert fallback count"),
+            hostReviewProofs,
             field("Original intent phase"), field("Original intent last reason"))
     }
 
@@ -530,6 +560,7 @@ class AutoLifecycleDiagnosticSmokeTest {
 
     private fun reportCounts(label: String, before: Counts, now: Counts) {
         report(label, "PROOF_${boundedDelta(now.proofs, before.proofs)}_" +
+            "HOST_REVIEW_${boundedDelta(now.hostReviewProofs, before.hostReviewProofs)}_" +
             "CAPTURE_${boundedDelta(now.captures, before.captures)}_" +
             "COMMIT_${boundedDelta(now.commits, before.commits)}_" +
             "INTENT_CAPTURE_${boundedDelta(now.autoCaptures, before.autoCaptures)}_" +

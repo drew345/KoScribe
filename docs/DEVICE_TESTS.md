@@ -1,5 +1,164 @@
 # Phase 1 device acceptance record
 
+## 2026-11-04 — Automatic empty-field candidate: safe refusal
+
+Andrew confirmed the A35 was unlocked/free. Secure API-free REVIEW/auto sample
+9F5EC233 and smoke987D40B1 were installed in place. SwiftKey stayed selected;
+the personal credential was not accessed. Exact method
+`AutomaticInsertSmokeTest#unchangedEmptyOriginalAutoInsertsOnceAndDismisses`
+with sole `autoEmptyReady=true` failed at
+`ORIGINAL_INTENT_NOT_ARMED_IN_REVIEW` in5.538s before confirmation.
+
+Own process32073 trace accepted `AUTO_ORIGINAL_REMOVED_ONCE`, then refused
+`UNEXPECTED_WINDOW_CHANGE` in ENTERING_REVIEW. Event mask16 was LAYER-only for
+a present SYSTEM window, nonfocused/inactive on the default display. The own
+review was the sole focused window; the original remained absent. This does
+not identify the system window as harmless chrome. Intent/proof counters1,
+automatic attempts/destination captures/commits0, manual result renders0.
+Harness Cancel left draftNONE/cleanupfalse; AppOps showed the microphone had
+stopped after650ms. No insertion, Copy, Send, screenshots or API call occurred.
+
+Restored regular D266E911 in place. Reconnected service3258 was idle with
+speech/translation=true, auto/probes=false and SwiftKey unchanged. This outcome
+is a safe refusal, not automatic-insertion acceptance. Next is a reviewed
+metadata-only system-window comparison during an owned Cancel-only run.
+
+### Same-day diagnostic: unchanged bottom-edge SystemUI window
+
+Diagnostic-only source D3F3FF06 and lifecycle selector patch8CF4E237 were cleared
+by independent Astra/xhigh review. App97 unit tests, app/smoke lint0errors and
+assembly passed. APKs saved under app/build/auto-insert-20261104:
+`AUTO-system-layer-diag-v1.apk` SHA-256
+`5F4EF5F390521364C245C28FD68AD3BCFFBC918872336B38E4EB683DC22676EE`, and
+`smoke-system-layer-v1.apk` SHA-256
+`C70B623C516A0989D4C15E2EB3A199543CD203CBECEC420A4EF92EC5FBF75D5E`.
+Signer matched the restored live baseline. Andrew unlocked again after the phone
+slept during preparation. Exact
+`AutoLifecycleDiagnosticSmokeTest#originalWindowReviewCancelReturnIsObservedWithoutInsertion`
+with sole `autoLifecycleReady=true` passed in5.575s on process11229.
+
+Fixed-code refusal record: baseline PRESENT/complete, SYSTEM type and default
+display same, layer DOWN, root identity/package/class same, bounds and touchable
+Region same, parent/children same, PiP false before/after, input focus/active/
+accessibility focus all false. SystemUI package before/after YES; event package
+unavailable. Edge bits before/after T0/B1/L1/R1; original bounding-box relation
+PARTIAL and current own-review relation NONE. Fresh review service/unlocked/
+owner/local/input/wait/remote/root/editor/sole-focus/full proof bits all1.
+Geometry categories alone are not an identity guarantee.
+
+Exactly one original REMOVED and one ADDED were observed. The original owned
+Activity/editor/token and restored accessibility window/root/node were unchanged,
+empty/caret0, with lifecycle deltas0 at natural and300ms settled return. Intent/
+proof1, attempts/captures/commits0, fallback1, draftNONE/cleanupfalse, microphone
+639ms ended. This is a diagnostic pass; automatic insertion still fell back.
+Restored regular D266E911; service12545 idle, speech/translation enabled, auto
+false and SwiftKey retained. Next is a separately reviewed narrow entry-only
+SystemUI layer rule and fresh automatic acceptance, not a broad system exemption.
+
+### Same-day sample v2: second layer refusal
+
+Source reviewed by Astra/xhigh;101 unit tests, lint0errors and assembly passed.
+Saved `AUTO-sample-v2.apk` SHA-256
+`8E05CDD5BF2DE06192421819170F31BC90DD1340D28A85F47C91F1C7CF85834F`.
+With the phone still unlocked, installed in place and ran the same sole empty
+automatic method against harnessC70B623C. It failed before confirmation in4.782s.
+Process19799 accepted `AUTO_ORIGINAL_REMOVED_ONCE` and
+`AUTO_SYSTEM_BOTTOM_LAYER_DOWN_ACCEPTED_ONCE`, then refused another SYSTEM
+LAYER-only DOWN event during ENTERING_REVIEW. This second window was baseline
+present with complete unchanged root/type/display/package/class/bounds/Region/
+parent/children/PiP and false focus/active flags. SystemUI NO, owner unmeasured;
+edge bits T0/B0/L0/R1 and partial own-review overlap. Full bound review proof1.
+Intent/proof1, attempts/captures/commits0, fallback1, manual renders0. Cancel left
+draftNONE/cleanupfalse; microphone722ms stopped. No API call, Copy, Send or image.
+Restored D266E911; service25434 regular flags, idle and SwiftKey selected.
+
+Next experiment retains the existing KoScribe overlay through review/return,
+disabling the narrow SYSTEM allowance. It must pass independent review and a
+Cancel-only identity/geometry test before another automatic write-path test.
+Current traces do not justify ignoring SYSTEM events or adding owner exceptions.
+
+### Same-day retained host: preparation passed, review proof refused
+
+Sol implemented retained-host source; Astra/xhigh and Astra/Ultra independently
+cleared service99075947/review50B61440.97 unit tests passed, lint0errors41warnings
+and assembly passed. Saved `AUTO-retained-host-v1.apk`, SHA-256
+`CFCB26BB5934D7FD2ABA49754E0FD8DA02D917BE27998CBEDF6E75EE3166F809`.
+No SYSTEM-window exception remains. Same harnessC70 Cancel-only method completed
+in5.47s on process15451, without Confirm, insertion, API, Copy, Send or images.
+
+Host acquired/review/return counters1/0/0: prelaunch same-window shrink and tight
+inventory proof passed, but ORIGINAL_REMOVAL_UNVERIFIED terminated automatic
+eligibility. The trace does not establish which of the old review attestation or
+new host/geometry predicates failed. The retained-host hypothesis is not accepted.
+Original Activity/editor/token and accessibility window/root/node returned stable
+after1removed/1added, natural and300ms settled checks. Intent/proof1,
+attempts/captures/commits0, manual renders0, draftNONE/cleanupfalse; mic541ms ended.
+Restored D266E911; service17802 idle with regular flags and SwiftKey retained.
+Next: one diagnostic-only terminal predicate record, not a new guard exception.
+
+### Same-day retained-host diagnostic: transient keyboard geometry
+
+Diagnostic serviceF42CEEDE/review042BDE86 independently cleared;97 units,
+lint0errors and assembly passed. Saved `AUTO-retained-host-diag-v1.apk` SHA-256
+`407F495931202E984213865FE26D992DE3F669C9EE335370057A728E5DAF5FDF`.
+Cancel-only harnessC70 completed5.179s on process20490. Actual refusal STEP was
+OWN_HOST_PROOF, entry-wait age LT250ms, exact removal/original absent both1.
+Post-decision snapshot: all old review proof bits1, FULL1; lease local and remote
+identity/bounds/touch Region proof1; slot/card/editor/actions ready and visible,
+slot contains chip and no overlap with controls. IME_VISIBLE1 but height0;
+current accessibility IME window count0. Thus geometry readiness was incomplete,
+not a measured target mismatch or proof of keyboard absence.
+Host acquired/review/return1/0/0; attempts/captures/commits0, manual renders0,
+stable original1removed/1added, draftNONE/cleanupfalse, mic559ms ended.
+Restored D266E911. Next focused implementation separates that bounded keyboard
+readiness wait from the already-proved removal identity; no auto return/write
+before complete geometry, no deadline extension or rearming an invalidated intent.
+
+### Same-day bounded IME gate: early observer refusal
+
+Ultra implemented a fixed launch+1s IME readiness gate, independently reviewed
+at service69A4EE40/reviewA3DBFC08/gateEB5DBD4E/testsC5C946B1.101 units passed,
+lint0errors/build passed. Saved `AUTO-retained-ime-v1.apk` SHA-256
+`4190ACADD083CBC8CBF6E5446A88E7401B04D374F6B19269BBAB64CEFE88E617`.
+Sol's readiness-aware smoke133D637D/3CDBAE7F was independently cleared and built;
+saved `smoke-retained-readiness-v1.apk` SHA-256
+`C84BD6FE79DF29E04FF8B75A4398C0603891BB958F1B88FD27894C1DBD8DC708`.
+Cancel-only method completed6.681s on process29435, reporting AUTO_FALLBACK.
+Host acquired/review/return1/0/0; reason AUTO_HOST_REVIEW_GEOMETRY_LOST, before
+any IME_PENDING or accepted REMOVED marker.0attempt/capture/commit/manual renders,
+stable original1removed/1added, draftNONE/cleanupfalse, mic836ms ended.
+
+Independent source review identified an INITIAL layout-observer authority
+regression from exposing typed incomplete geometry. Corrected source70F9508B
+defers incomplete INITIAL observations; only fully bound READY can be admitted
+there, and exact REMOVED/pending guards remain unchanged.101 units/lint0errors/
+build passed; saved `AUTO-retained-ime-v2.apk` SHA-256
+`00C115A895FBCFAB69B704A02464089C4D389603EF34572D7EBF39DDB1F75168`.
+Its phone gate is pending. Baseline restoration encountered Google Play Protect's
+optional app-submission prompt; Andrew requested inspection/explanation. No
+choice was selected by the agent; temporary system-prompt images were deleted.
+
+### Same-day retained IME v2: entry proof passed, SYSTEM layer refusal remains
+
+After Andrew selected Play Protect's Send this time, baseline restoration
+completed. Installed reviewed00C115A8 with harnessC84BD6FE. Exact Cancel-only
+method completed6.702s on process6748: IME_PENDING and ORIGINAL_REMOVED_ONCE
+were accepted. A subsequent unchanged bottom-edge SystemUI LAYER_DOWN event
+was refused with full bound review proof. No narrow SYSTEM allowance is active.
+Host acquired/review/return1/0/0;0attempt/capture/commit/manual render, stable
+original1removed/1added, draftNONE/cleanupfalse, mic803ms stopped.
+Retaining the own host therefore does not eliminate all measured layer churn;
+the known keyboard also disappears during entry. Complete inventory/order proof
+is the next design, including only finite declared transitions and exact survivor
+invariants. Current per-window evidence alone does not establish that proof.
+
+Baseline restoration again paused at Play Protect; Andrew selected Send this
+time again. Restore succeeded; service9686 idle with regular flags and SwiftKey.
+Ordinary local debug/release BuildConfig outputs restored OFF/allfalse. No
+automatic insertion, API request, real-app content, Copy or Send in these gates.
+
+## Historical phase evidence
+
 Status: eight normal synthetic cross-app checks passed on the final modal guard
 on 2026-10-23, including edited English review return and Korean/emoji insertion.
 First Kakao flow safely refused insertion; other external-app checks and actual

@@ -1216,3 +1216,87 @@
   recurred across three goal turns. Clean local checkpoint and all saved APK
   hashes were reverified; implementation/review agents are complete. Resume
   when Andrew confirms the unlocked A35 is free. No device action occurred.
+
+## 2026-11-04 — First automatic device check; system-layer refusal
+
+- Andrew replied Ready. Root installed reviewed sample9F5EC233 and smoke987D40B1
+  in place over idle KoScribe. Exact owned empty method failed at
+  ORIGINAL_INTENT_NOT_ARMED_IN_REVIEW in5.538s, before confirmation or a write.
+- Own evidence: original removal attestation succeeded, then SYSTEM LAYER-only
+  mask16 event (nonfocused/inactive, own review sole focused window) triggered
+  UNEXPECTED_WINDOW_CHANGE during ENTERING_REVIEW. Intent/proof1;
+  attempts/captures/commits0, manual renders0, draftNONE/cleanupfalse after Cancel;
+  microphone stopped after650ms. This is a safe refusal, not acceptance.
+- Restored D266E911 in place; service reconnected as PID3258 with regular
+  speech/translation enabled, auto/probes false, idle draft and SwiftKey intact.
+  No screenshots, real-app content, API call, key change, Copy or Send.
+- Astra review recommends a single bounded Cancel-only diagnostic comparing
+  the refused system window with mode-click identity/region/focus metadata.
+  AOSP layer renumbering after removal is a plausible explanation, not a measured
+  Samsung cause. No arbitrary SYSTEM-window exception is approved.
+- Diagnostic-only service D3F3FF06 and corrected Cancel-only harness8CF4E237
+  were independently cleared. App97 units/lint0errors and smoke lint0errors/build
+  passed. Saved diagnostic5F4EF5F3/harnessC70B623C. Phone had locked during build;
+  Andrew explicitly unlocked again before installation and the sole run.
+- Cancel-only diagnostic passed5.575s. The first refused system window was
+  baseline-present SystemUI at the bottom edge, with same root/package/class,
+  bounds/Region/display/topology and false focus/active/PiP flags; layer DOWN was
+  its only measured change. Own review had complete proof and no bounding-box
+  overlap. Original identity returned unchanged after exactly1removed/1added.
+  Intent/proof1, attempts/captures/commits0, draftNONE/cleanupfalse, mic639ms ended.
+- Restored D266E911, servicePID12545 regular speech/translation on, auto off,
+  idle and SwiftKey intact. Astra architecture/review supports one narrowly
+  verified bottom-edge LAYER-only entry exception, not general system events.
+  Sol is implementing it with adversarial policy tests before the next device gate.
+
+- Reviewed sample-v2 (8E05CDD5) passed101 units/lint0errors/build. Exact empty
+  automatic test failed4.782s before Confirm: bottom-SystemUI allowance accepted,
+  then another unchanged right-edge SYSTEM window moved DOWN and was refused.
+  Its owner is unmeasured. Attempts/captures/commits0, manual renders0, clean
+  Cancel and mic722ms stopped. Restored D266E911, service25434 idle/regular flags
+  and SwiftKey retained. No automatic insertion has passed.
+- Architecture/review selected a cause-focused next experiment: retain the own
+  bubble host through review and return, with a small visible Cancel control in
+  proven owned UI space. Current source removes that window at review entry;
+  AOSP ordinal layers make renumbering plausible. Disable the narrow SystemUI
+  allowance, preserve all guards, review first, then run Cancel-only. This is
+  an implementation direction, not measured success or external-app acceptance.
+- Andrew explicitly authorized Astra Ultra for coding/checking when useful.
+  Existing Ultra architecture agent is also checking the retained-host change;
+  Sol/xhigh remains the implementation owner and Astra/xhigh reviews independently.
+- Retained-host source99075947/review50B61440 cleared both Astra reviews;97 units,
+  lint0errors41warnings and build passed. Saved CFCB26BB. Owned Cancel-only5.47s
+  completed cleanly but automatic eligibility refused ORIGINAL_REMOVAL_UNVERIFIED:
+  host acquired/review/return1/0/0. Identity survived1removed/1added;0writes,
+  clean Cancel, mic541ms stopped. Restored D266E911, service17802 idle/regular
+  flags/SwiftKey. Implement diagnostic-only predicate breakdown before any further
+  behavior change; missing IME insets is a hypothesis, not a measured cause.
+- Reviewed diagnosticF42CEEDE/042BDE86 passed97units/lint0errors/build; saved
+ 407F4959. Cancel-only5.179s measured actual OWN_HOST_PROOF refusal: full old
+ review identity and tight same host/slot/control geometry passed; own IME
+ visible=true/height0 and accessibilityIMEcount0.0writes, stable original,
+ cleanCancel/mic559ms stopped; restored D266E911. Under Andrew's Ultra permission,
+ architecture agent takes the focused implementation: bounded keyboard readiness
+ within existing entry deadline, preserved core identity, full proof before
+ automatic return, contradiction/early Confirm/timeout terminal. Astra/xhigh checks.
+- Ultra gate69A4EE40 passed101units/lint0errors/build; sample4190ACAD with reviewed
+  readiness harnessC84BD6FE completed Cancel-only6.681s but refused early at
+  AUTO_HOST_REVIEW_GEOMETRY_LOST (host1/0/0, noIME_PENDING/REMOVED marker).
+ 0writes, stableoriginal1removed/1added, cleanCancel/mic836ms. Source review
+ found INITIAL observer regression; corrected70F9508B reviewed/built, saved
+ 00C115A8 for next Cancel-only gate. No automatic phone insertion pass yet.
+- Baseline reinstall waits at Play Protect security-check prompt. Andrew asked
+  to look/explain choices; agent recommended Send this time and selected nothing.
+  Requested temporary screenshot showed the system prompt and was removed from
+  phone/PC. Wait for restoration completion before another install/test.
+- Andrew selected Send this time himself; restoration completed and regular
+  service5306 was verified idle. Installed reviewed00C115A8 with C84BD6FE.
+  Cancel-only6.702s now accepted IME_PENDING and ORIGINAL_REMOVED_ONCE, then
+  refused unchanged bottom-SystemUI LAYER_DOWN with full bound review proof.
+  Host1/0/0,0writes/manual renders, stableoriginal1removed/1added, mic803ms ended.
+  This supports complete declared keyboard/window transition verification next;
+  retaining the own host alone did not remove all layer churn. Ultra designs and
+  implements; Astra/xhigh independently checks. No package/edge exemptions.
+- Restoration again encountered Play Protect; Andrew again selected Send this
+  time. D266E911 restoration completed; service9686 idle with regular flags,
+  SwiftKey unchanged. Ordinary debug/release outputs restored OFF/allfalse.

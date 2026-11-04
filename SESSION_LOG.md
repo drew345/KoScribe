@@ -1379,3 +1379,17 @@
   before any rule change. Then reviewed owned Cancel-only after fresh readiness.
   Complete entry/return/automatic insertion are still unproven. No more edits or
   tests tonight; local reviewed checkpoint only, no push.
+
+## 2026-11-05 — Independent-model consultation prepared
+
+- Andrew resumed and asked for a reusable question with current GitHub files to
+  seek Claude/Gemini ideas. Frame architectural choices as open to challenge,
+  distinguish user-facing safety requirements from the current strict validator,
+  and accurately retain the unknown missing-root role/no automatic success.
+- Verified private repository/current main; scanned all four outgoing commits
+  and21 changed files for credential/generated-file patterns, then published
+  reviewed checkpoint80b1eb9 to `codex/approve-translate-insert`. Main unchanged.
+  No message sent to another model, PR opened, code changed or phone operated.
+- PROGRESS updated for this consultation. Supply pinned GitHub links and a
+  source-only archive for models without access to the private repository.
+  Await independent advice; the exact diagnostic restart step remains pending.

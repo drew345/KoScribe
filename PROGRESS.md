@@ -1,6 +1,6 @@
 # Current progress
 
-Updated: 2026-11-04 (Asia/Seoul).
+Updated: 2026-11-05 (Asia/Seoul).
 
 **Selected active goal:** automatic Korean translation and insertion after
 English approval, without the intermediate Insert action on the verified path.
@@ -9,10 +9,14 @@ Karrot/OpenAI dot compatibility remains a separate follow-up; old real-app
 read/write trial scopes are not reopened. Automatic eligibility remains owned
 fixture only, debug opt-in and default/release OFF.
 
-**Paused for sleep:** Andrew requested a clear stopping point on November4,
-around20:25 KST, to resume in roughly9hours. No more experiments tonight.
-This file is the restart entry point. Branch: `codex/approve-translate-insert`.
-The reviewed source and this handoff are checkpointed locally; nothing was pushed.
+**November5 restart:** Andrew returned and requested a question plus GitHub links
+for independent Claude/Gemini architectural advice before further implementation.
+Reviewed source checkpoint `80b1eb9` has been pushed to the separate
+`codex/approve-translate-insert` branch of the existing private GitHub repository.
+Main is unchanged. No phone action, code change or new device result on November5.
+The consultation should challenge implementation assumptions, especially complete
+window-inventory requirements, while preserving the product's safety outcomes.
+This file remains the restart entry point; the next diagnostic below is pending.
 
 **Latest measured result:** final sample9D5B00D6 passed retained-host preparation
 and the new exact original focus-loss observation. It then safely refused

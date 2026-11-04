@@ -69,13 +69,16 @@ class ReviewActivity : Activity() {
         }
 
         /** Local references only; the service performs the remote accessibility attestation. */
-        fun focusedReviewViews(id: String, owner: Any): Pair<View, EditText>? {
+        fun localReviewViews(id: String, owner: Any): Pair<View, EditText>? {
             val activity = active.get()?.takeIf {
                 it.draftId == id && it.owner === owner && !it.isFinishing && !it.isDestroyed &&
                     it::editor.isInitialized
             } ?: return null
-            val decor = activity.window.decorView
-            val edit = activity.editor
+            return activity.window.decorView to activity.editor
+        }
+
+        fun focusedReviewViews(id: String, owner: Any): Pair<View, EditText>? {
+            val (decor, edit) = localReviewViews(id, owner) ?: return null
             return if (decor.hasWindowFocus() && decor.isAttachedToWindow && edit.isAttachedToWindow &&
                 edit.isFocused && decor.windowToken != null && edit.windowToken == decor.windowToken)
                 decor to edit else null

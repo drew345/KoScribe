@@ -41,6 +41,7 @@ class AutomaticInsertSmokeTest {
     private data class State(
         val arm: String, val phase: String, val captures: Int, val commits: Int,
         val confirmation: String, val proofs: Int, val hostReviewProofs: Int,
+        val entryInventory: String, val inventoryCompletions: Int,
         val cleanup: Boolean,
         val autoEnabled: Boolean, val speechEnabled: Boolean, val translationEnabled: Boolean,
         val intentPhase: String, val intentReason: String, val intentCaptures: Int,
@@ -313,11 +314,15 @@ class AutomaticInsertSmokeTest {
                 throw AssertionError("WRITE_BEFORE_REVIEW_CONFIRM")
             if (current.intentPhase == "FALLBACK" || current.autoFallbacks > before.autoFallbacks)
                 throw AssertionError("AUTO_REVIEW_FELL_BACK_BEFORE_CONFIRM")
+            if (current.entryInventory == "FAILED")
+                throw AssertionError("AUTO_ENTRY_INVENTORY_FAILED_BEFORE_CONFIRM")
             if (current.intentCaptures != before.intentCaptures + 1 ||
                 current.intentPhase !in setOf("ENTERING_REVIEW", "REVIEW") ||
                 current.phase != "REVIEW")
                 throw AssertionError("AUTO_REVIEW_STATE_CHANGED_BEFORE_CONFIRM")
             current.takeIf { it.hostReviewProofs == before.hostReviewProofs + 1 &&
+                it.entryInventory == "COMPLETE" &&
+                it.inventoryCompletions == before.inventoryCompletions + 1 &&
                 it.intentPhase == "REVIEW" }
         }
         assertReviewActionGeometry()
@@ -588,7 +593,8 @@ class AutomaticInsertSmokeTest {
         return State(field("Experiment arm"), field("Draft phase"),
             count("Destination capture count"), count("Commit request count"),
             field("Commit confirmation"), count("Unbound recording proof count"),
-            hostReviewProofs,
+            hostReviewProofs, field("Auto entry inventory"),
+            count("Auto entry inventory completions"),
             boolean("Overlay cleanup pending"), boolean("Auto insert enabled"),
             boolean("Speech input enabled"), boolean("Translation input enabled"),
             field("Original intent phase"), field("Original intent last reason"),

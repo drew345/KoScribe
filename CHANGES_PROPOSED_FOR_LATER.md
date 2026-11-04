@@ -18,11 +18,19 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    disappearance/reappearance and removes the intermediate manual controls on
    the automatic path. Phone acceptance remains pending. See
    [Phase 3](docs/PHASE3.md#october25-proposal-reopened-november4).
-   The current retained-host/keyboard-readiness candidate is still undergoing
-   owned-fixture acceptance. Also retain the separate no-removal-path liveness
-   check: core proof may bind after the last layout callback, requiring a
-   deliberate readiness observation after binding. This does not reopen external
-   automatic eligibility or allow a missing proof to be treated as success.
+   The current retained-host/keyboard-readiness work is still undergoing owned
+   acceptance. Its complete-inventory candidate deliberately requires the
+   measured original-window removal/replacement. A no-original-removal review
+   path will use manual fallback until its distinct inventory projection is
+   designed and accepted. That later path also needs readiness observation after
+   late core binding; the last layout callback may already have occurred. This
+   does not reopen external automatic eligibility or treat missing proof as success.
+   The November4 final run passed retained-host preparation and provisional
+   original focus loss, but a passive poll could not read one remote window root.
+   Identify that role before any rule change. If complete snapshot/event alignment
+   proves unreliable, evaluate focusable accessibility-overlay review as a separate
+   architecture; original introspection may improve, but SwiftKey/input ownership
+   and return still need proof. This alternative is not implemented or accepted.
 
 2. **Make recording and processing states more obvious.** Andrew initially did
    not realize tapping a language choice immediately started recording. Improve

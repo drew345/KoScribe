@@ -637,3 +637,44 @@ identity/placement in an owned Cancel-only run with SYSTEM allowances disabled.
 If that does not eliminate churn, a future complete finite inventory/order proof
 would need to account for every survivor and only declared own-window changes;
 the current per-window diagnostic does not establish that global invariant.
+
+The retained-host/IME-v2 owned run subsequently accepted the original removal
+but still refused the unchanged bottom SystemUI layer change. The keyboard was
+also absent during this measured entry transition. The next design therefore
+checks complete bounded inventories and only finite declared IME transitions;
+it is not another owner-specific exemption. The same AOSP implementation sends
+all removals first, then iterates the new window list in order for additions and
+other changes. An unchanged survivor above a restored IME can receive its LAYER
+notification before that IME's ADDED notification. Public events do not include
+old/new layer values or an inventory revision. A current snapshot or timestamp
+alone cannot authenticate a past layer transition. The finite validator must
+account for the complete expected sequence, unknown/mixed/duplicate events,
+unchanged survivor identity/geometry/order, and the fixed entry deadline before
+granting readiness. AOSP ordering is source evidence; acceptance on the A35
+remains a separate measured gate.
+
+The finite OLD/TARGET host-preparation experiment then observed a third remote
+shape despite one explicit position-and-size `updateViewLayout` call. There is
+no explicit animation on that host in the preparation code; the recording pulse
+animates a child and is stopped before preparation. Android's public
+[`setCanPlayMoveAnimation(false)`](https://developer.android.com/reference/android/view/WindowManager.LayoutParams#setCanPlayMoveAnimation(boolean))
+(API34+) disables window position interpolation. The next minimal experiment
+sets it only on the leased overlay before that update, retaining exact endpoint,
+inventory and deadline guards. WindowManager move animation is a source-supported
+hypothesis for the mismatch, not its measured cause. The older session-dialog
+no-move experiment involved a different window and return failure; it does not
+establish the result for this retained overlay.
+
+**Practical limit of the finite ledger:** KoScribe's `notificationTimeout=0`
+avoids the same-type pending-event replacement path in AOSP's
+[`AbstractAccessibilityServiceConnection`](https://raw.githubusercontent.com/aosp-mirror/platform_frameworks_base/android16-release/services/accessibility/java/com/android/server/accessibility/AbstractAccessibilityServiceConnection.java).
+However, the available inventory has no revision tied to the delivered event.
+The strict ledger can safely refuse a legitimate queued DOWN event if its current
+snapshot already shows UP. This is a framework-derived liveness risk, not the
+cause measured so far. Finish the focused original-loss fix and its entry gate;
+if the trace then shows skipped epochs, late DOWN against restored UP, or recurring
+extra transitions, reassess architecture instead of adding event exceptions.
+A focusable accessibility-overlay review could preserve original-window
+introspection and reduce replacement churn, but editable review would still
+transfer SwiftKey/input generation and need independent ownership/return proof.
+It remains a proposed fallback architecture, not an accepted path.

@@ -1300,3 +1300,82 @@
 - Restoration again encountered Play Protect; Andrew again selected Send this
   time. D266E911 restoration completed; service9686 idle with regular flags,
   SwiftKey unchanged. Ordinary debug/release outputs restored OFF/allfalse.
+
+## 2026-11-04 — Finite inventory and preparation timing diagnostic
+
+- Ultra implemented the bounded inventory/order protocol; Astra/xhigh and a
+  second Astra/Ultra independently cleared sourceFA6D2118/FA14163F/BC9DB93D.
+  120 units, app lint0errors41warnings and assembly passed. Sol's inventory-aware
+  smoke5FACB13A/61BBF8DA was cleared; smoke lint/build passed. Saved E3108A9D
+  sample and BA587844 harness. No-original-removal route remains manual fallback;
+  return layer changes are a separate strict gate.
+- Exact Cancel-only run6.215s (PID31208) refused PREPARATION_BOUNDS_EVENT,
+  host0/0/0 inventoryFAILED/completions0, attempts/captures/commits0. Original
+  returned stable after1removed/1added; cleanCancel/mic701ms ended. Restored
+  D266E911, service837 idle/regular flags.
+- Diagnostic-only exact predicate split9BE9392C/1C93966E/1D80D24C independently
+  cleared and unit/lint/build passed; saved F859DC6A. Exact same Cancel-only run
+  (PID4401) measured actual PREPARATION_HOST_UNPROVED / HOST_REMOTE_BOUNDS,
+  phaseSETTLING, lease ageLT250ms and event after lease creation. Secondary
+  recheck retained local holder/identity/flags, but remote bounds mismatched and
+  touch Region was not confined. Not a duplicate. Host0/0/0 inventoryFAILED,
+  attempts/captures/commits0, draftNONE/cleanupfalse and mic581ms stopped. The
+  instrumentation output was unavailable after truncation; no harness-pass or
+  elapsed-time claim is made. Own service confirms REVIEW_CANCELLED cleanup.
+- Restored D266E911 in place successfully; service5544 idle, normal flags and
+  SwiftKey unchanged. No API, credentials, external editor, Copy or Send used.
+  Next: measured bounded preparation protocol, independently reviewed before
+  another owned Cancel-only gate. No automatic phone insertion has passed.
+- Ultra implemented finite OLD-to-TARGET preparation with unchanged500ms limit,
+  full inventory on every event/poll, no third shape/regression and one notice per
+  endpoint. Both independent reviewers cleared5048CF94/A1705D54/4412CF1A;
+  128units0failures, lint0errors41warnings, assembly passed. Saved2016CA5A.
+  Exact Cancel-only completed5.195s, PID10927: OLD_CAPTURED then
+  PREPARATION_REMOTE_THIRD_SHAPE before any endpoint acknowledgment or acquired
+  host. Actual targetREMOTE_BOUNDS/SETTLING/AFTERlease/ageLT250; local target
+  rectangleYES, remote bounds/Region-confinementNO.0writes, stableoriginal,
+  cleanCancel/mic525ms stopped. Restored D266E911, service12163 idle/regularflags.
+  Next investigates removing intermediate resize/move geometry at its source;
+  animation is unproven and arbitrary third-shape allowances are not justified.
+- Public API34+ no-move control applied only to retained overlay; exact source
+  45FEBE57 cleared by both reviewers,128units/lint0errors/build passed. Saved
+  D3CBDC2D. Cancel-only5.709s PID16713 accepted TARGET bounds and acquired host,
+  then refused entry CURRENT_OWNED_PROOF before accepted originalREMOVED/IME
+  markers. Host1/0/0;0writes, stableoriginal1removed1added, cleanCancel/mic707ms.
+  Restored D266E911, service18583 idle/regularflags. Next needs actual first
+  pre-anchor event/proof predicate; no whole-class event exception is justified.
+- Exact-frame diagnostic0E1C4097 was reviewed with identical decision reads and
+  predicates;128units/lint0errors/build passed, saved5EF08DE6. Cancel5.556s,
+  PID22768: actual first event ORIGINAL_FOCUS/mask96 AFTERlaunch LT250, original
+  present/unfocused, reviewabsent, no sole focus; reviewBound0, hoststepOWNER_FOCUS,
+  entryActive1. Preparation again acquired host;0writes, stableoriginal,
+  cleanCancel/mic634ms. Restored D266E911, service24255 regular/idle. Implement
+  narrow provisional original-focus transition with full original/host/survivor
+  checks, no readiness authority; existing final review/destination proof remains.
+
+## 2026-11-04 — Sleep handoff: focus-loss step passes; remote root unavailable
+
+- **User decision:** Andrew asked around20:25 KST for a clean stopping point within
+  20minutes and clear restart notes for roughly9hours later. Finish the current
+  build and one Cancel-only run, restore normal phone/local configurations, then
+  pause. No further experiment or automatic scheduled phone action.
+- **Reviewed source:** Ultra implemented exact96 focus-loss bookkeeping with
+  local identity pinning, full original/host/survivor proof and event/poll history.
+  Astra/xhigh and Astra/Ultra independently cleared39EC2A5D/85D9B60D/E438AF69/
+  BD8418D8.135 units passed; lint0errors41warnings and assembly passed.
+  Saved AUTO-prefocus-v1.apk9D5B00D6; harnessBA587844 unchanged.
+- **Measured:** exact Cancel-only5.175s, PID29021, accepted retained-target host
+  and ORIGINAL_FOCUS_LOSS_PENDING_ONCE, then POLL refused WINDOW_ROOT_MISSING.
+  Metadata0 means the failing window identity/counts are unknown; do not infer
+  original/review/IME. Host/preAnchor proofs1, local review ownership/input1,
+  remote/bound0. Host1/0/0, inventoryFAILED/0; attempts/captures/commits0.
+  Original returned stable1removed/1added, cleanCancel and mic560ms stopped.
+- **Left safe:** normal secure D266E911 restored and exact installed hash checked;
+  service30001 idle with regular flags, SwiftKey unchanged. Removed only owned
+  smoke package from user0. Main app/key preserved. Ordinary debug/release flags
+  rebuilt/verified OFF/allfalse. No external content, API call, clipboard or Send.
+- **Restart:** PROGRESS now contains exact source/APKs/state and next step: classify
+  the FIRST unavailable root by fixed role from the deciding read, diagnostic-only,
+  before any rule change. Then reviewed owned Cancel-only after fresh readiness.
+  Complete entry/return/automatic insertion are still unproven. No more edits or
+  tests tonight; local reviewed checkpoint only, no push.

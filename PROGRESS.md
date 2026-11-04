@@ -9,48 +9,89 @@ Karrot/OpenAI dot compatibility remains a separate follow-up; old real-app
 read/write trial scopes are not reopened. Automatic eligibility remains owned
 fixture only, debug opt-in and default/release OFF.
 
-**Latest measured result:** retained-host/IME candidate v2 accepted the original
-window removal and entered the bounded keyboard-readiness wait. It then refused
-an unchanged bottom SystemUI window's LAYER_DOWN event during ENTERING_REVIEW.
-Full bound review proof passed. Exact Cancel-only harness completed6.702s;
-host acquired/review/return1/0/0, attempts/captures/commits0, manual renders0,
-original identity stable after1removed/1added, microphone803ms stopped and draft
-cleaned up. This is a safe refusal, not automatic-insertion acceptance.
+**Paused for sleep:** Andrew requested a clear stopping point on November4,
+around20:25 KST, to resume in roughly9hours. No more experiments tonight.
+This file is the restart entry point. Branch: `codex/approve-translate-insert`.
+The reviewed source and this handoff are checkpointed locally; nothing was pushed.
+
+**Latest measured result:** final sample9D5B00D6 passed retained-host preparation
+and the new exact original focus-loss observation. It then safely refused
+`ENTRY_INVENTORY_WINDOW_ROOT_MISSING` on a passive POLL during entry. One remote
+window root was unavailable; **which window is unknown**. Do not infer it was
+the original, review, or IME. No full entry, automatic return, or automatic phone
+insertion has passed. Exact Cancel-only test completed5.175s on service29021.
+Host acquired/review/return1/0/0; inventoryFAILED/completions0; attempts,
+destination captures, commits and manual renders0. Original identity returned
+stable after1removed/1added. Cancel cleared draft/cleanup; mic560ms stopped.
 
 **Implemented/reviewed:** one authenticated original removal/addition; retained
 same view/token/window through review and return; visible Cancel in a reserved
 owned slot; bounded IME readiness without deadline extension; all destination,
 precommit, one-attempt and postcommit safeguards. INITIAL layout callbacks cannot
-admit incomplete evidence. No SYSTEM exception remains. Astra Ultra implemented
-the latest readiness fixes with Astra/xhigh independent review. Andrew explicitly
-authorized Ultra coding/checking when useful.101 unit tests pass; app/smoke lint
-0 errors (41/4 warnings), both assemble. Ordinary debug/release outputs restored
-OFF/all optional flags false.
+admit incomplete evidence. No SYSTEM exception remains. The finite inventory
+model verifies declared original/review and IME transitions, survivor identity,
+geometry and rank order. Own-host preparation has fixed OLD/TARGET endpoints and
+500ms deadline; API34+ move animation is disabled on that host. The exact96
+focus-loss observation pins own local identity, remembers regression history,
+and grants no anchor/readiness. Full removal and DOWN/UP completion remain required.
+Astra Ultra implemented; Astra/xhigh and a second Astra/Ultra independently cleared
+the final source. **135 unit tests passed; app lint0errors41warnings; build passed.**
+Smoke source was independently reviewed and built/linted (0errors4warnings).
+Ordinary local debug APK and release BuildConfig were restored to OFF/allfalse.
 
-**Saved current candidate:** app/build/auto-insert-20261104/AUTO-retained-ime-v2.apk
-SHA-256 00C115A895FBCFAB69B704A02464089C4D389603EF34572D7EBF39DDB1F75168.
-Source service70F9508B/reviewA3DBFC08/gateEB5DBD4E/testsC5C946B1.
-Harness smoke-retained-readiness-v1.apk SHA-256
-C84BD6FE79DF29E04FF8B75A4398C0603891BB958F1B88FD27894C1DBD8DC708.
-The readiness-aware harness waits for full geometry before normal Confirm;
-Cancel-only still makes no confirmation or write.
+**Saved final candidate (not installed):**
+`app/build/auto-insert-20261104/AUTO-prefocus-v1.apk`, SHA-256
+9D5B00D6582D235AACF4CB58109723F8EC23E3AC4E9E172B38A44F121952A8B7.
+Reviewed source SHA prefixes: service39EC2A5D, ReviewActivity85D9B60D,
+EntryWindowInventoryE438AF69, EntryWindowInventoryTestBD8418D8 (34model tests).
+Matching BuildConfig is saved beside the candidate: REVIEW/auto=true; speech,
+translation, visual and all Karrot probes=false. Harness `smoke-inventory-v1.apk`
+in the same directory, SHA-256
+BA587844D1A4B9D8028CB92F360F6A0808B30DCEF59A6BEE65575075EEC339CD.
+Harness source hashes: AutomaticInsert5FACB13A / AutoLifecycle61BBF8DA.
+Saved APKs are ignored local build artifacts, not Git deliverables.
 
-**Next work:** review and implement a complete bounded window-inventory/order
-proof for only the declared original/review and known keyboard transitions.
-Retaining KoScribe's host alone does not eliminate keyboard disappearance or
-possible restoration layer changes. No package/edge-specific exceptions.
-Then repeat exact Cancel-only gate before empty/middle/adversarial automatic
-checks. Actual translation and separately authorized external acceptance remain
-open. No automatic phone insertion has passed. Detailed evidence and prior
-candidates: docs/DEVICE_TESTS.md; rationale: docs/RESEARCH.md.
+**Exact restart action:** inspect `readEntryInventory` / `autoSystemWindowMetadata`
+in KoScribeService. Add a diagnostic-only fixed category for the FIRST missing
+root from the SAME deciding read: ORIGINAL, EXPECTED_REVIEW, RETAINED_HOST,
+CAPTURED_IME, BASELINE_OTHER or UNKNOWN, plus minimal type/focus/membership bits.
+Do not reread/retry the root, print identifiers/content, or allow missing metadata.
+Review/build before installing. After fresh phone-readiness confirmation, reinstall
+the owned smoke APK and run only
+`AutoLifecycleDiagnosticSmokeTest#originalWindowReviewCancelReturnIsObservedWithoutInsertion`
+with sole `autoLifecycleReady=true` (runner `com.koscribe.smoke/.KoScribeTestRunner`).
+An OK harness result is NOT automatic-entry acceptance; inspect own counters/reason.
 
-**Current phone:** normal secure D266E911 build restored in place; service9686
-idle, speech/translation enabled, auto/probes false and SwiftKey unchanged.
+**Latest decisive frame:** POLL/BASELINE, launchageLT1000, metadata0, anchor0,
+reviewProved0, hostProved1, preAnchorProved1, entryActive1; owner present/same,
+local review service/unlocked/own/local/input/wait1, remote/root/editor/sole/full/
+bound0. Membership counts are UNKNOWN because the inventory read failed.
+Use this to classify the gap before deciding any next implementation.
+
+**Acceptance still required:** full entry inventory COMPLETE and review proof,
+then owned automatic empty return/insertion, middle preservation and adversarial
+cases, actual translation, and separately authorized external acceptance.
+RETURNING layer changes remain strict; no-removal review paths remain unsupported.
+If evidence shows skipped epochs, late DOWN against current UP, or recurring
+undeclared transitions, reassess architecture instead of adding exceptions.
+An accessibility-overlay review is only a proposed fallback (see RESEARCH).
+All trials remain fixture-only; real-app read/write scope is not renewed.
+
+**Phone left ready for normal use:** normal secure D266E911 build restored in
+place; installed APK hash verified exactly, service30001 idle, speech/translation
+enabled, auto/probes false and SwiftKey unchanged. Main app/key data preserved.
+Saved baseline: `app/build/design-install/KoScribe-0.2-translation-final.apk`, SHA-256
+D266E911F443B896C33E49DFCE9EDBA5705F50D1E4515956CF045DEB59DAD234.
+The owned `com.koscribe.smoke` package was removed from user0 after testing.
 Play Protect twice asked for a security check during restoration; Andrew selected
 Send this time himself both times. The second restoration completed successfully.
 The requested temporary system-prompt screenshot was deleted on phone and PC.
-No real-app content read/write, conversation image, API request, credential change,
-Copy or Send occurred. Live credential/backup remain untouched.
+No external-editor content read/write, conversation image, KoScribe speech or
+translation request, credential change, clipboard action or message Send occurred.
+Live credential/backup remain untouched.
+
+Detailed results and candidate history: [DEVICE_TESTS](docs/DEVICE_TESTS.md).
+Technical rationale/limits: [RESEARCH](docs/RESEARCH.md).
 
 **Native design upgrade installed, 2026-10-31:** Andrew approved installing the
 comparison design and replacing the visible Phase 1 name. Sol/xhigh implemented

@@ -1,5 +1,151 @@
 # Phase 1 device acceptance record
 
+## 2026-11-04 — Final sleep checkpoint: focus-loss accepted, poll root missing
+
+Source service39EC2A5DFD48D2C88783007F096302034CCF8C0EFFFAD2AB9C550290C8C1F4A3,
+ReviewActivity85D9B60D7E899FAEB95A421516A2CC23A4B4B02C4AEF1559044482EC74D82686,
+inventoryE438AF69068FC2ADC834DBA5E1BE686762B2AB0863FDF39CD072E1B7D026B8C9,
+testsBD8418D8B0EC4CF1038C25ADBA070450C89815C029AE81E504DAB47CAAC82DB5
+were independently cleared by Astra/xhigh and Astra/Ultra.135 units passed;
+app lint0errors41warnings and assembly passed. Saved `AUTO-prefocus-v1.apk`, SHA-256
+`9D5B00D6582D235AACF4CB58109723F8EC23E3AC4E9E172B38A44F121952A8B7`.
+It is secure API-free REVIEW/auto, all other feature/probe flagsfalse.
+
+Andrew requested a sleep stopping point, so root ran only the already planned
+`AutoLifecycleDiagnosticSmokeTest#originalWindowReviewCancelReturnIsObservedWithoutInsertion`
+with sole `autoLifecycleReady=true` using BA587844. Harness completed5.175s on
+PID29021. TARGET acknowledgment/retained-host acquisition succeeded, followed by
+`AUTO_ENTRY_ORIGINAL_FOCUS_LOSS_PENDING_ONCE`. Thus the new measured96 stage
+passed this run. A subsequent passive POLL refused WINDOW_ROOT_MISSING.
+
+Actual deciding frame: inventoryBASELINE, launchageLT1000, metadata0/anchor0,
+reviewProved0, hostProved1, preAnchorProved1, entryActive1. PolicyENTERING_REVIEW,
+draftREVIEW/leaseREVIEW, ownerpresent/same1. Local review service/unlocked/own/
+local/input/wait1; remote/root/editor/sole/full/bound0. The incomplete inventory
+has UNKNOWN counts; the diagnostic does not identify which window root was
+unavailable. This is not evidence of original-root loss, skipped epochs or a
+safe missing-root interval. Full entry completion and all automatic insertion
+remain unproven. No next write-path test was attempted.
+
+Host1/0/0, inventoryFAILED/completions0, attempts/captures/commits/manual renders0.
+Original direct/accessibility identities returned stable after1removed/1added;
+draftNONE/cleanupfalse and microphone560ms stopped. Restored D266E911 in place,
+verified installed hash exactly, service30001 idle/regular flags, SwiftKey retained.
+Removed only the owned smoke package from user0; main app/key unchanged.
+Ordinary local debug/release flags were rebuilt/verified OFF/allfalse.
+
+Restart with a diagnostic-only classification of the FIRST missing root from
+the same read (fixed original/review/host/IME/baseline-other/unknown roles). No
+root retry, identifier/content log or missing-metadata success. Review/build
+before a fresh owned Cancel-only gate; PROGRESS owns the exact restart sequence.
+
+## 2026-11-04 — Finite entry inventory: preparation geometry refusal
+
+Reviewed source serviceFA6D2118/inventoryFA14163F/testsBC9DB93D passed120 units,
+lint0errors41warnings and assembly. Saved `AUTO-inventory-v1.apk`, SHA-256
+`E3108A9DD2CE8B2A5609683B97E37C6C4439632263FF65F86CD700E347EA049D`.
+Reviewed smoke5FACB13A/61BBF8DA passed lint/build; `smoke-inventory-v1.apk`
+SHA-256 `BA587844D1A4B9D8028CB92F360F6A0808B30DCEF59A6BEE65575075EEC339CD`.
+It waits for full host proof and finite inventory completion before Confirm.
+
+Exact `AutoLifecycleDiagnosticSmokeTest#originalWindowReviewCancelReturnIsObservedWithoutInsertion`
+with sole `autoLifecycleReady=true` completed6.215s, PID31208. Mode-click intent
+and complete baseline inventory were captured, but PREPARATION_BOUNDS_EVENT
+refused eligibility before host acquisition. Host acquired/review/return0/0/0,
+inventoryFAILED/completions0, attempts/captures/commits/manual renders0. Original
+identity returned stable after1removed/1added; cleanCancel, mic701ms ended.
+Restored D266E911; service837 idle/regular flags. This was a safe refusal.
+
+Diagnostic-only source9BE9392C/1C93966E/1D80D24C split actual first predicates
+without changing Boolean order, reads or outcomes. Independently cleared and
+unit/lint/assembly passed. Saved `AUTO-inventory-preparation-diag-v1.apk`, SHA-256
+`F859DC6A86CDAA3E35BDC6DDF2492514209CBAB51ED96A67FA3325C740273073`.
+Same Cancel-only method ran on PID4401. Instrumentation output was truncated
+and unavailable; no harness-pass or elapsed-time claim is made. Own service
+recorded REVIEW_CANCELLED, draftNONE, cleanupfalse and mic581ms stopped.
+
+Actual decision: PREPARATION_HOST_UNPROVED / HOST_REMOTE_BOUNDS, phaseSETTLING,
+lease ageLT250ms; event occurrence followed lease creation and was not future.
+Separate post-decision recheck: lease/draft/holder/params same; holder attached,
+shown, enabled and token present; correct flags/local rectangle; one remote
+window of expected type/default display and unfocused. Remote BOUNDS_NO and
+REGION_CONFINED_NO, with region nonempty. This does not prove the exact old or
+intermediate shape, only that final geometry had not been verified. It was not
+a duplicate preparation BOUNDS notification. Host0/0/0, inventoryFAILED/0,
+attempts/captures/commits/manual renders0.
+
+Restored D266E911 successfully; service5544 idle, speech/translation enabled,
+auto/probes disabled and SwiftKey retained. No real-editor inspection, API,
+credential operation, clipboard, screenshot or Send in these two runs. Next is
+a reviewed finite preparation protocol retaining final settled prelaunch proof
+and complete survivor continuity. Automatic insertion remains unaccepted.
+
+### Same-day finite OLD-to-TARGET preparation: third shape refused
+
+Source5048CF94/A1705D54/4412CF1A was independently cleared by Astra/xhigh and
+Astra/Ultra;128units passed, lint0errors41warnings and assembly passed. Saved
+`AUTO-inventory-preparation-v2.apk`, SHA-256
+`2016CA5A35CE8C47193CAAB53BE05DAFCBB5E820F19A33B8C618507196089979`.
+The fixed500ms protocol freezes exact OLD before mutation, requires exact TARGET
+and complete inventory before launch, permits at most one notice per endpoint,
+and rejects regression, duplicate, third shape or changed survivor metadata.
+
+Same exact Cancel-only method/flag and BA587844 harness completed5.195s on
+PID10927. OLD_CAPTURED succeeded, then PREPARATION_REMOTE_THIRD_SHAPE refused
+before any endpoint acknowledgment. Actual target failureREMOTE_BOUNDS, phase
+SETTLING, eventAFTERlease/notfuture, leaseageLT250. Recheck local desiredrectYES,
+remoteBOUNDS_NO/REGION_CONFINED_NO, unchanged identity/flags. Exact third-shape
+geometry and cause remain unmeasured. Host0/0/0, inventoryFAILED/0, attempts,
+captures, commits and manual renders0. Original direct/accessibility identity
+returned stable after1removed/1added; draftNONE/cleanupfalse and mic525ms stopped.
+Restored D266E911 successfully; service12163 idle with regular flags.
+
+This disproves the two-endpoint assumption on this run, not the final destination
+identity. Investigate eliminating the intermediate own-host shape at source;
+current code issues one explicit position+size update. Move animation is only a
+hypothesis. No automatic write-path test or new external-app scope is opened.
+
+### Same-day no-move overlay: preparation passed, early entry proof refused
+
+Public API34+ `setCanPlayMoveAnimation(false)` was applied only to the retained
+host before its one existing layout update. Both reviewers cleared45FEBE57 with
+unchanged modelA1705D54/tests4412CF1A.128units, lint0errors41warnings and build
+passed. Saved `AUTO-inventory-no-move-v1.apk`, SHA-256
+`D3CBDC2D1AA53391060A161B06EF4F26258DBDB7A55F879860D7BFE0AB854759`.
+
+Same BA587844 harness and exact Cancel-only method/flag completed5.709s on
+PID16713. OLD_CAPTURED, MOVE_ANIMATION_REQUESTED_OFF, BOUNDS_ACK_TARGET and
+HOST_LEASE_ACQUIRED all observed. It then refused entry CURRENT_OWNED_PROOF
+before any accepted original-removal or IME-readiness marker. The exact triggering
+event and grouped owned-proof subpredicate are unrecorded. This is preparation
+progress on this run, not completed review continuity or insertion acceptance.
+Host1/0/0, inventoryFAILED/0, attempts/captures/commits/manual renders0. Original
+returned stable after1removed/1added; cleanCancel and mic707ms stopped. Restored
+D266E911 successfully; service18583 idle/regular flags. Next is a narrow actual
+entry-decision diagnostic/source correction preserving full final proof.
+
+### Same-day exact-frame diagnostic: original focus lost before review appears
+
+Diagnostic-only source0E1C4097 with unchanged model/tests passed independent
+review and128units/lint0errors/build. Saved `AUTO-entry-frame-diag-v1.apk`, SHA-256
+`5EF08DE6B27F41C6BA9D8C0D0FAB172BEAFA13FD0EDFC6ACCA7D45FD035E3CE6`.
+Same exact Cancel-only method/flag/harness completed5.556s, PID22768. It again
+passed no-move preparation and then refused CURRENT_OWNED_PROOF.
+
+The actual deciding frame (no later reread): stateBASELINE, eventORIGINAL_FOCUS,
+roleORIGINAL, mask96, eventAFTERlaunch and launchageLT250, metadata1, anchor0,
+reviewProved0/hostProved0, entryActive1. OriginalONE/present/unfocused, reviewZERO,
+hostONE, no sole focus. PolicyENTERING_REVIEW/draftREVIEW/leaseREVIEW; local review
+owner present/same but bound0; first placement failureOWNER_FOCUS. Review proof
+service/unlocked/wait1; own focus/local/input/remote/root/editor/sole/full/bound0.
+
+Host1/0/0, inventoryFAILED/0, attempts/captures/commits/manual renders0; original
+returned stable after1removed/1added, draftNONE/cleanupfalse and mic634ms stopped.
+Restored D266E911; service24255 idle/regular flags. The next narrow design admits
+only a provisional loss of original focus with the original still present and
+review absent under complete original/host/survivor checks. This grants no review
+readiness or write authority; final authenticated review/removal proof remains.
+
 ## 2026-11-04 — Automatic empty-field candidate: safe refusal
 
 Andrew confirmed the A35 was unlocked/free. Secure API-free REVIEW/auto sample

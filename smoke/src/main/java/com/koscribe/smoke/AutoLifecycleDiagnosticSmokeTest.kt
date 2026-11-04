@@ -46,7 +46,7 @@ class AutoLifecycleDiagnosticSmokeTest {
         val arm: String, val auto: Boolean, val speech: Boolean, val translation: Boolean,
         val phase: String, val cleanup: Boolean, val proofs: Int, val captures: Int,
         val commits: Int, val autoCaptures: Int, val autoAttempts: Int, val autoFallbacks: Int,
-        val hostReviewProofs: Int,
+        val hostReviewProofs: Int, val entryInventory: String, val inventoryCompletions: Int,
         val intentPhase: String, val intentReason: String,
     )
 
@@ -228,14 +228,18 @@ class AutoLifecycleDiagnosticSmokeTest {
             if (now.captures != before.captures || now.commits != before.commits ||
                 now.autoAttempts != before.autoAttempts)
                 throw AssertionError("UNEXPECTED_WRITE_DURING_REVIEW_READINESS")
-            now.takeIf { it.hostReviewProofs > before.hostReviewProofs ||
-                it.intentPhase == "FALLBACK" || it.autoFallbacks > before.autoFallbacks }
+            now.takeIf { (it.hostReviewProofs > before.hostReviewProofs &&
+                it.entryInventory == "COMPLETE" &&
+                it.inventoryCompletions == before.inventoryCompletions + 1) ||
+                it.entryInventory == "FAILED" || it.intentPhase == "FALLBACK" ||
+                it.autoFallbacks > before.autoFallbacks }
         }
         report("pre_cancel_readiness", when {
             readiness == null -> "TIMEOUT"
             readiness.intentPhase == "FALLBACK" || readiness.autoFallbacks > before.autoFallbacks ->
                 "AUTO_FALLBACK"
-            else -> "HOST_REVIEW_PROVED"
+            readiness.entryInventory == "FAILED" -> "INVENTORY_FAILED"
+            else -> "HOST_AND_INVENTORY_PROVED"
         })
 
         val preCancel = discoverReviewOwner() ?: throw AssertionError("OWN_REVIEW_OWNER_LOST_BEFORE_CANCEL")
@@ -547,7 +551,8 @@ class AutoLifecycleDiagnosticSmokeTest {
             count("Unbound recording proof count"), count("Destination capture count"),
             count("Commit request count"), count("Original intent captured count"),
             count("Auto insert attempt count"), count("Auto insert fallback count"),
-            hostReviewProofs,
+            hostReviewProofs, field("Auto entry inventory"),
+            count("Auto entry inventory completions"),
             field("Original intent phase"), field("Original intent last reason"))
     }
 
@@ -561,6 +566,8 @@ class AutoLifecycleDiagnosticSmokeTest {
     private fun reportCounts(label: String, before: Counts, now: Counts) {
         report(label, "PROOF_${boundedDelta(now.proofs, before.proofs)}_" +
             "HOST_REVIEW_${boundedDelta(now.hostReviewProofs, before.hostReviewProofs)}_" +
+            "INVENTORY_COMPLETE_${boundedDelta(now.inventoryCompletions, before.inventoryCompletions)}_" +
+            "INVENTORY_${now.entryInventory}_" +
             "CAPTURE_${boundedDelta(now.captures, before.captures)}_" +
             "COMMIT_${boundedDelta(now.commits, before.commits)}_" +
             "INTENT_CAPTURE_${boundedDelta(now.autoCaptures, before.autoCaptures)}_" +

@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import android.provider.Settings
+import android.view.Display
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
@@ -126,13 +127,13 @@ class ManualResultEditSmokeTest {
         val fixture = launchAndSeed()
         val before = state()
         startReviewAndPrepare(before)
-        assertPreview(fixedKorean, before)
+        assertPreview(fixedKorean, before, naturalKeyboard = false)
         clickOwnId("ready_edit")
         editOwnResult(editedKorean)
         clickOwnId("ready_result_done")
-        assertPreview(editedKorean, before)
+        assertPreview(editedKorean, before, naturalKeyboard = false)
         assertTrue("UNEDITED_COPY_CONTROL_NOT_REACHABLE", reachableOwnId("ready_copy") != null)
-        chooseTargetAfterDone(fixture)
+        chooseTargetAfterDone(fixture, editedKorean)
         assertNoProductWrite(before)
         clickOwnId("ready_insert") // One explicit manual transaction only.
         awaitConfirmed(before, fixture, editedKorean)
@@ -143,8 +144,8 @@ class ManualResultEditSmokeTest {
         val fixture = launchAndSeed()
         val before = state()
         startReviewAndPrepare(before)
-        assertPreview(fixedKorean, before)
-        chooseTargetAfterDone(fixture)
+        assertPreview(fixedKorean, before, naturalKeyboard = false)
+        chooseTargetAfterDone(fixture, fixedKorean)
         assertNoProductWrite(before)
         clickOwnId("ready_insert")
         awaitConfirmed(before, fixture, fixedKorean)
@@ -181,7 +182,7 @@ class ManualResultEditSmokeTest {
             it.isVisibleToUser && it.text?.toString() == longKorean
         } }
         assertNoProductWrite(before)
-        assertTrue("SWIFTKEY_NOT_OPEN_WITH_LONG_RESULT", imeVisible() && selectedSwiftKey())
+        assertLongPreviewWithKeyboard(fixture, before)
         assertLongPreviewScrolls()
         assertTrue("LONG_RESULT_INSERT_NOT_REACHABLE", reachableOwnId("ready_insert") != null)
         assertTrue("LONG_RESULT_COPY_NOT_REACHABLE", reachableOwnId("ready_copy") != null)
@@ -247,15 +248,100 @@ class ManualResultEditSmokeTest {
         assertNoProductWrite(before)
     }
 
-    private fun assertPreview(expected: String, before: State) {
+    private fun assertPreview(expected: String, before: State,
+        naturalKeyboard: Boolean = true) {
         await("FINAL_KOREAN_PREVIEW_NOT_VISIBLE") { ownId("ready_result_text")?.takeIf {
             it.isVisibleToUser && it.text?.toString() == expected
         } }
+        assertTrue("SWIFTKEY_NOT_SELECTED_FOR_RESULT", selectedSwiftKey())
+        if (naturalKeyboard) await("SWIFTKEY_NOT_OPEN_WHILE_PREVIEW_VISIBLE", 2_000) {
+            true.takeIf { previewWithSwiftKey(expected) }
+        }
         assertTrue("RESULT_EDIT_NOT_REACHABLE", reachableOwnId("ready_edit") != null)
         assertTrue("RESULT_INSERT_OR_COPY_NOT_REACHABLE",
             reachableOwnId("ready_insert") != null && reachableOwnId("ready_copy") != null)
         assertNoProductWrite(before)
-        assertTrue("SWIFTKEY_NOT_OPEN_WHILE_PREVIEW_VISIBLE", imeVisible() && selectedSwiftKey())
+        if (naturalKeyboard) await("SWIFTKEY_OR_PREVIEW_LOST_AFTER_CONTROLS", 2_000) {
+            true.takeIf { previewWithSwiftKey(expected) }
+        }
+    }
+
+    private fun assertLongPreviewWithKeyboard(fixture: Fixture, before: State) {
+        if (waitForPreviewWithSwiftKey(longKorean, 2_000)) {
+            keyboardPath("NATURAL")
+            return
+        }
+        val now = state()
+        assertTrue("LONG_RESULT_CHANGED_BEFORE_REFOCUS", now.phase == "READY" &&
+            !now.cleanup && now.captures == before.captures && now.commits == before.commits &&
+            ownId("ready_result_text")?.let {
+                it.isVisibleToUser && it.text?.toString() == longKorean
+            } == true && selectedSwiftKey() && !defaultDisplayImeVisible())
+        instrumentation.runOnMainSync {
+            assertTrue("LONG_RESULT_SOURCE_CHANGED_BEFORE_REFOCUS",
+                fixture.source.text.toString() == sourceText &&
+                    fixture.source.selectionStart == sourceText.length &&
+                    fixture.source.selectionEnd == sourceText.length)
+            fixture.source.requestFocus()
+            (fixture.activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                .showSoftInput(fixture.source, InputMethodManager.SHOW_IMPLICIT)
+        }
+        keyboardPath("SYNTHETIC_SOURCE_REFOCUS")
+        await("LONG_RESULT_KEYBOARD_NOT_OPEN_AFTER_OWN_REFOCUS", 3_000) {
+            true.takeIf { previewWithSwiftKey(longKorean) &&
+                fixtureNode("local_test_editor")?.let {
+                    it.isFocused && it.textSelectionStart == sourceText.length &&
+                        it.textSelectionEnd == sourceText.length
+                } == true }
+        }
+        assertNoProductWrite(before)
+    }
+
+    private fun waitForPreviewWithSwiftKey(expected: String, timeoutMs: Long): Boolean {
+        val end = SystemClock.elapsedRealtime() + timeoutMs
+        while (SystemClock.elapsedRealtime() < end) {
+            if (previewWithSwiftKey(expected)) return true
+            SystemClock.sleep(80)
+        }
+        return previewWithSwiftKey(expected)
+    }
+
+    private fun keyboardPath(code: String) {
+        instrumentation.sendStatus(2, Bundle().apply {
+            putString("stream", "LONG_PREVIEW_KEYBOARD_PATH=$code\n")
+        })
+    }
+
+    private fun defaultDisplayImeVisible(): Boolean = automation().windows.any {
+        it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD &&
+            it.displayId == Display.DEFAULT_DISPLAY
+    }
+
+    private fun previewWithSwiftKey(expected: String, targetCaret: Int? = null): Boolean {
+        if (!selectedSwiftKey()) return false
+        val windows = automation().windows
+        if (windows.none { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD &&
+                it.displayId == Display.DEFAULT_DISPLAY }) return false
+        val previews = windows.asSequence().filter {
+            it.displayId == Display.DEFAULT_DISPLAY &&
+                it.type == AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY
+        }
+            .mapNotNull { it.getRoot(0) }.filter { it.packageName?.toString() == product }
+            .flatMap { it.findAccessibilityNodeInfosByViewId(
+                "$product:id/ready_result_text").asSequence() }.toList()
+        if (previews.size != 1 || !previews.single().isVisibleToUser ||
+            previews.single().text?.toString() != expected) return false
+        if (targetCaret == null) return true
+        val targets = windows.asSequence().filter {
+            it.displayId == Display.DEFAULT_DISPLAY &&
+                it.type == AccessibilityWindowInfo.TYPE_APPLICATION
+        }
+            .mapNotNull { it.getRoot(0) }.filter { it.packageName?.toString() == fixture }
+            .flatMap { it.findAccessibilityNodeInfosByViewId(
+                "$fixture:id/local_result_target_editor").asSequence() }.toList()
+        return targets.size == 1 && targets.single().isFocused && targets.single().isEditable &&
+            targets.single().textSelectionStart == targetCaret &&
+            targets.single().textSelectionEnd == targetCaret
     }
 
     private fun editOwnResult(value: String) {
@@ -274,7 +360,7 @@ class ManualResultEditSmokeTest {
         } }
     }
 
-    private fun chooseTargetAfterDone(fixture: Fixture) {
+    private fun chooseTargetAfterDone(fixture: Fixture, expected: String) {
         instrumentation.runOnMainSync {
             fixture.target.requestFocus()
             fixture.target.setSelection(fixture.caret)
@@ -289,6 +375,9 @@ class ManualResultEditSmokeTest {
                 it.isFocused && it.isEditable && it.textSelectionStart == fixture.caret &&
                     it.textSelectionEnd == fixture.caret && imeVisible() && selectedSwiftKey()
             }
+        }
+        await("PREINSERT_PREVIEW_TARGET_AND_SWIFTKEY_NOT_TOGETHER", 2_000) {
+            true.takeIf { previewWithSwiftKey(expected, fixture.caret) }
         }
     }
 

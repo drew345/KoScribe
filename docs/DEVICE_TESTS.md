@@ -2441,3 +2441,14 @@ translation on, auto off, draft NONE, cleanup clear, SwiftKey selected. The
 revised live build was withheld per Andrew's all-gates-pass condition. Long
 preview and the two Insert cases remain pending. No actual clipboard operation
 or live translation request was made.
+
+After Andrew confirmed availability again, reinstalled the same verified sample
+and harness for one fresh long-preview check. PID 4653 recorded one microphone
+proof and stopped after 571ms. Done saved the entire edited Korean and the test
+found it in the visible result panel. The immediate check for a visible,
+selected SwiftKey failed at 6.352s before scrolling. The test had already
+observed SwiftKey in the editor. This run does not establish whether the
+keyboard would return by itself after a delay. Zero destination captures and
+commits, draft NONE, cleanup clear. Reinstalled the verified D266E911, removed
+the fixture, and confirmed PID 6412 idle with the normal speech/translation
+settings and SwiftKey selected.

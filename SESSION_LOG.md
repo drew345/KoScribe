@@ -1542,3 +1542,14 @@
   destination transaction. Requested status, then restored D266E911 within
   the five-minute window (PID 31731 idle, normal settings and SwiftKey,
   fixture removed). Long preview, unedited Insert and edited Insert are pending.
+- A fresh long case on the same sample reached the saved Korean preview.
+  Microphone proof passed (571ms) and no write occurred. Its immediate
+  keyboard-visibility assertion failed at 6.352s after Done. Scroll and both
+  Inserts remained pending. Restored D266E911, PID 6412 idle. Correct the test
+  to separate saved-text visibility from keyboard visibility for the manual
+  destination workflow.
+- New harness E54189D6 (APK B7962357) passed independent review, assembly and
+  lint. The long test reports whether SwiftKey returned naturally or the
+  fixture reopened it. Both Insert cases verify preview, field, cursor and
+  keyboard together after the deliberate destination selection. The app and
+  fixture are unchanged, so the Discard result still applies.

@@ -492,6 +492,13 @@ destination/commit deltas, microphone stop and cleanup before proceeding.
 | Explicit Insert uses the prepared Korean unchanged | `uneditedPreparedKoreanIsVisibleAndInsertsOnce` | `manualResultUneditedReady` |
 | Save corrected Korean, choose a different fixture field, Insert at its middle caret | `editedKoreanInsertsOnlyFinalResultIntoChosenField` | `manualResultEditedReady` |
 
+Done returns to the nonfocusable result panel. Check the full saved text there
+before choosing a destination. For the long-layout case, first allow the
+keyboard to return naturally. If necessary, select the known fixture field to
+open SwiftKey, then require the preview and keyboard together before scrolling.
+Record how the keyboard returned. For the Insert cases, require the chosen
+cursor and keyboard before the explicit Insert.
+
 The tests edit only KoScribe's own result editor. Only the final manual Insert
 may open a destination transaction. The expected target string includes the
 original prefix and suffix. The source field must stay intact. Verify the Copy

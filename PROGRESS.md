@@ -11,7 +11,7 @@ user last saved. The October design preference to hide the Korean preview has
 been superseded. Keep the automatic experiments available for later investigation.
 
 **Installed phone:** the secure manual MVP D266E911 is restored and its installed
-hash verified. Service PID 31731, REVIEW, speech/translation on, auto off, draft
+hash verified. Service PID 6412, REVIEW, speech/translation on, auto off, draft
 NONE, cleanup clear. SwiftKey is selected and the fixture was removed for user 0.
 This installed build predates the requested editable Korean result.
 
@@ -32,10 +32,14 @@ restored the original, and Cancel cleared the draft with zero writes.
 The next case stopped before English review because Android silenced the
 microphone at startup. No write, recording proof or pending draft. Returned
 the previous MVP within the five-minute window. Andrew asked to leave the
-revised live build only after all four cases pass. On fresh availability,
-resume with long-preview, then unedited Insert, then edited Insert at the
-newly selected cursor. Each is an independent test using the same frozen
-sample, smoke 69A663B4 and source 4CD5DFE5. The normal clipboard was untouched.
+revised live build only after all four cases pass. A subsequent fresh long run
+reached the saved Korean preview with a good mic proof. Its immediate SwiftKey
+check failed after Done, before scrolling. The reviewed replacement harness
+can explicitly reopen the keyboard in the owned field after it verifies the
+full saved Korean and zero writes. It then checks the visible preview and
+SwiftKey together. Test source E54189D6, APK `smoke-manual-korean-v2.apk`
+(B7962357), smoke lint 0 errors/5 warnings. Resume long-preview, unedited
+Insert and edited Insert in order. The normal clipboard was untouched.
 See [manual A35 results](docs/DEVICE_TESTS.md#manual-korean-result-review-on-november-5).
 
 **Automatic checkpoint, November 5:** C and D passed the identical-field switch

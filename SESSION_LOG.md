@@ -1553,3 +1553,12 @@
   fixture reopened it. Both Insert cases verify preview, field, cursor and
   keyboard together after the deliberate destination selection. The app and
   fixture are unchanged, so the Discard result still applies.
+- All three remaining A35 gates passed on sample AE1D1C6B and revised harness
+  B7962357. Long preview scrolled to the end with natural SwiftKey return
+  (6.306s). Unedited (3.918s) and edited Korean with emoji (4.754s) each
+  committed once to the selected middle cursor. Both preserved the source,
+  prefix and suffix. The earlier Discard pass completes the four checks.
+- Honored Andrew's installation choice. Verified the live MVP 3FE8BE0F
+  installed in place, service PID 12646 idle, speech/translation on, auto off,
+  SwiftKey selected and owned fixture removed. Device tests used fixed samples.
+  No clipboard operation or live API request was made during these checks.

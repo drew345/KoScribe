@@ -2452,3 +2452,25 @@ keyboard would return by itself after a delay. Zero destination captures and
 commits, draft NONE, cleanup clear. Reinstalled the verified D266E911, removed
 the fixture, and confirmed PID 6412 idle with the normal speech/translation
 settings and SwiftKey selected.
+
+In the next ten-minute window Andrew authorized, the same sample AE1D1C6B
+ran with smoke B7962357 (source E54189D6) on PID 10272. Installed hashes
+matched. Each case ran separately and passed its full JUnit assertions.
+
+| Case | Time | Direct evidence |
+| --- | ---: | --- |
+| Long Korean preview | 6.306s | SwiftKey returned naturally. The owned preview scrolled to its reported end. Insert and Copy were reachable, no capture or commit, clean Cancel. |
+| Unedited Korean | 3.918s | A fresh manual Insert captured the newly chosen field and committed once. Exact full string and caret confirmed, source field intact. |
+| Edited Korean | 4.754s | After Done, the corrected Korean with emoji appeared in the preview. Selecting a different field produced zero writes. The single explicit Insert placed the correction at its middle caret and preserved both sides. |
+
+The three microphone proofs ended at 609ms, 483ms and 541ms. Cumulative
+captures/commits were 0/0, 1/1 and 2/2. Both writes ended CONFIRMED. All
+three ended with draft NONE and cleanup clear. Together with the preceding
+Discard pass this completed the four requested gates. The fixture used fixed
+content and programmatic changes to KoScribe's own editor. The Copy payload
+was checked in source/unit tests; the phone's clipboard was untouched.
+
+As requested, installed the secure live speech/translation MVP in place and
+verified its bytes against 3FE8BE0FF5AFD51908177D81F6AF652FB6EB0C34A85CD68825731E16DA3D33EA.
+Service PID 12646, speech/translation on, auto off, empty draft, cleanup clear,
+SwiftKey selected. Removed the fixture and verified its absence for user 0.

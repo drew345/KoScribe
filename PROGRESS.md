@@ -10,37 +10,31 @@ still checks the field and cursor afresh. Both actions must use the Korean the
 user last saved. The October design preference to hide the Korean preview has
 been superseded. Keep the automatic experiments available for later investigation.
 
-**Installed phone:** the secure manual MVP D266E911 is restored and its installed
-hash verified. Service PID 6412, REVIEW, speech/translation on, auto off, draft
-NONE, cleanup clear. SwiftKey is selected and the fixture was removed for user 0.
-This installed build predates the requested editable Korean result.
+**Installed on Andrew's A35:** the secure manual MVP with editable Korean is
+installed and verified (SHA-256
+3FE8BE0FF5AFD51908177D81F6AF652FB6EB0C34A85CD68825731E16DA3D33EA).
+The accessibility service reconnected at PID 12646. Speech and translation are
+on, automatic insertion is off, the draft is empty and SwiftKey is selected.
+The fixture was removed from user 0. The previous live build D266E911 is saved.
 
-**Manual revision:** the Korean preview and same-panel editor are implemented.
-Edit opens SwiftKey, Done saves locally, Discard edits retains the last saved
-text, and Cancel on the preview ends the draft. The result scrolls and an
-uncertain attempted write retains only recovery actions. Both Insert and Copy
-read the saved result; no translation request runs when saving an edit.
-Independent app review cleared service E4BB7D07, draft 754C641C, IDs A4EF0CB6,
-strings F74D355F and tests 165F4017. The secure fixed-sample and live-translation
-builds both passed 159 unit tests, assembly and app lint (0 errors, 50 warnings).
-The matching-signer APKs are archived in `app/build/manual-korean-result-20261105/`:
-sample AE1D1C6B and live 3FE8BE0F. Source checkpoint `d40cd21`.
+**Device acceptance:** all four manual Korean review checks passed with fixed
+samples. Discard restored the original. A long correction scrolled to the end
+with SwiftKey naturally visible and Insert and Copy reachable. Unchanged Korean
+and a saved correction with emoji each inserted once at the newly chosen middle
+cursor. Both preserved the other field, surrounding text and exact caret.
+The separate live build uses the same result UI and writer. Device tests used
+synthetic edits to KoScribe's editor and left the clipboard untouched. Source
+and unit checks verify the saved result supplies Copy. A fresh live translation
+and physical Korean typing were outside these checks.
+[Full phone evidence](docs/DEVICE_TESTS.md#manual-korean-result-review-on-november-5)
 
-**A35 manual gates:** Discard passed in 7.700s. The Korean was visible, the
-owned editor accepted a synthetic correction with SwiftKey present, Discard
-restored the original, and Cancel cleared the draft with zero writes.
-The next case stopped before English review because Android silenced the
-microphone at startup. No write, recording proof or pending draft. Returned
-the previous MVP within the five-minute window. Andrew asked to leave the
-revised live build only after all four cases pass. A subsequent fresh long run
-reached the saved Korean preview with a good mic proof. Its immediate SwiftKey
-check failed after Done, before scrolling. The reviewed replacement harness
-can explicitly reopen the keyboard in the owned field after it verifies the
-full saved Korean and zero writes. It then checks the visible preview and
-SwiftKey together. Test source E54189D6, APK `smoke-manual-korean-v2.apk`
-(B7962357), smoke lint 0 errors/5 warnings. Resume long-preview, unedited
-Insert and edited Insert in order. The normal clipboard was untouched.
-See [manual A35 results](docs/DEVICE_TESTS.md#manual-korean-result-review-on-november-5).
+**Build and source:** both app variants passed 159 unit tests, assembly and app
+lint (0 errors, 50 warnings). Independent review cleared service E4BB7D07 and
+draft 754C641C. App checkpoint `d40cd21`, final harness checkpoint `7000290`.
+Archived in `app/build/manual-korean-result-20261105/`: sample AE1D1C6B,
+live 3FE8BE0F and smoke B7962357. Ordinary debug/release still default to OFF.
+Andrew can now try the installed workflow in daily use; external automatic
+insertion and broader Karrot/OpenAI dot compatibility remain deferred.
 
 **Automatic checkpoint, November 5:** C and D passed the identical-field switch
 with usable manual recovery. Neither unchanged-middle test wrote any text. The

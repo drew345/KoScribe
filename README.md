@@ -31,9 +31,9 @@ without an API key; ordinary and release builds default to OFF. See
 
 ## Agreed interaction
 
-The November 5 MVP uses manual **Insert** and **Copy & close**. Its next
-revision shows the translated Korean on the result panel, where the user can
-read it and save corrections before either action. The installed-build status
+The manual MVP installed on November 5 shows the translated Korean on the
+result panel. Read it and save any corrections before tapping **Insert** or
+**Copy & close**. The installed-build status
 and acceptance evidence are in [PROGRESS](PROGRESS.md). Work on automatic
 insertion is deferred. Repeat bubble use in the same editor is phone-tested.
 The floating button uses the selected [Spoken K design](docs/design/floating-button/README.md)
@@ -52,7 +52,7 @@ when an app's editor cannot be verified for Insert.
    **Translate** (Korean modes) or **Use English** (EN). **Cancel**
    discards the session. Review appears for every message initially; a skip
    option can be added later.
-5. In the Korean-result revision, read the Korean on the result panel.
+5. Read the Korean on the result panel.
    To change it, tap **Edit**, correct it using SwiftKey, then tap **Done**.
    **Discard edits** keeps the last saved version. For insertion, check the
    intended message field and cursor.

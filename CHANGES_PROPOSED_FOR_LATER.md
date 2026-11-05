@@ -31,9 +31,9 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    deciding whether the extra signal merits touching the audio-read path.
    Optional vibration/sound and clearer processing feedback remain proposals.
 
-3. **Korean preview and editing.** Moved into the active manual MVP on
-   November 5. Show the prepared Korean in the existing result panel, allow
-   local edits, and use the saved text for Insert or Copy & close. Current
+3. **Korean preview and editing.** Delivered in the November 5 manual MVP
+   after four owned-fixture checks passed. The result panel shows the prepared
+   Korean and supports local edits before Insert or Copy & close. Current
    implementation and acceptance status are in [PROGRESS](PROGRESS.md).
 
 4. **An option to skip English review.** Initially every message keeps editable

@@ -94,6 +94,16 @@ class KoScribeService : AccessibilityService() {
         if (ReviewSurfaceProbeMode.enabled) surfaceProbe.activityLost(activity)
     }
     private val karrotProbeBusy = AtomicBoolean(false)
+    private fun effectsBlocked(): Boolean = ReviewSurfaceProbeMode.block() || RelativeReadProbeMode.enabled
+    private val relativeReadProbe by lazy {
+        RelativeReadProbe(this, input = {
+            val method = inputMethod as? TrackingInputMethod
+            val info = method?.currentInputEditorInfo
+            val connection = method?.currentInputConnection
+            if (method?.currentInputStarted == true && info != null && connection != null)
+                RelativeReadProbe.Input(method.generation, info, connection) else null
+        }, idle = { karrotProbeIdle() && resultEdit == null && stableSession == null }, safeType = ::safeInputType)
+    }
     private data class KarrotProbeToken(val active: AtomicBoolean, val deadlineUptimeMs: Long)
     private val karrotProbeToken = AtomicReference<KarrotProbeToken?>(null)
     private val karrotProbeStatus = AtomicReference("KARROT_SERVICE_METADATA_V1 NO_REQUEST")
@@ -2258,6 +2268,8 @@ class KoScribeService : AccessibilityService() {
             "Karrot service probe enabled: ${BuildConfig.KARROT_SERVICE_PROBE}\n" +
             "Karrot empty connection probe enabled: ${BuildConfig.KARROT_EMPTY_CONNECTION_PROBE}\n" +
             "Karrot no-read probe enabled: ${BuildConfig.KARROT_NO_READ_PROBE}\n" +
+            "Relative read probe arm: ${BuildConfig.RELATIVE_READ_PROBE_ARM}\n" +
+            relativeReadProbe.status() + "\n" +
             "Speech input enabled: ${BuildConfig.SPEECH_INPUT}\n" +
             "Translation input enabled: ${BuildConfig.TRANSLATION_INPUT}\n" +
             "Original intent phase: ${autoDestination?.policy?.phase?.name ?: stableSession?.phase ?: autoLastPhase}\n" +
@@ -2290,6 +2302,14 @@ class KoScribeService : AccessibilityService() {
     }
 
     override fun dump(fd: FileDescriptor, writer: PrintWriter, args: Array<out String>) {
+        if (args.size == 1 && args[0] == "--relative-editor-read-once") {
+            writer.println(relativeReadProbe.request())
+            return
+        }
+        if (args.size == 1 && args[0] == "--relative-editor-read-status") {
+            writer.println(relativeReadProbe.status())
+            return
+        }
         if (args.size == 1 && args[0] == "--karrot-editor-probe-metadata-once") {
             writer.println(karrotServiceProbeOnce())
             return
@@ -3037,6 +3057,7 @@ class KoScribeService : AccessibilityService() {
             if (startupExperiment == StartupExperiment.REVIEW) {
                 generation++
                 composition.reset()
+                if (RelativeReadProbeMode.enabled) relativeReadProbe.inputStarted(generation, attribute)
                 stableSession?.inputStarted(attribute, generation, restarting)
                 trackAutoInputStarted(attribute, generation, restarting)
                 abortPostCommitProbe("INPUT_STARTED")
@@ -3057,6 +3078,7 @@ class KoScribeService : AccessibilityService() {
         }
 
         override fun onFinishInput() {
+            if (RelativeReadProbeMode.enabled) relativeReadProbe.inputFinished()
             if (ReviewSurfaceProbeMode.enabled) {
                 composition.reset()
                 surfaceProbe.onInput(false, probeInputRole())
@@ -3111,6 +3133,8 @@ class KoScribeService : AccessibilityService() {
             oldSelStart: Int, oldSelEnd: Int, newSelStart: Int, newSelEnd: Int,
             candidatesStart: Int, candidatesEnd: Int
         ) {
+            if (RelativeReadProbeMode.enabled)
+                relativeReadProbe.selection(generation, newSelStart, newSelEnd, candidatesStart, candidatesEnd)
             if (ReviewSurfaceProbeMode.enabled) {
                 composition.update(newSelStart, newSelEnd, candidatesStart, candidatesEnd)
                 return
@@ -3346,6 +3370,7 @@ class KoScribeService : AccessibilityService() {
     override fun onCreateInputMethod(): InputMethod = TrackingInputMethod(this)
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
+        if (RelativeReadProbeMode.enabled) relativeReadProbe.event(event)
         val precommitReceipt = if (BuildConfig.STABLE_OVERLAY_AUTO &&
             freshDestination?.phase == DestinationPhase.PRECOMMIT && freshDestination?.stablePrecommitTrace != null)
             SystemClock.uptimeMillis() else null
@@ -3796,6 +3821,7 @@ class KoScribeService : AccessibilityService() {
     }.getOrDefault("LOCAL_CONTENT_UNKNOWN")
 
     override fun onInterrupt() {
+        if (RelativeReadProbeMode.enabled) { relativeReadProbe.interrupt("SERVICE_INTERRUPT"); relativeReadProbe.inputFinished() }
         stableSession?.interrupt("SERVICE_INTERRUPTED")
         if (ReviewSurfaceProbeMode.enabled) surfaceProbe.terminate("SERVICE_INTERRUPTED")
         if (karrotProbeBusy.get()) karrotProbeMutationEpoch++
@@ -3813,6 +3839,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        if (RelativeReadProbeMode.enabled) { relativeReadProbe.interrupt("SERVICE_DESTROY"); relativeReadProbe.inputFinished() }
         stableSession?.interrupt("SERVICE_DESTROYED")
         if (ReviewSurfaceProbeMode.enabled) surfaceProbe.terminate("SERVICE_DESTROYED")
         if (karrotProbeBusy.get()) karrotProbeMutationEpoch++
@@ -3881,7 +3908,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     fun bindSessionPanel(id: String, owner: Any): Boolean {
-        if (ReviewSurfaceProbeMode.block()) return false
+        if (effectsBlocked()) return false
         if (pendingId != id || guard.session(id) == null) return false
         val bound = modalOcclusion?.bind(owner) == true
         if (!bound) invalidate(id, "PANEL_OWNER_CHANGED")
@@ -3978,6 +4005,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     private fun startMode(mode: OutputMode) {
+        if (RelativeReadProbeMode.enabled) return
         if (BuildConfig.STABLE_OVERLAY_AUTO) { startStableSample(mode); return }
         if (ReviewSurfaceProbeMode.enabled) {
             if (surfaceProbe.active) return
@@ -4111,7 +4139,7 @@ class KoScribeService : AccessibilityService() {
 
     /** Debug-only destination-free session. No target APIs are called until a later explicit action. */
     private fun startUnboundRecording(mode: OutputMode) {
-        if (ReviewSurfaceProbeMode.block()) return
+        if (effectsBlocked()) return
         if (BuildConfig.SPEECH_INPUT) {
             if (mode != OutputMode.ENGLISH && !BuildConfig.TRANSLATION_INPUT) {
                 status = "Korean translation arrives in the next phase. Choose EN for speech input."
@@ -4159,7 +4187,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     private fun startUnboundRecordingReady(mode: OutputMode) {
-        if (ReviewSurfaceProbeMode.block()) return
+        if (effectsBlocked()) return
         if (pendingId != null || unboundRecording.current() != null ||
             unboundDraft.current() != null || SessionActivity.isVisible ||
             overlayCleanupPending != null) {
@@ -4301,7 +4329,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     private fun startSpeechTranscription(recordingId: String, wav: ByteArray) {
-        if (ReviewSurfaceProbeMode.block()) { wav.fill(0); return }
+        if (effectsBlocked()) { wav.fill(0); return }
         if (!BuildConfig.SPEECH_INPUT || startupExperiment != StartupExperiment.REVIEW ||
             !unboundRecording.owns(recordingId) || overlayPanel?.hostStable() != true ||
             speechJob != null || !speechGate.stoppedAndReleased(recordingId)) {
@@ -4342,7 +4370,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     private fun beginDraftReview(recordingId: String, mode: OutputMode, transcript: String? = null) {
-        if (ReviewSurfaceProbeMode.block()) return
+        if (effectsBlocked()) return
         if (!unboundRecording.end(recordingId)) return
         val originalIntent = autoForRecording(recordingId)
         stopOverlayOwnership()
@@ -4448,7 +4476,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     internal fun bindDraftReview(id: String, owner: Any): UnboundDraftState.Draft? {
-        if (ReviewSurfaceProbeMode.block()) return null
+        if (effectsBlocked()) return null
         val draft = unboundDraft.current() ?: return null
         if (startupExperiment != StartupExperiment.REVIEW || draft.id != id ||
             draft.phase != UnboundDraftState.Phase.REVIEW || draftReviewOwner != null ||
@@ -4716,7 +4744,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     internal fun beginAutoReturn(id: String, owner: Any) {
-        if (ReviewSurfaceProbeMode.block()) return
+        if (effectsBlocked()) return
         val binding = autoForDraft(id) ?: return
         val current = windows
         if (unboundDraft.current()?.takeIf {
@@ -4737,10 +4765,10 @@ class KoScribeService : AccessibilityService() {
     }
 
     internal fun updateDraftEnglish(id: String, owner: Any, english: String): Boolean =
-        !ReviewSurfaceProbeMode.block() && draftReviewOwner === owner && unboundDraft.edit(id, english)
+        !effectsBlocked() && draftReviewOwner === owner && unboundDraft.edit(id, english)
 
     internal fun confirmDraftReview(id: String, owner: Any): UnboundDraftState.Confirm {
-        if (ReviewSurfaceProbeMode.block()) return UnboundDraftState.Confirm.STALE
+        if (effectsBlocked()) return UnboundDraftState.Confirm.STALE
         if (startupExperiment != StartupExperiment.REVIEW || draftReviewOwner !== owner ||
             (getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked)
             return UnboundDraftState.Confirm.STALE
@@ -4769,7 +4797,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     private fun startDraftTranslation(draft: UnboundDraftState.Draft, owner: Any): Boolean {
-        if (ReviewSurfaceProbeMode.block()) return false
+        if (effectsBlocked()) return false
         if (translationJob != null || draft.phase != UnboundDraftState.Phase.TRANSLATING ||
             draftReviewOwner !== owner || draft.mode == OutputMode.ENGLISH) return false
         val generation = ++translationGeneration
@@ -5032,7 +5060,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     private fun copyDraft(id: String) {
-        if (ReviewSurfaceProbeMode.block()) return
+        if (effectsBlocked()) return
         if (freshDestination != null || resultEdit != null) return
         val draft = unboundDraft.current() ?: return
         if (draft.id != id || draft.phase !in setOf(UnboundDraftState.Phase.READY,
@@ -5063,6 +5091,7 @@ class KoScribeService : AccessibilityService() {
             !BuildConfig.KARROT_NO_READ_PROBE && !VisualTestMode.enabled
 
     private fun openResultEditor(draft: UnboundDraftState.Draft, holder: LinearLayout) {
+        if (RelativeReadProbeMode.enabled) return
         val original = draft.result ?: return
         if (!manualKoreanResult(draft) || draft.phase != UnboundDraftState.Phase.READY ||
             unboundDraft.current() !== draft || resultEdit != null || freshDestination != null ||
@@ -5176,7 +5205,7 @@ class KoScribeService : AccessibilityService() {
 
     /** A click owns one short transaction; no prior recording/review target is inherited. */
     private fun insertDraft(draftId: String, automatic: OriginalWriteBinding? = null) {
-        if (ReviewSurfaceProbeMode.block()) return
+        if (effectsBlocked()) return
         if (resultEdit != null) return
         if (automatic == null && autoForDraft(draftId) != null)
             clearAutoIntent("MANUAL_INSERT_SELECTED", renderReady = false)
@@ -5254,7 +5283,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     private fun commitFreshDestination(transaction: FreshDestination, result: String) {
-        if (ReviewSurfaceProbeMode.block()) return
+        if (effectsBlocked()) return
         if (freshDestination !== transaction || transaction.phase != DestinationPhase.PRECOMMIT ||
             unboundDraft.current()?.takeIf {
                 it.id == transaction.draftId && it.phase == UnboundDraftState.Phase.READY &&
@@ -5789,7 +5818,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     private fun attemptInsertion(id: String) {
-        if (ReviewSurfaceProbeMode.block()) return
+        if (effectsBlocked()) return
         if (pendingId != id) return
         if (startupExperiment != StartupExperiment.OFF) {
             invalidate(id, "EXPERIMENT_INSERT_BLOCKED")
@@ -6088,7 +6117,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     private fun copyRecovery() {
-        if (ReviewSurfaceProbeMode.block()) return
+        if (effectsBlocked()) return
         if (startupExperiment != StartupExperiment.OFF) return
         val result = recoveryText ?: return
         val clip = ClipData.newPlainText("KoScribe sample", result)

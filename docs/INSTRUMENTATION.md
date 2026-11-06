@@ -1,5 +1,68 @@
 # Synthetic cross-app instrumentation smoke test
 
+## Karrot relative-read diagnostic — November 6
+
+This is a hard no-write diagnostic for the active manual-insertion goal.
+Build secure REVIEW with `-PkoscribeRelativeReadProbe=FIXTURE` or `KARROT`;
+every speech, translation, visual, automatic and other probe flag must be OFF.
+Default/release stays OFF. The two arms share a classifier but have separate
+package scope. FIXTURE additionally requires the product's signing certificate.
+There are no draft, microphone, API, credential, clipboard or insertion actions
+in either arm. Status always reports `ELIGIBLE=NEVER`.
+
+After source review, archive separate APKs/configs and verify their signatures
+against the installed manual MVP. Obtain phone availability before installation.
+Run these owned cases individually with the exact method suffix after
+`com.koscribe.smoke.RelativeEditorReadSmokeTest#` and its sole flag:
+
+| Method | Sole flag | Required observation |
+| --- | --- | --- |
+| `emptyCollapsedHasUnknownAbsoluteOffset` | `relativeEmptyReady` | EMPTY, UNKNOWN offset, collapsed relative and independent selection |
+| `middleCollapsedHasUnknownAbsoluteOffset` | `relativeMiddleReady` | NONEMPTY, UNKNOWN offset, collapsed relative and independent selection |
+| `selectedEmojiLooksCollapsedWhenSelectedTextIsUnavailable` | `relativeSelectedReady` | NONEMPTY, UNKNOWN offset, collapsed relative selection but independent SELECTED / SHAPE_CONTRADICTS |
+
+```powershell
+adb -d shell am instrument --user 0 -w -r -e class 'com.koscribe.smoke.RelativeEditorReadSmokeTest#emptyCollapsedHasUnknownAbsoluteOffset' -e relativeEmptyReady true com.koscribe.smoke/com.koscribe.smoke.KoScribeTestRunner
+```
+
+The fixture retains its actual focus and input connection while its remote
+accessibility node omits focused/editable/type/resource-ID/selection metadata.
+It reproduces the default-like unknown-offset surrounding-text response with
+selected text unavailable. Tests check actual remote metadata, SwiftKey, served
+input, unchanged fixture text/selection and unchanged legacy effect counters.
+They launch and finish only their owned fixture. Stop on the first failure.
+
+Only after those checks pass, install the KARROT arm in place and have Andrew
+prepare an empty Karrot composer with SwiftKey visible. Never inspect conversation
+history or screenshots. The one deliberate command is:
+
+```powershell
+adb -d shell dumpsys activity service com.koscribe.prototype/.KoScribeService --relative-editor-read-once
+adb -d shell dumpsys activity service com.koscribe.prototype/.KoScribeService --relative-editor-read-status
+```
+
+Status does not read editor text. One request permits at most one styled
+`getSurroundingText(1,1,GET_TEXT_WITH_STYLES)` call, with a three-second deadline,
+terminal interruption and a busy latch until the IPC returns. Android can return
+the entire selection despite the small adjacent-context request. KARROT refuses
+known selected/nonzero metadata before reading; unexpected nonempty content is
+classified numerically then discarded without inspecting characters or spans.
+No content, hash, coordinates or app-provided exception text is logged.
+
+`PAYLOAD=EMPTY` describes the returned snippet, not the entire field.
+`INPUT_SOURCE=INITIAL_ONLY` is start-time evidence; `CALLBACK_CURRENT_GEN` means
+delivered in this input generation, not proven remotely fresh. Age, later signals,
+composition and relative/independent selection agreement remain separate.
+None of these results authorizes an insertion. Review measured evidence before
+designing a manual adapter. Do not automatically retry a refused/interrupted read.
+
+Restore the current editable-Korean live MVP in place after the session:
+`app/build/manual-korean-result-20261105/manual-korean-translation-v1.apk`, SHA-256
+`3FE8BE0FF5AFD51908177D81F6AF652FB6EB0C34A85CD68825731E16DA3D33EA`.
+Verify installed hash, connected idle service, speech/translation true, all
+experiments false, SwiftKey retained and no draft/cleanup. Remove only the owned
+fixture from user 0. Never uninstall/clear the main app or alter its saved key.
+
 ## Automatic approval-to-insertion candidate — November4
 
 Use the reviewed secure API-free REVIEW build with AUTO_INSERT=true. Speech,

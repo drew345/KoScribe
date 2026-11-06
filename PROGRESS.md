@@ -9,13 +9,32 @@ after tapping that field again. OpenAI dot is low priority. The installed
 editable-Korean MVP is the starting point. Automatic-after-English remains
 deferred.
 
-**Current work:** build and independently review a hard no-write relative-read
-diagnostic. The old unknown-offset result skipped relative-selection
-classification. The new probe will classify selection, offset, empty/nonempty
-payload, composing state and independent selection evidence separately.
-Owned fixtures will cover collapsed and selected text behind Karrot-like
-container metadata. A write adapter follows only if the evidence supports it.
-Work is isolated on `codex/karrot-insertion`.
+**Current work:** the hard no-write relative-read diagnostic is built and
+independently cleared. The old unknown-offset result skipped relative-selection
+classification; this probe separates selection, offset, empty/nonempty payload,
+composition and independent selection evidence. Three owned cases cover empty,
+middle cursor and a selected emoji whose unavailable selected-text response
+appears collapsed. Actual remote metadata omissions are checked. A fixture is
+not a full Karrot virtual-container reproduction. A write adapter follows only
+if measured evidence supports it. Work is isolated on `codex/karrot-insertion`.
+
+**November 6 local validation:** 168 unit tests passed; app assembly/lint passed
+(0 errors, 50 warnings), smoke assembly/lint passed (0 errors, 5 warnings).
+Astra/xhigh cleared controller5928DF24, policyAB570260, testsF96EFA09,
+serviceA52884C8, ApiKeyActivityDFD6771A, Gradle02539BC6 and smoke8BDE13D6,
+fixture9E20404B/IDs8FFA0496. Ignored `app/build/relative-read-20261106/`
+contains FIXTURE18FE04FD, KARROTC46B46FF and smokeF90717A9, with saved arm
+configs and signatures matching the live MVP. Each diagnostic arm blocks all
+writer/mic/API/credential/clipboard effects and always reports ELIGIBLE=NEVER.
+Ordinary local debug and release configs were rebuilt and verified OFF/allfalse,
+including the new probe flag.
+
+**Next phone step:** awaiting Andrew's fresh availability for three no-write
+owned cases. No November 6 phone action has occurred. Stop at first failure,
+restore live3FE8BE0F in place and remove only the owned fixture. After all three
+pass, ask Andrew to prepare an empty Karrot composer for one deliberate read.
+No new Karrot insertion is authorized by the diagnostic results themselves.
+Exact protocol: [INSTRUMENTATION](docs/INSTRUMENTATION.md#karrot-relative-read-diagnostic--november-6).
 
 **Current product direction:** Andrew proposed returning to the working manual
 workflow after the automatic insertion experiments. Proceed with the manual MVP:
@@ -48,8 +67,8 @@ lint (0 errors, 50 warnings). Independent review cleared service E4BB7D07 and
 draft 754C641C. App checkpoint `d40cd21`, final harness checkpoint `7000290`.
 Archived in `app/build/manual-korean-result-20261105/`: sample AE1D1C6B,
 live 3FE8BE0F and smoke B7962357. Ordinary debug/release still default to OFF.
-Andrew can now try the installed workflow in daily use; external automatic
-insertion and broader Karrot/OpenAI dot compatibility remain deferred.
+Andrew can use the installed workflow while Karrot compatibility is developed.
+External automatic insertion and OpenAI dot acceptance remain deferred.
 
 **Automatic checkpoint, November 5:** C and D passed the identical-field switch
 with usable manual recovery. Neither unchanged-middle test wrote any text. The

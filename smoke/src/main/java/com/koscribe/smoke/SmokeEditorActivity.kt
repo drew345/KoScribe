@@ -8,14 +8,17 @@ import android.os.Handler
 import android.os.Looper
 import android.text.InputType
 import android.text.Spanned
+import android.text.TextUtils
 import android.text.style.UnderlineSpan
 import android.view.View
+import android.view.accessibility.AccessibilityNodeInfo
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.Display
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputConnectionWrapper
+import android.view.inputmethod.SurroundingText
 import android.view.inputmethod.TextAttribute
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -31,6 +34,7 @@ class SmokeEditorActivity : Activity() {
         const val EXTRA_REVIEW_SURFACE_PROBE = "com.koscribe.smoke.REVIEW_SURFACE_PROBE"
         const val EXTRA_STABLE_AUTO_FIXTURE = "com.koscribe.smoke.STABLE_AUTO_FIXTURE"
         const val EXTRA_MANUAL_RESULT_FIXTURE = "com.koscribe.smoke.MANUAL_RESULT_FIXTURE"
+        const val EXTRA_RELATIVE_READ_FIXTURE = "com.koscribe.smoke.RELATIVE_READ_FIXTURE"
         const val COMPOSED_WRONG_RESULT = "Incorrect synthetic composed result."
         @Volatile
         var current = WeakReference<SmokeEditorActivity>(null)
@@ -66,6 +70,7 @@ class SmokeEditorActivity : Activity() {
     fun stableAutoEditor(): EditText? = findViewById(R.id.stable_auto_editor)
     fun stableAutoAlternateEditor(): EditText? = findViewById(R.id.stable_auto_alternate_editor)
     fun manualResultTargetEditor(): EditText? = findViewById(R.id.local_result_target_editor)
+    fun relativeReadEditor(): EditText? = findViewById(R.id.local_relative_read_editor)
     /** Immutable fixture-only draft ownership for this view's entire lifetime. */
     fun stableAutoDraftToken(): Any? =
         (stableAutoEditor() as? StableAutoEditor)?.logicalDraft
@@ -146,6 +151,8 @@ class SmokeEditorActivity : Activity() {
         }
         if (intent.getBooleanExtra(EXTRA_MANUAL_RESULT_FIXTURE, false))
             root.addView(manualResultTargetField(), LinearLayout.LayoutParams(-1, -2))
+        if (intent.getBooleanExtra(EXTRA_RELATIVE_READ_FIXTURE, false))
+            root.addView(relativeReadField(), LinearLayout.LayoutParams(-1, -2))
         if (composedFixtures()) {
             root.addView(composedEditor(R.id.local_composed_match_editor, false),
                 LinearLayout.LayoutParams(-1, -2))
@@ -205,6 +212,11 @@ class SmokeEditorActivity : Activity() {
             if (manualTarget == null) fixtureRoot.addView(manualResultTargetField(),
                 LinearLayout.LayoutParams(-1, -2))
         } else if (manualTarget != null) fixtureRoot.removeView(manualTarget)
+        val relativeRead = relativeReadEditor()
+        if (intent.getBooleanExtra(EXTRA_RELATIVE_READ_FIXTURE, false)) {
+            if (relativeRead == null) fixtureRoot.addView(relativeReadField(),
+                LinearLayout.LayoutParams(-1, -2))
+        } else if (relativeRead != null) fixtureRoot.removeView(relativeRead)
         val protectedField = fixtureRoot.findViewById<EditText>(R.id.local_protected_editor)
         if (manual || intent.getBooleanExtra(EXTRA_OMIT_PROTECTED_EDITOR, false)) {
             if (protectedField != null) fixtureRoot.removeView(protectedField)
@@ -264,6 +276,14 @@ class SmokeEditorActivity : Activity() {
         hint = "Synthetic manually chosen destination"
         inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
         importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+    }
+
+    private fun relativeReadField(): EditText = RelativeReadEditor(this).apply {
+        id = R.id.local_relative_read_editor
+        hint = "Synthetic relative read field"
+        inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+        importantForContentCapture = View.IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS
     }
 
     private class StableAutoEditor(context: Context) : EditText(context) {
@@ -343,6 +363,38 @@ class SmokeEditorActivity : Activity() {
         super.onDestroy()
     }
 
+}
+
+/** Test-only served editor with deliberately incomplete public destination metadata. */
+private class RelativeReadEditor(context: Context) : EditText(context) {
+    override fun onInitializeAccessibilityNodeInfo(info: AccessibilityNodeInfo) {
+        super.onInitializeAccessibilityNodeInfo(info)
+        // Model the measured Karrot node flags while the actual view stays input focused.
+        info.isFocused = false
+        info.isEditable = false
+        info.inputType = InputType.TYPE_NULL
+        info.setTextSelection(-1, -1)
+        info.viewIdResourceName = null
+    }
+
+    override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection? {
+        val delegate = super.onCreateInputConnection(outAttrs) ?: return null
+        return object : InputConnectionWrapper(delegate, true) {
+            // An unsupported selected-text read is possible even with a real selected range.
+            override fun getSelectedText(flags: Int): CharSequence? = null
+
+            override fun getSurroundingText(beforeLength: Int, afterLength: Int,
+                flags: Int): SurroundingText? {
+                // Mirror InputConnection's default fallback. InputConnectionWrapper delegates
+                // this method, so overriding getSelectedText alone would not exercise it.
+                val before = getTextBeforeCursor(beforeLength, flags) ?: return null
+                val after = getTextAfterCursor(afterLength, flags) ?: return null
+                val selected = getSelectedText(flags) ?: ""
+                return SurroundingText(TextUtils.concat(before, selected, after), before.length,
+                    before.length + selected.length, -1)
+            }
+        }
+    }
 }
 
 /** Test-only editor: acknowledges a commit without changing its visible text. */

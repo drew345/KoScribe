@@ -63,6 +63,14 @@ require(karrotNoReadProbe != "true" ||
 }
 val reviewSurfaceProbe = providers.gradleProperty("koscribeReviewSurfaceProbe").orElse("OFF").get()
 val stableOverlayAuto = providers.gradleProperty("koscribeStableOverlayAuto").orElse("false").get()
+val relativeReadProbe = providers.gradleProperty("koscribeRelativeReadProbe").orElse("OFF").get()
+require(relativeReadProbe in setOf("OFF", "FIXTURE", "KARROT"))
+require(relativeReadProbe == "OFF" || (startupExperimentArm == "REVIEW" &&
+    reviewSurfaceProbe == "OFF" && stableOverlayAuto == "false" &&
+    listOf(visualTest, speechInput, translationInput, autoInsert, karrotServiceProbe,
+        karrotEmptyConnectionProbe, karrotNoReadProbe).all { it == "false" })) {
+    "Relative read probe requires secure REVIEW with every other feature and experiment disabled"
+}
 require(stableOverlayAuto in setOf("true", "false"))
 require(stableOverlayAuto != "true" || (startupExperimentArm == "REVIEW" && reviewSurfaceProbe == "OFF" &&
     listOf(visualTest, speechInput, translationInput, autoInsert, karrotServiceProbe,
@@ -104,6 +112,7 @@ android {
             buildConfigField("boolean", "KARROT_NO_READ_PROBE", karrotNoReadProbe)
             buildConfigField("String", "REVIEW_SURFACE_PROBE", "\"$reviewSurfaceProbe\"")
             buildConfigField("boolean", "STABLE_OVERLAY_AUTO", stableOverlayAuto)
+            buildConfigField("String", "RELATIVE_READ_PROBE_ARM", "\"$relativeReadProbe\"")
         }
         getByName("release") {
             buildConfigField("String", "STARTUP_EXPERIMENT_ARM", "\"OFF\"")
@@ -116,6 +125,7 @@ android {
             buildConfigField("boolean", "KARROT_NO_READ_PROBE", "false")
             buildConfigField("String", "REVIEW_SURFACE_PROBE", "\"OFF\"")
             buildConfigField("boolean", "STABLE_OVERLAY_AUTO", "false")
+            buildConfigField("String", "RELATIVE_READ_PROBE_ARM", "\"OFF\"")
         }
     }
 

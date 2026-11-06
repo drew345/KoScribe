@@ -10,6 +10,21 @@
   and safety reviews of the missing Karrot editor metadata and unknown-offset
   connection result, plus an inventory of reusable owned fixtures. No new
   device action or insertion occurred at goal setup.
+- Built a separate default-OFF relative-read diagnostic, with signed owned-fixture
+  and empty-Karrot scopes. Android's default unknown-offset fallback can hide a
+  real selection when selected text is unavailable; the new classifier preserves
+  relative/independent selection, source/age, offset and composition separately.
+  Reports grant no insertion authority and contain no editor text. Source findings
+  are in RESEARCH; actual Karrot evidence remains to be measured.
+- Astra/xhigh cleared exact app and three-case harness after fixing the worker
+  deadline check, terminal status overwrite and fast terminal-response test race.
+  Final 168 units passed, app lint0errors50warnings, smoke lint0errors5warnings,
+  both assembled. Saved signed FIXTURE18FE04FD, KARROTC46B46FF and smokeF90717A9
+  under ignored `app/build/relative-read-20261106/`. Asked fresh phone availability;
+  no device actions yet. Preserve installed editable-Korean live3FE8BE0F as the
+  restoration baseline. The one-button automatic work remains deferred.
+- Rebuilt ordinary local debug and release config as OFF/allfalse, including the
+  new probe. No generated APK, personal data or credential is staged or published.
 
 ## 2026-10-31 — Design review site revised from Andrew's feedback
 

@@ -16,9 +16,11 @@ selection and composition updates in one served generation. Implement/review a
 separate manual relative insertion path behind a default-OFF, signed-owned-fixture
 flag. Its acceptance must include the normal English/Korean review return. Preserve
 usable fresh empty composers after Korean review; do not require artificial user
-typing/deletion as the product workflow. The app and five-case harness are
-implemented, independently cleared and built; fresh phone availability is pending. No new writer
-phone test or Karrot insertion has occurred. Branch: `codex/karrot-insertion`.
+typing/deletion as the product workflow. The first owned writer test reached one
+applied commit but ended UNCERTAIN because no newer selection callback arrived.
+The remaining four tests were stopped and the normal MVP restored. Investigate
+framework/fixture callback behavior before changing confirmation. No Karrot
+insertion has occurred. Branch: `codex/karrot-insertion`.
 
 **Owned writer candidate, November 6:** explicit secure REVIEW flag
 `koscribeRelativeEmptyInsert=true`, signed fixture only. Separate relative proof,
@@ -33,8 +35,17 @@ testsD56A8198/Gradle40D25924. Saved `app/build/relative-empty-insert-20261106/`
 Ordinary debug/release rebuilt and verified OFF/allfalse. Final harnessEFAA2297
 and fixture1B3AD551 independently cleared; smoke assembly/lint0errors6warnings
 pass. Saved smoke-relative-empty-v1.apk SHA2A87967F with matching signature.
-Asked fresh five-minute phone availability for the bounded owned-only gate;
-stop first failure and restore normal MVP3FE8BE0F afterward.
+**Owned writer phone result:** fresh five-minute availability began11:15:44 KST.
+The first method failed16.001s: UNCERTAIN/RELATIVE_POSTCONTEXT_TIMEOUT,
+ORIGIN=INITIAL_ONLY, READS7, current selectionINITIAL_ONLY/COLLAPSED/ORIGIN,
+compositionUNKNOWN, UNRESOLVED=YES. Product captures1/commits1; fixture calls1/
+applied1 and target nonempty, sourcefocus0/targetfocus1, SwiftKey visible/selected.
+No newer callback was observed. The success-path exact-text/caret oracle was not
+reached, so do not claim full insertion correctness. No retry; four other methods
+not run. Restored verified installed live3FE8BE0F/hash, service15975 idle/regular
+flags/SwiftKey, removed fixture by11:17:20 KST. App780f17e, harness1c1b66e.
+Next source review distinguishes framework callback behavior from a fixture issue;
+no confirmation-policy change yet. No phone test is active.
 
 **November 6 local validation:** 168 unit tests passed; app assembly/lint passed
 (0 errors, 50 warnings), smoke assembly/lint passed (0 errors, 5 warnings).
@@ -114,7 +125,7 @@ been superseded. Keep the automatic experiments available for later investigatio
 **Installed on Andrew's A35:** the secure manual MVP with editable Korean is
 installed and verified (SHA-256
 3FE8BE0FF5AFD51908177D81F6AF652FB6EB0C34A85CD68825731E16DA3D33EA).
-The accessibility service reconnected at PID 28758 after the latest restoration. Speech and translation are
+The accessibility service reconnected at PID 15975 after the latest restoration. Speech and translation are
 on, automatic insertion is off, the draft is empty and SwiftKey is selected.
 The fixture was removed from user 0. The previous live build D266E911 is saved.
 

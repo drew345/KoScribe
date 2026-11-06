@@ -1,5 +1,43 @@
 # Phase 1 device acceptance record
 
+## Empty-relative manual insertion — November 6
+
+Reviewed app780f17e (policy069E0CAE/reader45E56ACB/service08684FFB/testsD56A8198/
+Gradle40D25924) and harness1c1b66e (EFAA2297/fixture1B3AD551). All189 units pass in
+candidate and OFF builds; app lint0errors51warnings, smoke lint0errors6warnings,
+both assembled. Archived signed app978EF1B5 and smoke2A87967F in
+`app/build/relative-empty-insert-20261106/`; signatures match live MVP.
+
+Andrew confirmed five-minute availability at11:15:44 KST. Verified user0,
+awake/unlocked, SwiftKey and normal MVP idle, then installed candidate/fixture
+in place. Only exact method
+`RelativeEmptyInsertSmokeTest#freshUntouchedEmptyAfterEditedKoreanInsertsOnce`
+with sole `relativeInsertFreshReady=true` ran. It failed after16.001s:
+
+```text
+STATE=UNCERTAIN REASON=RELATIVE_POSTCONTEXT_TIMEOUT ORIGIN=INITIAL_ONLY READS=7
+CURRENT_SOURCE=INITIAL_ONLY CURRENT_SHAPE=COLLAPSED CURRENT_POSITION=ORIGIN
+CURRENT_COMPOSITION=UNKNOWN UNRESOLVED=YES
+DRAFT=UNCERTAIN CAPTURES=1 COMMITS=1
+OWNER=1 SOURCE_FOCUS=0 TARGET_FOCUS=1 TARGET_EMPTY=0 HOOK=IDLE
+FIXTURE_CALLS=1/1 IME=1 SWIFTKEY=1
+```
+
+The fixture counted one commit call and one applied acknowledgment, and its
+target was nonempty. The required postcommit selection callback did not arrive.
+The final success-path exact-text/caret and source-preservation oracle was not
+reached; the prewrite preservation checks had passed. This is a write-boundary
+milestone and failed confirmation gate, not a full insertion pass. No retry;
+UNCERTAIN remained terminal. Own cleanup succeeded, and the other four methods
+were not run. No Karrot action, API, clipboard, Send or credential operation.
+The sample recording briefly used the microphone within the agreed scope.
+
+Restored live3FE8BE0F in place and verified full installed hash, service15975,
+REVIEW speech/translationtrue, all recorded automatic/probe flagsfalse, draftNONE,
+cleanupfalse, SwiftKey. Removed only fixture from user0. Complete by11:17:20 KST.
+Next read-only source review must distinguish Android callback behavior from
+fixture validity before changing confirmation or planning another device gate.
+
 ## Karrot relative-read fixture — November 6
 
 Andrew confirmed the A35 unlocked and free for five minutes. At 09:54 KST,

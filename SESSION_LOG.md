@@ -120,6 +120,14 @@
   Asked fresh five-minute availability for five exact owned methods, fixed sample
   mic/noAPI/noClipboard, stop first failure and restore live3FE8BE0F. No phone
   action since the calibration restoration.
+- Harness checkpoint1c1b66e. Fresh five-minute availability11:15:44; first untouched
+  empty edited-Korean method failed16.001s with UNCERTAIN/RELATIVE_POSTCONTEXT_TIMEOUT,
+  admissionINITIAL_ONLY, reads7, currentINITIAL_ONLY/UNKNOWN comp/unresolvedYES.
+  Product captures1/commits1, fixture calls1/applied1, target nonempty, SwiftKey
+  retained. No newer callback; final exact payload/caret oracle was not reached.
+  No retry or other four cases. Restored and verified installed live3FE8BE0F/hash,
+  idle service15975/regular flags/SwiftKey, removed fixture by11:17:20. Read-only
+  framework, fixture and confirmation-premise reviews started before any change.
 
 ## 2026-10-31 — Design review site revised from Andrew's feedback
 

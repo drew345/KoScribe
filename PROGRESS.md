@@ -34,10 +34,9 @@ not be used to choose a restore APK or the next development step.
   latest SESSION_LOG. Follow the remaining owned-fixture gates and obtain
   fresh phone availability before taking over the device. Do not rebuild or
   install this older `main` as a substitute for the saved normal MVP.
-- **Sync follow-up:** the completed End receipt predates this checkout change
-  and names `codex/karrot-insertion`. Run the existing End workflow's normal
-  recheck to publish this documentation and record `main`; do not edit its
-  receipt or baseline manually. This local handoff is not a new sync verdict.
+- **Sync handoff:** the original November 6 End receipt named
+  `codex/karrot-insertion`. The current published CodexSync receipt determines
+  which branch to receive. A successful End from this checkout records `main`.
 
 ## Historical main status (October 31)
 

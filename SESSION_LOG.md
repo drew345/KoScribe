@@ -1,5 +1,21 @@
 # Session log
 
+## 2026-11-06 — Park checkout on main; preserve paused debugging branch
+
+- Andrew requested leaving the laptop on `main` while keeping the unfinished
+  Karrot work identifiable. Verified the worktree was clean and the debugging
+  checkpoint `dc7f6a02e73b67bc783f56331910bcc3cbb95512` was on GitHub, then
+  switched to `main` without merging app changes. The branch remains intact.
+- Added a current handoff in PROGRESS and an AGENTS pointer. The installed
+  editable-Korean MVP is newer than main's app source; the last verified normal
+  APK is `3FE8BE0F`, not the historical `D266E911` build below. No phone action,
+  credential access, app change, or additional device test was performed.
+- The Karrot goal remains paused after one successful owned-editor positive
+  check, with five owned-editor gates outstanding. Exact evidence and restart
+  steps stay on `codex/karrot-insertion`. The already completed End receipt
+  needs the normal End recheck to record this later main checkout and publish
+  its documentation. No shared sync receipt or baseline was edited here.
+
 ## 2026-10-31 — Design review site revised from Andrew's feedback
 
 - Andrew corrected the first site's plain-K current bubble and preferred a

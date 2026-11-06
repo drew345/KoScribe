@@ -7,6 +7,13 @@ Read this file, `PROGRESS.md`, and the latest `SESSION_LOG.md` entry. Read
 and `docs/RESEARCH.md` when a technical decision needs its evidence.
 `PROGRESS.md` is the single source of current state; keep history concise.
 
+**November 6 checkout handoff:** This checkout is intentionally on `main`;
+its app source predates the installed editable-Korean MVP. Karrot compatibility
+work is paused at Andrew's request and preserved on `codex/karrot-insertion`
+at `dc7f6a0`. Automatic insertion remains deferred. Older instructions below
+do not authorize resuming development or phone tests. See the handoff at the
+top of `PROGRESS.md` before building, installing, or continuing work.
+
 ## Work authorization and model roles
 
 - On2026-10-26 Andrew deferred the difficult automatic Translate & insert work

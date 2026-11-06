@@ -1,5 +1,46 @@
 # Current progress
 
+Updated: 2026-11-06 (Asia/Seoul).
+
+## Main checkout and paused Karrot work
+
+Andrew requested leaving this laptop on `main` while preserving the unfinished
+debugging effort. The checkout is now on `main`; no implementation was merged
+and no phone action was taken. The app source on `main` is older than the
+installed editable-Korean MVP. The October status below is historical and must
+not be used to choose a restore APK or the next development step.
+
+- **Preserved work:** `codex/karrot-insertion`, checkpoint
+  `dc7f6a02e73b67bc783f56331910bcc3cbb95512`, verified on GitHub before switching.
+  The authoritative development handoff, evidence, and exact resume order are
+  in [that checkpoint's PROGRESS.md](https://github.com/drew345/KoScribe/blob/dc7f6a02e73b67bc783f56331910bcc3cbb95512/PROGRESS.md).
+  Locally, read it with `git show codex/karrot-insertion:PROGRESS.md`.
+- **Paused goal:** explicit manual Insert into Karrot from editable Korean,
+  preserving SwiftKey, existing text, one commit, terminal uncertainty, and
+  no Send. The final owned-editor positive check passed; five owned-editor
+  acceptance checks remain before separately reviewed Karrot testing.
+  Karrot insertion has not been accepted. Automatic-after-English work remains
+  deferred. This checkout change does not resume the goal.
+- **Phone baseline:** the last verified restore on November 6 was the normal
+  editable-Korean MVP, SHA-256
+  `3FE8BE0FF5AFD51908177D81F6AF652FB6EB0C34A85CD68825731E16DA3D33EA`,
+  saved locally at
+  `app/build/manual-korean-result-20261105/manual-korean-translation-v1.apk`.
+  Its app checkpoint is `d40cd21`, with acceptance recorded at `9aee9cf`, both
+  preserved on the debugging branch. Switching Git branches does not change
+  the installed app. No fresh phone inspection was made for this housekeeping.
+- **Resume:** when Andrew requests it, first confirm a clean checkout, switch
+  with `git switch codex/karrot-insertion`, and read its AGENTS, PROGRESS and
+  latest SESSION_LOG. Follow the remaining owned-fixture gates and obtain
+  fresh phone availability before taking over the device. Do not rebuild or
+  install this older `main` as a substitute for the saved normal MVP.
+- **Sync follow-up:** the completed End receipt predates this checkout change
+  and names `codex/karrot-insertion`. Run the existing End workflow's normal
+  recheck to publish this documentation and record `main`; do not edit its
+  receipt or baseline manually. This local handoff is not a new sync verdict.
+
+## Historical main status (October 31)
+
 Updated: 2026-10-31 (Asia/Seoul).
 
 **Native design upgrade installed, 2026-10-31:** Andrew approved installing the

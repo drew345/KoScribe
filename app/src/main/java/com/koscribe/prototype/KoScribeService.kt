@@ -104,6 +104,16 @@ class KoScribeService : AccessibilityService() {
                 RelativeReadProbe.Input(method.generation, info, connection) else null
         }, idle = { karrotProbeIdle() && resultEdit == null && stableSession == null }, safeType = ::safeInputType)
     }
+    private val relativeEmptyEvidence = RelativeEmptyPolicy.Evidence()
+    private val relativeEmptyInsert by lazy {
+        RelativeEmptyInsert(this, input = {
+            val method = inputMethod as? TrackingInputMethod
+            val info = method?.currentInputEditorInfo
+            val connection = method?.currentInputConnection
+            if (method?.currentInputStarted == true && info != null && connection != null)
+                RelativeEmptyInsert.Input(method.generation, info, connection) else null
+        }, evidence = relativeEmptyEvidence::current, safeType = ::safeInputType)
+    }
     private data class KarrotProbeToken(val active: AtomicBoolean, val deadlineUptimeMs: Long)
     private val karrotProbeToken = AtomicReference<KarrotProbeToken?>(null)
     private val karrotProbeStatus = AtomicReference("KARROT_SERVICE_METADATA_V1 NO_REQUEST")
@@ -419,16 +429,27 @@ class KoScribeService : AccessibilityService() {
         val node: AccessibilityNodeInfo,
         val root: AccessibilityNodeInfo,
         val generation: Int,
-        val expected: CommitConfirmation.Expected,
+        val expected: CommitConfirmation.Expected?,
         val host: View,
         val hostToken: IBinder?,
         val hostWindowId: Int,
         val autoIntent: OriginalWriteBinding? = null,
         var phase: DestinationPhase = DestinationPhase.PRECOMMIT,
         var commitRequestedUptimeMs: Long = 0L,
-        var stablePrecommitTrace: StablePrecommitTrace? = null
-    )
+        var stablePrecommitTrace: StablePrecommitTrace? = null,
+        val relative: RelativeEmptyInsert.Frame? = null
+    ) {
+        init { require((expected != null) != (relative != null)) }
+    }
     private var freshDestination: FreshDestination? = null
+    private fun invalidateFresh(transaction: FreshDestination) {
+        if (transaction.relative != null) transaction.relative.proof.end() else guard.invalidate(transaction.id)
+    }
+    private fun endFreshProof(transaction: FreshDestination) {
+        transaction.relative?.proof?.end()
+        guard.cancel(transaction.id)
+        guard.end(transaction.id)
+    }
     private enum class PostCommitProbeKind(val prefix: String) {
         CARET("POST_DIAG"), COMPOSITION("POST_COMPOSE")
     }
@@ -2269,7 +2290,9 @@ class KoScribeService : AccessibilityService() {
             "Karrot empty connection probe enabled: ${BuildConfig.KARROT_EMPTY_CONNECTION_PROBE}\n" +
             "Karrot no-read probe enabled: ${BuildConfig.KARROT_NO_READ_PROBE}\n" +
             "Relative read probe arm: ${BuildConfig.RELATIVE_READ_PROBE_ARM}\n" +
+            "Relative empty insertion: ${BuildConfig.RELATIVE_EMPTY_INSERT}\n" +
             relativeReadProbe.status() + "\n" +
+            relativeEmptyInsert.status() + "\n" +
             "Speech input enabled: ${BuildConfig.SPEECH_INPUT}\n" +
             "Translation input enabled: ${BuildConfig.TRANSLATION_INPUT}\n" +
             "Original intent phase: ${autoDestination?.policy?.phase?.name ?: stableSession?.phase ?: autoLastPhase}\n" +
@@ -2312,6 +2335,10 @@ class KoScribeService : AccessibilityService() {
         }
         if (args.size == 1 && args[0] == "--relative-editor-selection-status") {
             writer.println(relativeReadProbe.selectionStatus())
+            return
+        }
+        if (args.size == 1 && args[0] == "--relative-empty-insert-status") {
+            writer.println(relativeEmptyInsert.status())
             return
         }
         if (args.size == 1 && args[0] == "--karrot-editor-probe-metadata-once") {
@@ -3062,12 +3089,17 @@ class KoScribeService : AccessibilityService() {
                 generation++
                 composition.reset()
                 if (RelativeReadProbeMode.enabled) relativeReadProbe.inputStarted(generation, attribute, restarting)
+                if (RelativeEmptyInsertMode.enabled) {
+                    if (attribute.packageName == RelativeEmptyInsertMode.PACKAGE && safeInputType(attribute.inputType))
+                        relativeEmptyEvidence.start(generation, attribute.initialSelStart, attribute.initialSelEnd)
+                    else relativeEmptyEvidence.clear()
+                }
                 stableSession?.inputStarted(attribute, generation, restarting)
                 trackAutoInputStarted(attribute, generation, restarting)
                 abortPostCommitProbe("INPUT_STARTED")
                 freshDestination?.let {
                     if (it.phase == DestinationPhase.PRECOMMIT) {
-                        guard.invalidate(it.id)
+                        invalidateFresh(it)
                         it.stablePrecommitTrace?.invalidated(StablePrecommitTrace.Kind.INPUT_START,
                             StablePrecommitTrace.Role.UNKNOWN, null, null, SystemClock.uptimeMillis())
                     } else finishUncertain(it, "INPUT_STARTED")
@@ -3083,6 +3115,7 @@ class KoScribeService : AccessibilityService() {
 
         override fun onFinishInput() {
             if (RelativeReadProbeMode.enabled) relativeReadProbe.inputFinished()
+            if (RelativeEmptyInsertMode.enabled) relativeEmptyEvidence.clear()
             if (ReviewSurfaceProbeMode.enabled) {
                 composition.reset()
                 surfaceProbe.onInput(false, probeInputRole())
@@ -3111,7 +3144,7 @@ class KoScribeService : AccessibilityService() {
                 abortPostCommitProbe("INPUT_FINISHED")
                 freshDestination?.let {
                     if (it.phase == DestinationPhase.PRECOMMIT) {
-                        guard.invalidate(it.id)
+                        invalidateFresh(it)
                         it.stablePrecommitTrace?.invalidated(StablePrecommitTrace.Kind.INPUT_FINISH,
                             StablePrecommitTrace.Role.UNKNOWN, null, null, SystemClock.uptimeMillis())
                     } else finishUncertain(it, "INPUT_FINISHED")
@@ -3139,6 +3172,15 @@ class KoScribeService : AccessibilityService() {
         ) {
             if (RelativeReadProbeMode.enabled)
                 relativeReadProbe.selection(generation, newSelStart, newSelEnd, candidatesStart, candidatesEnd)
+            if (RelativeEmptyInsertMode.enabled) {
+                relativeEmptyEvidence.update(generation, newSelStart, newSelEnd, candidatesStart, candidatesEnd)
+                freshDestination?.takeIf { it.relative != null }?.let {
+                    if (!it.relative!!.proof.selectionChanged(relativeEmptyEvidence.current())) {
+                        if (it.phase == DestinationPhase.PRECOMMIT) invalidateFresh(it)
+                        else finishUncertain(it, "RELATIVE_CALLBACK_CONTRADICTION")
+                    }
+                }
+            }
             if (ReviewSurfaceProbeMode.enabled) {
                 composition.update(newSelStart, newSelEnd, candidatesStart, candidatesEnd)
                 return
@@ -3375,6 +3417,13 @@ class KoScribeService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         if (RelativeReadProbeMode.enabled) relativeReadProbe.event(event)
+        if (RelativeEmptyInsertMode.enabled && event.packageName?.toString() == RelativeEmptyInsertMode.PACKAGE) {
+            when (event.eventType) {
+                AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED -> relativeEmptyEvidence.textChanged()
+                AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED ->
+                    relativeEmptyEvidence.selectionEvent(event.fromIndex, event.toIndex)
+            }
+        }
         val precommitReceipt = if (BuildConfig.STABLE_OVERLAY_AUTO &&
             freshDestination?.phase == DestinationPhase.PRECOMMIT && freshDestination?.stablePrecommitTrace != null)
             SystemClock.uptimeMillis() else null
@@ -3432,6 +3481,8 @@ class KoScribeService : AccessibilityService() {
             }
             val destination = freshDestination
             val target = destination?.let { guard.session(it.id)?.target }
+            val targetPackage = target?.packageName ?: destination?.relative?.let { RelativeEmptyInsertMode.PACKAGE }
+            val targetWindow = target?.windowId ?: destination?.relative?.window
             if (destination?.phase == DestinationPhase.OBSERVING &&
                 (event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
                     event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
@@ -3445,12 +3496,12 @@ class KoScribeService : AccessibilityService() {
                     event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
                     (event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED &&
                         event.packageName?.toString() != packageName) ||
-                    (target != null && event.packageName?.toString() == target.packageName &&
-                        event.windowId == target.windowId &&
+                    (targetPackage != null && event.packageName?.toString() == targetPackage &&
+                        event.windowId == targetWindow &&
                         (event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED ||
                             event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED ||
                             event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED)))) {
-                guard.invalidate(destination.id)
+                invalidateFresh(destination)
                 if (precommitReceipt != null && destination.autoIntent is StableOverlayAuto) {
                     val kind = when (event.eventType) {
                         AccessibilityEvent.TYPE_WINDOWS_CHANGED -> StablePrecommitTrace.Kind.WINDOWS
@@ -3825,6 +3876,7 @@ class KoScribeService : AccessibilityService() {
     }.getOrDefault("LOCAL_CONTENT_UNKNOWN")
 
     override fun onInterrupt() {
+        relativeEmptyEvidence.clear()
         if (RelativeReadProbeMode.enabled) { relativeReadProbe.interrupt("SERVICE_INTERRUPT"); relativeReadProbe.inputFinished() }
         stableSession?.interrupt("SERVICE_INTERRUPTED")
         if (ReviewSurfaceProbeMode.enabled) surfaceProbe.terminate("SERVICE_INTERRUPTED")
@@ -3843,6 +3895,7 @@ class KoScribeService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        relativeEmptyEvidence.clear()
         if (RelativeReadProbeMode.enabled) { relativeReadProbe.interrupt("SERVICE_DESTROY"); relativeReadProbe.inputFinished() }
         stableSession?.interrupt("SERVICE_DESTROYED")
         if (ReviewSurfaceProbeMode.enabled) surfaceProbe.terminate("SERVICE_DESTROYED")
@@ -3865,7 +3918,7 @@ class KoScribeService : AccessibilityService() {
         unboundDraft.current()?.id?.let(ReviewActivity::closeDraft)
         unboundDraft.endActive()
         clearDraftOwnership()
-        freshDestination?.id?.let { guard.cancel(it); guard.end(it) }
+        freshDestination?.let(::endFreshProof)
         freshDestination = null
         stopOverlayOwnership()
         overlayCleanupPending?.close()
@@ -5046,7 +5099,7 @@ class KoScribeService : AccessibilityService() {
         compactResultNotice = null
         clearPostCommitProbe()
         ReviewActivity.closeDraft(id)
-        freshDestination?.takeIf { it.draftId == id }?.let { guard.cancel(it.id); guard.end(it.id) }
+        freshDestination?.takeIf { it.draftId == id }?.let(::endFreshProof)
         freshDestination = null
         resetFreshComposition()
         releaseOwnHostLease("DRAFT_ENDED")
@@ -5239,6 +5292,18 @@ class KoScribeService : AccessibilityService() {
             return if (automatic == null) refuseFreshInsertion("BUBBLE_UNVERIFIED")
                 else finishOriginal(automatic, "AUTO_HOST_UNVERIFIED")
 
+        if (RelativeEmptyInsertMode.enabled) {
+            if (automatic != null) return finishOriginal(automatic, "RELATIVE_MANUAL_ONLY")
+            destinationCaptureCount++
+            val frame = relativeEmptyInsert.capture(result)
+                ?: return refuseFreshInsertion("RELATIVE_CAPTURE_REFUSED")
+            val transaction = FreshDestination(draftId, frame.proof.id, frame.node, frame.root,
+                frame.input.generation, null, host, token, hostWindowId, relative = frame)
+            freshDestination = transaction
+            main.post { commitFreshDestination(transaction, result) }
+            return
+        }
+
         resetFreshComposition()
         if (automatic == null) destinationCaptureCount++
         val stableAuto = automatic as? StableOverlayAuto
@@ -5293,6 +5358,18 @@ class KoScribeService : AccessibilityService() {
                 it.id == transaction.draftId && it.phase == UnboundDraftState.Phase.READY &&
                     it.result == result
             } == null) return
+        transaction.relative?.let { frame ->
+            val second = if (sameFreshHost(transaction)) relativeEmptyInsert.read(frame, 1, 1, precommit = true) else null
+            if (!sameFreshHost(transaction) || !frame.proof.reserve(relativeEmptyEvidence.current(), second,
+                    SystemClock.uptimeMillis())) {
+                endFreshProof(transaction)
+                freshDestination = null
+                relativeEmptyInsert.record("REFUSED", "PRECOMMIT", frame)
+                return refuseFreshInsertion("RELATIVE_PRECOMMIT_REFUSED")
+            }
+            requestFreshCommit(transaction, result, frame.input.connection)
+            return
+        }
         val second = observeEditor(requiredStableField = transaction.autoIntent is StableOverlayAuto)
         val same = second != null && sameFreshTarget(transaction, second)
         val automatic = transaction.autoIntent
@@ -5337,10 +5414,23 @@ class KoScribeService : AccessibilityService() {
             }
             finishOriginal(automatic, "AUTO_CONSUMED", fallback = false)
         }
+        requestFreshCommit(transaction, result, second!!.connection)
+    }
+
+    private fun requestFreshCommit(transaction: FreshDestination, result: String,
+        connection: android.accessibilityservice.InputMethod.AccessibilityInputConnection) {
+        if (freshDestination !== transaction || transaction.phase != DestinationPhase.PRECOMMIT ||
+            unboundDraft.current()?.let { it.id == transaction.draftId && it.phase == UnboundDraftState.Phase.READY &&
+                it.result == result } != true ||
+            transaction.relative?.proof?.commitAuthorized(SystemClock.uptimeMillis()) == false) {
+            endFreshProof(transaction)
+            if (freshDestination === transaction) freshDestination = null
+            return refuseFreshInsertion("COMMIT_PRECONDITION_CHANGED")
+        }
         // The guard has consumed the attempt before any editor IPC. No later tap can
         // get another Insert for this draft, even if the IPC throws or proves nothing.
         if (!unboundDraft.markAttempted(transaction.draftId)) {
-            guard.end(transaction.id)
+            endFreshProof(transaction)
             freshDestination = null
             resetFreshComposition()
             releaseOwnHostLease("DRAFT_CHANGED")
@@ -5349,11 +5439,14 @@ class KoScribeService : AccessibilityService() {
         transaction.phase = DestinationPhase.OBSERVING
         commitConfirmation = "PENDING"
         experimentPhase = "REVIEW_COMMIT_OBSERVING"
+        transaction.relative?.let { relativeEmptyInsert.record("ATTEMPTED", "SINGLE_COMMIT", it) }
+        if (transaction.relative?.proof?.commitAuthorized(SystemClock.uptimeMillis()) == false)
+            return finishUncertain(transaction, "RELATIVE_COMMIT_DEADLINE")
         try {
             commitRequestCount++
             transaction.commitRequestedUptimeMs = SystemClock.uptimeMillis()
             note("FRESH_COMMIT_REQUESTED_ONCE")
-            second!!.connection.commitText(result, 1, null)
+            connection.commitText(result, 1, null)
         } catch (_: Exception) {
             finishUncertain(transaction, "COMMIT_EXCEPTION")
             return
@@ -5397,11 +5490,31 @@ class KoScribeService : AccessibilityService() {
         if (freshDestination !== transaction || transaction.phase != DestinationPhase.OBSERVING)
             return
         if (!sameFreshHost(transaction)) return finishUncertain(transaction, "HOST_CHANGED")
-        val observed = observeEditor(transaction.expected.beforeCount,
-            transaction.expected.afterCount, postCommit = true, requiredStableField = transaction.autoIntent is StableOverlayAuto)
+        transaction.relative?.let { frame ->
+            val observed = relativeEmptyInsert.read(frame, frame.proof.result.length + 1, 1, precommit = false)
+            if (!sameFreshHost(transaction)) return finishUncertain(transaction, "HOST_CHANGED")
+            when (frame.proof.verdict(relativeEmptyEvidence.current(), observed, SystemClock.uptimeMillis())) {
+                RelativeEmptyPolicy.Verdict.CONFIRMED -> {
+                    relativeEmptyInsert.record("CONFIRMED", "EXACT_RELATIVE_AND_CALLBACK", frame)
+                    endFreshProof(transaction)
+                    freshDestination = null
+                    commitConfirmation = "CONFIRMED"
+                    endDraft(transaction.draftId, "INSERT_CONFIRMED", completed = true)
+                }
+                RelativeEmptyPolicy.Verdict.UNCERTAIN -> finishUncertain(transaction, "RELATIVE_POSTCONTEXT")
+                RelativeEmptyPolicy.Verdict.PENDING -> {
+                    if (poll >= 4) finishUncertain(transaction, "RELATIVE_POSTCONTEXT_TIMEOUT")
+                    else main.postDelayed({ verifyFreshCommit(transaction, poll + 1) }, 120L)
+                }
+            }
+            return
+        }
+        val expected = transaction.expected ?: return finishUncertain(transaction, "EXPECTED_CONTEXT_LOST")
+        val observed = observeEditor(expected.beforeCount,
+            expected.afterCount, postCommit = true, requiredStableField = transaction.autoIntent is StableOverlayAuto)
         if (observed == null || !sameFreshTarget(transaction, observed))
             return finishUncertain(transaction, "TARGET_CHANGED")
-        val verdict = CommitConfirmation.verdict(transaction.expected, observed.snapshot)
+        val verdict = CommitConfirmation.verdict(expected, observed.snapshot)
         if (verdict == CommitConfirmation.PostCommitVerdict.CONFIRMED) {
             guard.end(transaction.id)
             freshDestination = null
@@ -5429,6 +5542,7 @@ class KoScribeService : AccessibilityService() {
 
     private fun finishUncertain(transaction: FreshDestination, code: String) {
         if (freshDestination !== transaction) return
+        transaction.relative?.let { relativeEmptyInsert.record("UNCERTAIN", code, it) }
         val original = guard.session(transaction.id)?.target
         val probeKind = when (observationCode) {
             ObservationCode.NODE_CARET_MISMATCH -> PostCommitProbeKind.CARET
@@ -5437,14 +5551,14 @@ class KoScribeService : AccessibilityService() {
         }
         val probe = if (BuildConfig.DEBUG && startupExperiment == StartupExperiment.REVIEW &&
             code == "TARGET_CHANGED" && probeKind != null &&
-            original?.packageName == "com.koscribe.smoke") {
+            original?.packageName == "com.koscribe.smoke" && transaction.expected != null) {
             val expected = transaction.expected
             PostCommitProbe(probeKind, transaction.draftId, transaction.node, transaction.root,
                 original.windowId, original.editorFieldId, original.inputType, transaction.generation,
                 expected.oldOffset, expected.caret, expected.text.length,
                 digestContext(expected.text), transaction.commitRequestedUptimeMs)
         } else null
-        guard.end(transaction.id)
+        endFreshProof(transaction)
         freshDestination = null
         resetFreshComposition()
         releaseOwnHostLease("INSERT_UNCERTAIN")
@@ -6058,7 +6172,7 @@ class KoScribeService : AccessibilityService() {
                 info.packageName == "com.koscribe.smoke" &&
                 transaction?.phase == DestinationPhase.OBSERVING &&
                 guard.session(transaction.id)?.target?.packageName == "com.koscribe.smoke") {
-                val expected = transaction.expected
+                val expected = transaction.expected ?: return refuse(ObservationCode.POSTCOMMIT_TARGET_CHANGED)
                 val elapsed = (SystemClock.uptimeMillis() - transaction.commitRequestedUptimeMs)
                     .coerceAtLeast(0L)
                 val contextMatches = surrounding.offset == expected.oldOffset &&

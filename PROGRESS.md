@@ -16,9 +16,22 @@ selection and composition updates in one served generation. Implement/review a
 separate manual relative insertion path behind a default-OFF, signed-owned-fixture
 flag. Its acceptance must include the normal English/Korean review return. Preserve
 usable fresh empty composers after Korean review; do not require artificial user
-typing/deletion as the product workflow. Writer implementation is underway;
-no new insertion candidate has been built or phone-tested. No Karrot insertion
-has occurred. Branch: `codex/karrot-insertion`.
+typing/deletion as the product workflow. The app candidate is implemented,
+independently cleared and built; smoke harness review is underway. No new writer
+phone test or Karrot insertion has occurred. Branch: `codex/karrot-insertion`.
+
+**Owned writer candidate, November 6:** explicit secure REVIEW flag
+`koscribeRelativeEmptyInsert=true`, signed fixture only. Separate relative proof,
+two fresh empty reads, independent initial/callback evidence, shared canonical
+draft/sole commit, exact relative result plus newer matching callback confirmation.
+Initial composition stays UNKNOWN under the scoped empty contract; unknown offset
+is never normalized. All189 unit tests pass in candidate and ordinary OFF builds;
+candidate assembly/lint0errors51warnings pass (one new nonexhaustive event-switch
+warning). Astra/xhigh cleared policy069E0CAE/reader45E56ACB/service08684FFB/
+testsD56A8198/Gradle40D25924. Saved `app/build/relative-empty-insert-20261106/`
+`relative-empty-fixture-v1.apk` SHA978EF1B5 and config, signer matches MVP.
+Ordinary debug/release rebuilt and verified OFF/allfalse. Await final smoke
+review/build, then fresh phone availability for the bounded owned-only gate.
 
 **November 6 local validation:** 168 unit tests passed; app assembly/lint passed
 (0 errors, 50 warnings), smoke assembly/lint passed (0 errors, 5 warnings).

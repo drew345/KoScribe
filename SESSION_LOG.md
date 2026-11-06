@@ -106,6 +106,13 @@
   saved-result insertion into a fresh empty field without type/delete. App and
   smoke implementation started; no build/device/write result yet. Full rationale
   and negative gate are in RESEARCH. Normal live MVP remains restored.
+- Owned-only writer app implemented and independently cleared at policy069E0CAE,
+  reader45E56ACB, service08684FFB, testsD56A8198, Gradle40D25924. Candidate and
+  ordinary OFF builds each pass189 unit tests; candidate assembly/lint pass
+  (0errors51warnings, extra nonexhaustive event-switch warning). Archived signed
+  fixture978EF1B5/config; ordinary debug/release rebuilt and verified OFF/allfalse.
+  Smoke harness still under review. No new phone action; live3FE8BE0F remains
+  installed. Next gate uses fixed samples/own editor, then restores that MVP.
 
 ## 2026-10-31 — Design review site revised from Andrew's feedback
 

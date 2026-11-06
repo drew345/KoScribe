@@ -1,5 +1,45 @@
 # Synthetic cross-app instrumentation smoke test
 
+## Empty-relative manual insertion — November 6
+
+This candidate is limited to the signed owned fixture. Build secure API-free
+REVIEW with `-PkoscribeStartupArm=REVIEW -PkoscribeRelativeEmptyInsert=true`;
+every other feature/diagnostic flag stays OFF. Default/release stays OFF.
+The diagnostic flags remain separate and never grant write authority.
+
+The service shares the existing explicit manual draft attempt and sole commit
+with a distinct relative proof. It does not invent an absolute offset or editable
+node property. Two fresh empty reads and independent initial/callback selection
+are required before commit. Postcommit needs exact saved Korean, collapsed
+relative caret and a newer same-generation matching callback. An unconfirmed
+attempt remains terminal. Initial-only composition stays UNKNOWN under the
+scoped empty-editor contract, documented in RESEARCH.
+
+Reviewed app: policy069E0CAE, reader45E56ACB, service08684FFB, testsD56A8198,
+Gradle40D25924. Candidate and ordinary OFF builds pass189 tests; candidate
+assembly/lint0errors51warnings. Saved app/config in ignored
+`app/build/relative-empty-insert-20261106/relative-empty-fixture-v1.apk`, SHA-256
+`978EF1B500EB930A7963B164094E63BC9E97294E71CB05CC176DCD4B7A8D1A85`.
+App signer matches the normal MVP. Final smoke review/build and device gate are
+pending; do not use the archived app as a daily-use build.
+
+The planned compact gate covers untouched initial-only empty insertion after
+English review/Korean Edit→Done, callback-cleared empty insertion, hidden selected
+range refusal, ordinary mutation at the first read, and acknowledged-but-unobserved
+commit uncertainty. The mutation case proves refusal across the capture boundary;
+it does not isolate whether event, callback or second-read validation refused.
+Pure tests and source review cover sticky event invalidation and lifecycle changes.
+Korean editing is synthetic on KoScribe's own editor with SwiftKey selected and
+visible. Fixed sample recording briefly uses the mic but makes no API call.
+No clipboard, Send or credential action belongs to the gate. Obtain fresh phone
+availability after the exact smoke build/review; stop on the first failure.
+
+Read-free code status is `--relative-empty-insert-status` on the own service.
+It reports fixed state/reason/admission source and numeric selection categories,
+not editor text. Restore verified live3FE8BE0F in place afterward and remove only
+the owned fixture. Karrot insertion requires a subsequent separately prepared
+acceptance; this gate alone does not enable it.
+
 ## Cached selection calibration — November 6
 
 Use secure REVIEW with `-PkoscribeRelativeReadProbe=FIXTURE_SELECTION` or

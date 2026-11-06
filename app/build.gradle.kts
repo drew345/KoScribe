@@ -64,6 +64,14 @@ require(karrotNoReadProbe != "true" ||
 val reviewSurfaceProbe = providers.gradleProperty("koscribeReviewSurfaceProbe").orElse("OFF").get()
 val stableOverlayAuto = providers.gradleProperty("koscribeStableOverlayAuto").orElse("false").get()
 val relativeReadProbe = providers.gradleProperty("koscribeRelativeReadProbe").orElse("OFF").get()
+val relativeEmptyInsert = providers.gradleProperty("koscribeRelativeEmptyInsert").orElse("false").get()
+require(relativeEmptyInsert in setOf("true", "false"))
+require(relativeEmptyInsert != "true" || (startupExperimentArm == "REVIEW" &&
+    relativeReadProbe == "OFF" && reviewSurfaceProbe == "OFF" && stableOverlayAuto == "false" &&
+    listOf(visualTest, speechInput, translationInput, autoInsert, karrotServiceProbe,
+        karrotEmptyConnectionProbe, karrotNoReadProbe).all { it == "false" })) {
+    "Relative empty insertion requires secure API-free REVIEW with other experiments disabled"
+}
 require(relativeReadProbe in setOf("OFF", "FIXTURE", "KARROT", "FIXTURE_SELECTION", "KARROT_SELECTION"))
 require(relativeReadProbe == "OFF" || (startupExperimentArm == "REVIEW" &&
     reviewSurfaceProbe == "OFF" && stableOverlayAuto == "false" &&
@@ -113,6 +121,7 @@ android {
             buildConfigField("String", "REVIEW_SURFACE_PROBE", "\"$reviewSurfaceProbe\"")
             buildConfigField("boolean", "STABLE_OVERLAY_AUTO", stableOverlayAuto)
             buildConfigField("String", "RELATIVE_READ_PROBE_ARM", "\"$relativeReadProbe\"")
+            buildConfigField("boolean", "RELATIVE_EMPTY_INSERT", relativeEmptyInsert)
         }
         getByName("release") {
             buildConfigField("String", "STARTUP_EXPERIMENT_ARM", "\"OFF\"")
@@ -126,6 +135,7 @@ android {
             buildConfigField("String", "REVIEW_SURFACE_PROBE", "\"OFF\"")
             buildConfigField("boolean", "STABLE_OVERLAY_AUTO", "false")
             buildConfigField("String", "RELATIVE_READ_PROBE_ARM", "\"OFF\"")
+            buildConfigField("boolean", "RELATIVE_EMPTY_INSERT", "false")
         }
     }
 

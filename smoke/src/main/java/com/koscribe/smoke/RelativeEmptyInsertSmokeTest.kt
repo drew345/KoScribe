@@ -43,6 +43,9 @@ class RelativeEmptyInsertSmokeTest {
     private lateinit var instrumentation: Instrumentation
     private var sessionStarted = false
     private var fixtureLaunched = false
+    private var firstInsertFixture: Fixture? = null
+    private var firstInsertBaseline: SmokeEditorActivity.RelativeInsertDiagnostic? = null
+    private var firstInsertRelative: Relative? = null
 
     private data class Product(val phase: String, val experimentPhase: String,
         val confirmation: String, val proofs: Int,
@@ -134,6 +137,11 @@ class RelativeEmptyInsertSmokeTest {
             prior.word("CURRENT_POSITION") == "ORIGIN" && prior.word("UPDATES") == "0" &&
             prior.word("UNRESOLVED") == "NO")
         assertNoWrites(before, fixture)
+        instrumentation.runOnMainSync {
+            firstInsertFixture = fixture
+            firstInsertBaseline = fixture.activity.relativeInsertDiagnostic()
+        }
+        firstInsertRelative = prior
         clickOwnId("ready_insert")
         awaitConfirmed(before, fixture, prior, "INITIAL_ONLY")
         report("FRESH_INITIAL_CONFIRMED")
@@ -635,9 +643,15 @@ class RelativeEmptyInsertSmokeTest {
             "_${status?.word("CURRENT_POSITION") ?: "UNAVAILABLE"}" +
             "_${status?.word("CURRENT_COMPOSITION") ?: "UNAVAILABLE"}" +
             "_UNRESOLVED_${status?.word("UNRESOLVED") ?: "UNAVAILABLE"}" +
+            "_POSTREAD_${status?.word("LAST_POSTREAD") ?: "UNAVAILABLE"}" +
+            "_GEN_SAME_${bit(status != null && firstInsertRelative != null &&
+                status.word("GENERATION") == firstInsertRelative?.word("GENERATION"))}" +
+            "_UPDATES_DELTA_${boundedDelta(status?.word("UPDATES")?.toIntOrNull(),
+                firstInsertRelative?.word("UPDATES")?.toIntOrNull())}" +
             "_DRAFT_${product?.phase ?: "UNAVAILABLE"}" +
             "_CAPTURES_${product?.captures ?: -1}_COMMITS_${product?.commits ?: -1}" +
             "_${local}_HOOK_${hook}_FIXTURE_CALLS_${calls}" +
+            "_${runCatching { firstInsertOracle() }.getOrDefault("FIRST_ORACLE_ERROR")}" +
             "_IME_${bit(runCatching { defaultImeVisible() }.getOrDefault(false))}" +
             "_SWIFTKEY_${bit(selectedSwiftKey())}"
         instrumentation.sendStatus(2, Bundle().apply {
@@ -647,4 +661,50 @@ class RelativeEmptyInsertSmokeTest {
     }
 
     private fun bit(value: Boolean): Int = if (value) 1 else 0
+
+    private fun boundedDelta(current: Int?, before: Int?): String = when {
+        current == null || before == null -> "UNKNOWN"
+        current < before -> "NEGATIVE"
+        current == before -> "ZERO"
+        current == before + 1 -> "ONE"
+        else -> "TWO_PLUS"
+    }
+
+    private fun firstInsertOracle(): String {
+        val fixture = firstInsertFixture ?: return "FIRST_ORACLE_NOT_ARMED"
+        val before = firstInsertBaseline ?: return "FIRST_ORACLE_BASELINE_MISSING"
+        var outcome = "FIRST_ORACLE_UNAVAILABLE"
+        instrumentation.runOnMainSync {
+            val target = fixture.target
+            val current = fixture.activity.relativeInsertDiagnostic()
+            val exact = target.text.toString() == saved
+            val caret = target.selectionStart == saved.length &&
+                target.selectionEnd == saved.length
+            val sourceUnchanged = fixture.source.text.toString() == sourceText
+            val targetFocused = target.isFocused
+            val counters = if (current == null) "_DIAGNOSTIC_UNAVAILABLE" else
+                "_CONNECTION_DELTA_${boundedDelta(current.connections, before.connections)}" +
+                    "_SELECTION_DELTA_${boundedDelta(current.selectionCallbacks,
+                        before.selectionCallbacks)}" +
+                    "_SELECTION_CATEGORY_${current.selectionCategory}" +
+                    "_BATCH_BEGIN_DELTA_${boundedDelta(current.totalBegins,
+                        before.totalBegins)}" +
+                    "_BATCH_END_DELTA_${boundedDelta(current.totalEnds, before.totalEnds)}" +
+                    "_LATEST_BEGIN_DELTA_${boundedDelta(current.latestBegins,
+                        before.latestBegins)}" +
+                    "_LATEST_BEGIN_TRUE_DELTA_${boundedDelta(current.latestBeginReturnedTrue,
+                        before.latestBeginReturnedTrue)}" +
+                    "_LATEST_END_DELTA_${boundedDelta(current.latestEnds, before.latestEnds)}" +
+                    "_LATEST_END_TRUE_DELTA_${boundedDelta(current.latestEndReturnedTrue,
+                        before.latestEndReturnedTrue)}" +
+                    "_LATEST_CALL_DEPTH_${when (current.latestCallDepth) { 0 -> "ZERO"; 1 -> "ONE";
+                        else -> "TWO_PLUS" }}" +
+                    "_BEGIN_RESULT_${current.latestBeginResult}" +
+                    "_END_RESULT_${current.latestEndResult}"
+            outcome = "FIRST_EXACT_${bit(exact)}_CARET_${bit(caret)}" +
+                "_SOURCE_${bit(sourceUnchanged)}_TARGET_FOCUS_${bit(targetFocused)}" +
+                counters
+        }
+        return outcome
+    }
 }

@@ -16,10 +16,12 @@ selection and composition updates in one served generation. Implement/review a
 separate manual relative insertion path behind a default-OFF, signed-owned-fixture
 flag. Its acceptance must include the normal English/Korean review return. Preserve
 usable fresh empty composers after Korean review; do not require artificial user
-typing/deletion as the product workflow. The first owned writer test reached one
-applied commit but ended UNCERTAIN because no newer selection callback arrived.
-The remaining four tests were stopped and the normal MVP restored. Investigate
-framework/fixture callback behavior before changing confirmation. No Karrot
+typing/deletion as the product workflow. The second owned diagnostic verified
+exact saved Korean, correct caret and unchanged source after one commit. Its last
+relative read was exact, but no newer InputMethod selection callback arrived;
+confirmation stayed UNCERTAIN. Normal MVP restored. Source review found no
+intended origin-service callback suppression. Assess a separately authenticated
+selection-event proof without relaxing current selection requirements. No Karrot
 insertion has occurred. Branch: `codex/karrot-insertion`.
 
 **Owned writer candidate, November 6:** explicit secure REVIEW flag
@@ -44,8 +46,24 @@ No newer callback was observed. The success-path exact-text/caret oracle was not
 reached, so do not claim full insertion correctness. No retry; four other methods
 not run. Restored verified installed live3FE8BE0F/hash, service15975 idle/regular
 flags/SwiftKey, removed fixture by11:17:20 KST. App780f17e, harness1c1b66e.
-Next source review distinguishes framework callback behavior from a fixture issue;
-no confirmation-policy change yet. No phone test is active.
+The next diagnostic distinguishes exact readback from unchanged-empty reads and
+reports the owned result/caret plus passive selection/batch state on failure.
+No extra reads, forced callbacks, longer deadline or confirmation-policy change.
+No phone test is active.
+
+**Second owned diagnostic:** app v2 policyE987D2B3/reader26C55D02/service18C0ACAE/
+testsE6AD71C3 and smoke270F0653/fixtureFB189C54 independently cleared. All190 units
+pass; app lint0errors51warnings, smoke lint0errors6warnings, assembly passes.
+Archived app09479EE6/smoke80D4EA72 and matching config/signatures; default/release
+rebuilt/verified OFF. With fresh three-minute availability11:28:06 KST, the same
+first method failed15.637s, still one commit and terminal uncertainty. Diagnostic
+LAST_POSTREAD=EXACT; direct savedtext/caret/source checks alltrue. Native selection
+changed once, input connection unchanged, served generation unchanged, app callback
+deltaZERO. Batch calls were balanced; endBatchEdit=false alone is not a failure.
+No other method ran. Normal MVP restore waited on Android's security-check prompt;
+Andrew selected Send this time. Verified installed live3FE8BE0F, service25543 idle/
+regular flags/SwiftKey and fixture removal by11:31:52, exceeding the three-minute
+window only for the pending restoration. Phone is handed back; no new test scope.
 
 **November 6 local validation:** 168 unit tests passed; app assembly/lint passed
 (0 errors, 50 warnings), smoke assembly/lint passed (0 errors, 5 warnings).
@@ -125,7 +143,7 @@ been superseded. Keep the automatic experiments available for later investigatio
 **Installed on Andrew's A35:** the secure manual MVP with editable Korean is
 installed and verified (SHA-256
 3FE8BE0FF5AFD51908177D81F6AF652FB6EB0C34A85CD68825731E16DA3D33EA).
-The accessibility service reconnected at PID 15975 after the latest restoration. Speech and translation are
+The accessibility service reconnected at PID 25543 after the latest restoration. Speech and translation are
 on, automatic insertion is off, the draft is empty and SwiftKey is selected.
 The fixture was removed from user 0. The previous live build D266E911 is saved.
 

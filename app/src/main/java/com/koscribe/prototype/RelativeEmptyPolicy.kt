@@ -9,6 +9,7 @@ internal object RelativeEmptyPolicy {
     enum class Source { INITIAL_ONLY, CALLBACK_CURRENT_GEN }
     enum class Composition { UNKNOWN, NONE_REPORTED, COMPOSING, INVALID }
     enum class Verdict { CONFIRMED, PENDING, UNCERTAIN }
+    enum class PostRead { EXACT, UNCHANGED_EMPTY, OTHER, UNAVAILABLE }
     data class Selection(val generation: Int, val start: Int, val end: Int,
         val source: Source, val composition: Composition, val updates: Long,
         val unresolvedMutation: Boolean = false)
@@ -54,6 +55,16 @@ internal object RelativeEmptyPolicy {
 
     fun resultAllowed(result: String): Boolean = result.isNotBlank() && result.length <= 512 &&
         result.none { it == '\n' || it == '\r' }
+
+    /** Diagnostic classification only. A null-selected fallback can look EXACT while hiding a range. */
+    fun classifyPostRead(result: String, sample: Sample?): PostRead = when {
+        sample == null -> PostRead.UNAVAILABLE
+        sample.offset != -1 || sample.start < 0 || sample.start != sample.end ||
+            sample.end > sample.text.length -> PostRead.OTHER
+        sample.text == result && sample.start == result.length -> PostRead.EXACT
+        empty(sample) -> PostRead.UNCHANGED_EMPTY
+        else -> PostRead.OTHER
+    }
 
     class Attempt(val selection: Selection, val result: String, val started: Long) {
         val id: String = UUID.randomUUID().toString()

@@ -36,6 +36,10 @@ internal class RelativeEmptyInsert(
         val proof: RelativeEmptyPolicy.Attempt)
     @Volatile private var outcome = "STATE=IDLE REASON=NONE ORIGIN=NONE"
     @Volatile private var reads = 0
+    @Volatile private var lastPostRead: RelativeEmptyPolicy.PostRead? = null
+    fun recordPostRead(result: String, sample: RelativeEmptyPolicy.Sample?) {
+        lastPostRead = RelativeEmptyPolicy.classifyPostRead(result, sample)
+    }
     fun record(state: String, reason: String, frame: Frame? = null) {
         outcome = "STATE=$state REASON=$reason ORIGIN=${frame?.proof?.admissionSource ?: "NONE"}"
     }
@@ -52,7 +56,8 @@ internal class RelativeEmptyInsert(
             " READS=$reads CURRENT_SOURCE=${latest?.source ?: "NONE"} CURRENT_SHAPE=$shape" +
             " CURRENT_POSITION=$position CURRENT_COMPOSITION=${latest?.composition ?: "UNKNOWN"}" +
             " GENERATION=${latest?.generation ?: -1} UPDATES=${latest?.updates ?: 0}" +
-            " UNRESOLVED=${if (latest?.unresolvedMutation == true) "YES" else "NO"} SCOPE=SIGNED_FIXTURE_ONLY"
+            " UNRESOLVED=${if (latest?.unresolvedMutation == true) "YES" else "NO"}" +
+            " LAST_POSTREAD=${lastPostRead ?: "NONE"} SCOPE=SIGNED_FIXTURE_ONLY"
     }
     private fun ready(): Boolean = RelativeEmptyInsertMode.enabled &&
         Process.myUserHandle() == UserHandle.getUserHandleForUid(Process.ROOT_UID) &&
@@ -67,6 +72,7 @@ internal class RelativeEmptyInsert(
     }.singleOrNull()?.takeIf { it.displayId == Display.DEFAULT_DISPLAY }
 
     fun capture(result: String): Frame? {
+        lastPostRead = null
         return runCatching { captureFrame(result) }.getOrElse {
             record("REFUSED", "METADATA_UNAVAILABLE")
             null

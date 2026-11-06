@@ -61,6 +61,21 @@ not editor text. Restore verified live3FE8BE0F in place afterward and remove onl
 the owned fixture. Karrot insertion requires a subsequent separately prepared
 acceptance; this gate alone does not enable it.
 
+Observation-only v2 preserves the same method and insertion policy. Archived
+`relative-empty-fixture-v2.apk` SHA-256
+`09479EE67D126C31F64D19299298C68DA91F5491829D6AA8C1AE54C191EB09B6` and
+`smoke-relative-empty-v2.apk` SHA-256
+`80D4EA72BE5141342BA93090BA1AB1DE0D4204FBF04096C1329C0A176FFF06CE` have matching
+signers. App sourcesE987D2B3/26C55D02/18C0ACAE/E6AD71C3, harness270F0653 and
+fixtureFB189C54 independently cleared;190 units/assembly/lint passed.
+LAST_POSTREAD classifies the last existing sample, with no extra read. Only the
+first method captures passive baselines and reports fixed saved-text/caret/source
+booleans plus selection/connection/batch deltas on failure. CALL_DEPTH describes
+wrapper calls, not Android internal nesting; endBatchEdit=false is not rejection.
+There is no isActive/checkFocus diagnostic or forced updateSelection. The first
+v2 method has run and its confirmation gate failed; see DEVICE_TESTS. Do not run
+additional cases or treat those diagnostic facts as new write authority.
+
 ## Cached selection calibration — November 6
 
 Use secure REVIEW with `-PkoscribeRelativeReadProbe=FIXTURE_SELECTION` or

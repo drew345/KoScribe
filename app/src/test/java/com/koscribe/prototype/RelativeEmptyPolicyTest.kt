@@ -13,6 +13,27 @@ class RelativeEmptyPolicyTest {
     private fun delivered(e: RelativeEmptyPolicy.Evidence, start: Int = saved.length, end: Int = start,
         candidateStart: Int = -1, candidateEnd: Int = -1) = e.update(1, start, end, candidateStart, candidateEnd)
 
+    @Test fun postReadDiagnosticDistinguishesObservedShapesWithoutGrantingConfirmation() {
+        assertEquals(RelativeEmptyPolicy.PostRead.UNAVAILABLE, RelativeEmptyPolicy.classifyPostRead(saved, null))
+        assertEquals(RelativeEmptyPolicy.PostRead.UNCHANGED_EMPTY, RelativeEmptyPolicy.classifyPostRead(saved, empty))
+        assertEquals(RelativeEmptyPolicy.PostRead.EXACT, RelativeEmptyPolicy.classifyPostRead(saved, exact()))
+        assertEquals(RelativeEmptyPolicy.PostRead.EXACT, RelativeEmptyPolicy.classifyPostRead(saved, exact(true)))
+        for (other in listOf(exact().copy(text = saved + "X"), exact().copy(start = 0, end = 0),
+            exact().copy(offset = -2), empty.copy(composing = true)))
+            assertEquals(RelativeEmptyPolicy.PostRead.OTHER, RelativeEmptyPolicy.classifyPostRead(saved, other))
+
+        // Actual saved+X with X selected can yield this same apparent exact sample when
+        // getSelectedText returns null. Classification must not replace independent selection proof.
+        val e = evidence()
+        val proof = attempt(e)
+        assertTrue(proof.reserve(e.current(), empty, 102))
+        val misleadingFallback = RelativeEmptyPolicy.Sample(saved, -1, saved.length, saved.length, false)
+        assertEquals(RelativeEmptyPolicy.PostRead.EXACT, RelativeEmptyPolicy.classifyPostRead(saved, misleadingFallback))
+        assertEquals(RelativeEmptyPolicy.Verdict.PENDING, proof.verdict(e.current(), misleadingFallback, 103))
+        delivered(e, saved.length, saved.length + 1)
+        assertEquals(RelativeEmptyPolicy.Verdict.UNCERTAIN, proof.verdict(e.current(), misleadingFallback, 104))
+    }
+
     @Test fun untouchedFreshInitialEmptyNeedsTwoReadsThenANewerCallbackAndExactSavedPayload() {
         val e = evidence()
         val initial = e.current()!!

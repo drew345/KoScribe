@@ -38,6 +38,46 @@ cleanupfalse, SwiftKey. Removed only fixture from user0. Complete by11:17:20 KST
 Next read-only source review must distinguish Android callback behavior from
 fixture validity before changing confirmation or planning another device gate.
 
+Second diagnostic used observation-only v2 app09479EE6 and smoke80D4EA72. Reviewed
+app policyE987D2B3/reader26C55D02/service18C0ACAE/testsE6AD71C3, smoke270F0653/
+fixtureFB189C54. All190 unit tests pass; assembly and app/smoke lint pass with
+0errors51/6warnings. No extra content reads, callback injection, longer deadline,
+write-policy change or automatic retry was added.
+
+Fresh three-minute availability began11:28:06 KST. The same exact first method/
+sole flag failed15.637s, again UNCERTAIN/RELATIVE_POSTCONTEXT_TIMEOUT, reads7,
+admission/currentINITIAL_ONLY, currentcompositionUNKNOWN, unresolvedYES and one
+product capture/commit. Added fixed-code evidence:
+
+| Observation | Result |
+| --- | --- |
+| Last existing postread | EXACT |
+| Direct saved Korean / collapsed expected caret / source text unchanged | true / true / true |
+| Served generation unchanged / app selection callback delta | true / ZERO |
+| Native target selection callback delta/category | ONE / NONZERO |
+| Input connection creation delta | ZERO |
+| Wrapper begin/end call deltas | TWO_PLUS / TWO_PLUS |
+| Latest wrapper call depth | ZERO |
+| Last begin/end return values | YES / NO |
+| Latest end returned-true delta | ZERO |
+| Target focused / IME visible / SwiftKey selected | true / true / true |
+| Fixture delegated commit calls / true returns | 1 / 1 |
+
+The owned oracle now proves exact saved text, caret and source preservation in
+this run. The app lacked its required independent newer selection callback, so
+this remains a failed confirmation gate. LAST_POSTREAD describes the last existing
+sample, not every poll. Wrapper call depth is call accounting, not TextView's
+internal nesting; endBatchEdit returning false does not prove rejection. The
+connection did not change, so these deltas refer to the same wrapper.
+
+Stopped after that method; no other case or Karrot action. Own cleanup completed.
+Restoration blocked on Android's app-security-check prompt, confirmed by Andrew.
+He chose Send this time. Verified installed full live3FE8BE0F hash, service25543
+idle/regular flags/SwiftKey and fixture removal by11:31:52 KST. The three-minute
+window was exceeded only while completing that already-pending restoration.
+No API/clipboard/Send/credential action. Further work is source-only pending a
+reviewed next candidate and fresh availability.
+
 ## Karrot relative-read fixture — November 6
 
 Andrew confirmed the A35 unlocked and free for five minutes. At 09:54 KST,

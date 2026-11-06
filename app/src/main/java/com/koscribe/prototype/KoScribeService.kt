@@ -5492,6 +5492,8 @@ class KoScribeService : AccessibilityService() {
         if (!sameFreshHost(transaction)) return finishUncertain(transaction, "HOST_CHANGED")
         transaction.relative?.let { frame ->
             val observed = relativeEmptyInsert.read(frame, frame.proof.result.length + 1, 1, precommit = false)
+            if (freshDestination === transaction)
+                relativeEmptyInsert.recordPostRead(frame.proof.result, observed)
             if (!sameFreshHost(transaction)) return finishUncertain(transaction, "HOST_CHANGED")
             when (frame.proof.verdict(relativeEmptyEvidence.current(), observed, SystemClock.uptimeMillis())) {
                 RelativeEmptyPolicy.Verdict.CONFIRMED -> {

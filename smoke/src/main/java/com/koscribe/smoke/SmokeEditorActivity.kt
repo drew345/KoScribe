@@ -83,6 +83,14 @@ class SmokeEditorActivity : Activity() {
         (relativeReadEditor() as? RelativeReadEditor)?.armFirstReadMutation() == true
     fun relativeInsertFirstReadMutationState(): String =
         (relativeReadEditor() as? RelativeReadEditor)?.firstReadMutationState() ?: "UNAVAILABLE"
+    data class RelativeInsertDiagnostic(val connections: Int, val selectionCallbacks: Int,
+        val selectionCategory: String, val totalBegins: Int, val totalEnds: Int,
+        val latestBegins: Int, val latestBeginReturnedTrue: Int, val latestEnds: Int,
+        val latestEndReturnedTrue: Int, val latestCallDepth: Int, val latestBeginResult: String,
+        val latestEndResult: String)
+    fun relativeInsertDiagnostic(): RelativeInsertDiagnostic? =
+        (relativeReadEditor() as? RelativeReadEditor)?.takeIf { it.observeCommits }
+            ?.diagnostic()
     /** Immutable fixture-only draft ownership for this view's entire lifetime. */
     fun stableAutoDraftToken(): Any? =
         (stableAutoEditor() as? StableAutoEditor)?.logicalDraft
@@ -397,6 +405,29 @@ class SmokeEditorActivity : Activity() {
 /** Test-only served editor with deliberately incomplete public destination metadata. */
 private class RelativeReadEditor(context: Context, val observeCommits: Boolean,
     val acknowledgeWithoutChange: Boolean) : EditText(context) {
+    private class BatchCounters {
+        var begins = 0
+        var beginReturnedTrue = 0
+        var ends = 0
+        var endReturnedTrue = 0
+        var callDepth = 0
+        var lastBegin = "NONE"
+        var lastEnd = "NONE"
+    }
+    private val diagnosticLock = Any()
+    private var connectionCreates = 0
+    private var selectionCallbacks = 0
+    private var selectionCategory = "NONE"
+    private var totalBegins = 0
+    private var totalEnds = 0
+    private var latestBatch: BatchCounters? = null
+    fun diagnostic(): SmokeEditorActivity.RelativeInsertDiagnostic = synchronized(diagnosticLock) {
+        val batch = latestBatch
+        SmokeEditorActivity.RelativeInsertDiagnostic(connectionCreates, selectionCallbacks,
+            selectionCategory, totalBegins, totalEnds, batch?.begins ?: 0,
+            batch?.beginReturnedTrue ?: 0, batch?.ends ?: 0, batch?.endReturnedTrue ?: 0,
+            batch?.callDepth ?: 0, batch?.lastBegin ?: "NONE", batch?.lastEnd ?: "NONE")
+    }
     @Volatile var commitCallCount = 0
         private set
     @Volatile var appliedCommitCount = 0
@@ -447,9 +478,52 @@ private class RelativeReadEditor(context: Context, val observeCommits: Boolean,
         info.viewIdResourceName = null
     }
 
+    override fun onSelectionChanged(selStart: Int, selEnd: Int) {
+        super.onSelectionChanged(selStart, selEnd)
+        if (!observeCommits) return
+        synchronized(diagnosticLock) {
+            selectionCallbacks++
+            selectionCategory = when {
+                selStart < 0 || selEnd < 0 -> "INVALID"
+                selStart != selEnd -> "SELECTED"
+                selStart == 0 -> "ORIGIN"
+                else -> "NONZERO"
+            }
+        }
+    }
+
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection? {
         val delegate = super.onCreateInputConnection(outAttrs) ?: return null
+        val batch = BatchCounters()
+        if (observeCommits) synchronized(diagnosticLock) {
+            connectionCreates++
+            latestBatch = batch
+        }
         return object : InputConnectionWrapper(delegate, true) {
+            override fun beginBatchEdit(): Boolean {
+                val accepted = delegate.beginBatchEdit()
+                if (observeCommits) synchronized(diagnosticLock) {
+                    totalBegins++
+                    batch.begins++
+                    batch.callDepth++
+                    if (accepted) batch.beginReturnedTrue++
+                    batch.lastBegin = if (accepted) "YES" else "NO"
+                }
+                return accepted
+            }
+
+            override fun endBatchEdit(): Boolean {
+                val accepted = delegate.endBatchEdit()
+                if (observeCommits) synchronized(diagnosticLock) {
+                    totalEnds++
+                    batch.ends++
+                    if (batch.callDepth > 0) batch.callDepth--
+                    if (accepted) batch.endReturnedTrue++
+                    batch.lastEnd = if (accepted) "YES" else "NO"
+                }
+                return accepted
+            }
+
             // An unsupported selected-text read is possible even with a real selected range.
             override fun getSelectedText(flags: Int): CharSequence? = null
 

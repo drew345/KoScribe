@@ -128,6 +128,23 @@
   No retry or other four cases. Restored and verified installed live3FE8BE0F/hash,
   idle service15975/regular flags/SwiftKey, removed fixture by11:17:20. Read-only
   framework, fixture and confirmation-premise reviews started before any change.
+- Source review found Android intends changed-selection delivery to all a11y
+  sessions, but runtime omission cause remains unknown. Exact relative text alone
+  can hide an extra selected suffix, so confirmation was not weakened. Added only
+  existing-read classification and passive fixture failure diagnostics. Removed
+  isActive because it calls checkFocus; batch returnfalse is not labeled failure.
+  Astra cleared appE987D2B3/26C55D02/18C0ACAE/E6AD71C3, smoke270F0653/fixtureFB189C54.
+  All190 units, assembly and app/smoke lint0errors51/6warnings passed. Archived
+  v2 app09479EE6/smoke80D4EA72; ordinary debug/release rebuilt and verified OFF.
+- Fresh three-minute window11:28:06: first method again failed15.637s, but now
+  LAST_POSTREAD=EXACT and direct savedtext/caret/source checks alltrue. One commit;
+  native selection deltaONE, connection deltaZERO, same served generation, app
+  callback deltaZERO. Wrapper batch calls balanced; terminal uncertainty/no retry.
+  No other case. Restoration waited on confirmed security-check prompt; Andrew
+  chose Send this time. Installed live3FE8BE0F/hash, idle service25543/normal flags/
+  SwiftKey and fixture removal verified by11:31:52. The restore exceeded the
+  three-minute window due to the prompt; no further test ran. Next read-only
+  review assesses a bound selection-event alternative before implementation.
 
 ## 2026-10-31 — Design review site revised from Andrew's feedback
 

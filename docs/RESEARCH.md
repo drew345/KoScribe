@@ -652,6 +652,32 @@ hidden selection, stale initial, nonempty/composing, restart/target and uncertai
 commit negatives. Only a separately reviewed and prepared Karrot acceptance can
 follow this gate. The user's ordinary MVP remains installed during development.
 
+**First owned writer result:** one delegated commit returned true and the target
+became nonempty, but no newer selection callback was observed. Confirmation timed
+out and stayed terminal; the final exact-text/caret oracle was not reached.
+See DEVICE_TESTS. This does not justify removing independent selection evidence.
+For example, an actual field containing `savedResult + X` with `X` selected can
+return before=`savedResult`, selected=null and after=empty. The default-like
+fallback then looks exactly like savedResult with a collapsed relative caret,
+while concealing extra selected text. Repeating that read does not resolve it.
+
+Android16's [accessibility commitText contract](https://github.com/aosp-mirror/platform_frameworks_base/blob/android16-release/core/java/android/accessibilityservice/InputMethod.java#L195-L202)
+describes an onUpdateSelection notification after batch completion. The
+[remote accessibility commit](https://github.com/aosp-mirror/platform_frameworks_base/blob/android16-release/core/java/android/view/inputmethod/RemoteInputConnectionImpl.java#L1194-L1209)
+wraps finishComposingText/commitText in begin/endBatchEdit.
+[InputMethodManager.updateSelection](https://github.com/aosp-mirror/platform_frameworks_base/blob/android16-release/core/java/android/view/inputmethod/InputMethodManager.java#L3794-L3827)
+broadcasts changed selection to accessibility sessions without excluding the
+originating service. [Editor selection reporting](https://github.com/aosp-mirror/platform_frameworks_base/blob/android16-release/core/java/android/widget/Editor.java#L1907-L1925)
+and IMM have served-input, pending-invalidation and change-reporting gates.
+These are possible paths to investigate, not measured causes on the A35. Source
+review found no obvious notification suppression in the owned wrapper.
+
+Next change is observability only: classify each already-performed postread as
+exact/unchanged-empty/other, retain callback counts and report fixed failure-oracle
+booleans for the owned saved text/caret/source, together with passive selection,
+batch and input-connection observations. No additional content calls, forced
+callbacks, extended deadlines or weaker confirmation are authorized by this result.
+
 ## Automatic flow and compatibility review — 2026-11-04
 
 **Decision:** Andrew reopened both issues; the selected first goal is automatic

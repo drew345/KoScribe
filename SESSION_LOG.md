@@ -84,6 +84,28 @@
   Ordinary debug/release rebuilt/verified OFF. Asked fresh ten-minute availability
   for owned gate then user-operated ABCD/select/delete metadata snapshots. No
   content-read command, writer or new phone action in this preparation.
+- Fresh ten-minute window10:42:35: owned cached-selection test passed3.662s with
+  samegen2, starts1/finishes0/restarts0 and callbackcounts0/2/4/5. Karrot user
+  ABCD/select/delete stages then reported samegen4, starts2/finishes0/restarts1:
+  initial0→typed6(COMPOSING, CARET4)→selected7(NONE_REPORTED,RANGE_0_4)→cleared8
+  (NONE_REPORTED,ZERO). Every changed stage was a live callback. Older age/later
+  signal categories remain explicit. All effects0 and content reads disabled.
+  Restored verified live3FE8BE0F, idle service28758/regular flags/SwiftKey, removed
+  fixture by10:50:47. User confirmed sample deletion. No text/key inspection.
+- Checkpointed implementation/earlier evidence as c1009f3 after secret/path scan;
+  removed one trailing space from smoke source (A22A6D39→0C4D445B), confirmed no
+  semantic diff; the installed test APK remained the reviewed1ED459AC artifact.
+  Next: review a useful empty-relative manual insertion design, including normal
+  post-review input restarts, before owned write implementation. Do not require
+  artificial typing/deletion merely to obtain a callback or claim goal success.
+- App-owner and independent reviews accepted a signed-owned-fixture-only empty
+  relative writer design. Retain separate initial-only and current-callback
+  evidence, explicit unknown composition/offset, fresh reads and session identity.
+  Implement through the manual single-attempt lifecycle without weakening the
+  generic absolute guard. Required positive is normal English/Korean review and
+  saved-result insertion into a fresh empty field without type/delete. App and
+  smoke implementation started; no build/device/write result yet. Full rationale
+  and negative gate are in RESEARCH. Normal live MVP remains restored.
 
 ## 2026-10-31 — Design review site revised from Andrew's feedback
 

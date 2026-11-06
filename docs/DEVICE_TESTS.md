@@ -78,6 +78,59 @@ fixture from user0 by10:30:24 KST. No API, mic, clipboard, insertion, Send,
 screenshots or credential actions. User-operated fixed-sample selection
 calibration is a separate upcoming reviewed scope.
 
+## Cached selection calibration — November 6
+
+Reviewed sources: cache3A3A6CC2/testsFFB584D6/probeA3295272/serviceDAB2B763/
+Gradle6FD7E067 and smokeA22A6D39. All176 units pass, app lint0errors50warnings,
+smoke lint0errors5warnings; signed archived arms CAAB09CD (FIXTURE_SELECTION),
+7A96B1C4 (KARROT_SELECTION), smoke1ED459AC. The current committed smoke source
+0C4D445B differs only by removal of one trailing space, verified with `git diff -w`.
+Default/release OFF. These arms disable content reads before token allocation;
+status reads only cached numeric callback classifications and a local clock.
+
+Andrew provided ten-minute availability at10:42:35 KST. The exact owned
+`RelativeSelectionSmokeTest#currentGenerationSelectionCallbacksTrackOwnedChangesWithoutContentRead`
+with sole `relativeSelectionReady=true` passed3.662s on service23300. All stages
+stayed generation2, starts1, finishes0, restarts0:
+
+| Owned stage | Source | Shape/pair | Composition | Callback count | Signal order |
+| --- | --- | --- | --- | --- | --- |
+| Initial | INITIAL_ONLY | COLLAPSED/ZERO | UNKNOWN | 0 | NONE |
+| Typed | CALLBACK_CURRENT_GEN | COLLAPSED/CARET4 | COMPOSING | 2 | BEFORE_SAMPLE |
+| Selected | CALLBACK_CURRENT_GEN | SELECTED/RANGE_0_4 | NONE_REPORTED | 4 | BEFORE_SAMPLE |
+| Cleared | CALLBACK_CURRENT_GEN | COLLAPSED/ZERO | NONE_REPORTED | 5 | BEFORE_SAMPLE |
+
+The fixture used ordinary Editable changes and selection; it did not inject
+callbacks or claim physical typing. Direct owned oracle and unchanged effect
+counters passed. Installed KARROT_SELECTION7A96B1C4, service24978. One standalone
+status call timed out during reconnect; after Andrew prepared the composer,
+cached status responded normally. No content request was made.
+
+Andrew separately confirmed each real Karrot stage. All snapshots stayed
+generation4, starts2, finishes0, restarts1/LAST_START=RESTART; the restart already
+preceded the empty baseline. Counts below are both per-generation and total:
+
+| Karrot user stage | Source | Shape/position/pair | Composition | Callbacks | Signals / last |
+| --- | --- | --- | --- | --- | --- |
+| Empty,10:45:00 | INITIAL_ONLY | COLLAPSED/ORIGIN/ZERO | UNKNOWN | 0 | 186 / CONTENT |
+| Typed ABCD,10:47:33 | CALLBACK_CURRENT_GEN | COLLAPSED/NONZERO/CARET4 | COMPOSING | 6 | 206 / SELECTION |
+| Selected all four | CALLBACK_CURRENT_GEN | SELECTED/RANGE/RANGE_0_4 | NONE_REPORTED | 7 | 224 / CONTENT |
+| Deleted to empty,10:48:39 | CALLBACK_CURRENT_GEN | COLLAPSED/ORIGIN/ZERO | NONE_REPORTED | 8 | 232 / CONTENT |
+
+All Karrot snapshots had SAMPLE_AGE=OLDER and SIGNAL_ORDER=AFTER_SAMPLE;
+user reply/observation delays and later delivered events remain explicit. Target
+CONTENT signals are package-scoped, not proof of a particular field mutation.
+CARET4/RANGE_0_4 classify supplied coordinates only, not remotely observed text
+length. Independent user reports supplied the fixed-sample oracle.
+
+Every snapshot CONTENT_READ=DISABLED/ELIGIBLE=NEVER, countersOK. Final product
+effect counters0, draftNONE/cleanupfalse. This proves useful delivered selection
+and composition updates in this tested Karrot session; it does not prove general
+remote freshness, post-review initial selection accuracy, or write/readback.
+Restored verified installed live3FE8BE0F, service28758 idle/ordinary flags and
+SwiftKey, removed only fixture by10:50:47 KST. Andrew confirmed sample deletion.
+No text/credential inspection, Insert, Copy, Send, microphone or API operation.
+
 ## 2026-11-04 — Final sleep checkpoint: focus-loss accepted, poll root missing
 
 Source service39EC2A5DFD48D2C88783007F096302034CCF8C0EFFFAD2AB9C550290C8C1F4A3,

@@ -81,6 +81,13 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    alternative needs relative caret/context and postcommit evidence; no Karrot
    write trial has been authorized.
 
+   November6 read and callback calibrations passed their owned gates, and the
+   user-operated Karrot sequence exposed distinct current selection/composition
+   callbacks. A separate default-OFF empty-relative manual writer is now being
+   implemented for the signed owned fixture. Require ordinary review-return
+   insertion without artificial typing/deletion. Karrot writes and nonempty
+   relative insertion remain unaccepted; see PROGRESS and RESEARCH.
+
    On 2026-10-28 Andrew reported that KoScribe would not paste text into
    Instagram comments, while Instagram DMs work. On October 29 he clarified
    that the floating Insert first refused destination verification, then worked

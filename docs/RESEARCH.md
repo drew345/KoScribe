@@ -615,6 +615,43 @@ postcommit behavior in owned fixtures before a separately prepared Karrot trial.
 No original-intent/automatic-review continuity machinery is needed for the
 explicit manual tap.
 
+**Measured November 6 evidence:** all three owned read cases passed. The selected
+case demonstrated the hidden-selection ambiguity. Karrot's single empty read
+returned offsetUNKNOWN, relativeCOLLAPSED, independent INITIAL_ONLY/COLLAPSED,
+compositionUNKNOWN and styleUNSTYLED. A subsequent content-read-disabled
+calibration observed live callbacks through user typing, selecting and deleting
+ABCD in one served generation. Selection changed from CARET4 to RANGE_0_4 to
+ZERO; composition changed from COMPOSING to NONE_REPORTED. These callbacks
+support further implementation, not a Karrot write claim. Exact results and
+restoration are in [DEVICE_TESTS](DEVICE_TESTS.md#cached-selection-calibration--november-6).
+
+**Reviewed design decision:** implement the first manual empty-relative writer
+only for the signed owned fixture, default/release OFF. A distinct proof may use
+either current-generation collapsed-zero callback evidence with NONE_REPORTED
+composition, or current input-start selection0/0 corroborated by two fresh empty
+relative reads and no unresolved relevant text/selection contradiction. Android
+requires initial selection to reflect the cursor when input starts, including
+when editing begins again in the same field. This is a source contract, not proof
+of every editor's compliance. [EditorInfo initial selection](https://developer.android.com/reference/android/view/inputmethod/EditorInfo#initialSelStart)
+
+The initial-only branch retains compositionUNKNOWN and relies explicitly on the
+scoped empty-editor contract; it must not relabel an unstyled response as clear
+composition. Positive composing evidence refuses. Stable served generation,
+EditorInfo, application window/root/container and result host remain required.
+Age and broad package-level CONTENT notifications alone do not establish a field
+mutation; the diagnostic's AFTER_SAMPLE is delivered ordering. Relevant changes
+and transaction lifecycle interruptions remain terminal. No fabricated absolute
+offset, editable node property or diagnostic-derived write authority is allowed.
+
+Reuse the manual canonical result and attempt lifecycle, with reservation and
+markAttempted before the sole commitText call. Verify the exact same-session
+relative payload and collapsed caret afterward; ambiguous results remain terminal.
+Owned acceptance must include a fresh initial-only empty field after real review
+and saved Korean editing, without artificial typing/deletion, plus callback-empty,
+hidden selection, stale initial, nonempty/composing, restart/target and uncertain
+commit negatives. Only a separately reviewed and prepared Karrot acceptance can
+follow this gate. The user's ordinary MVP remains installed during development.
+
 ## Automatic flow and compatibility review — 2026-11-04
 
 **Decision:** Andrew reopened both issues; the selected first goal is automatic

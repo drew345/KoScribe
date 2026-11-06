@@ -9,13 +9,16 @@ after tapping that field again. OpenAI dot is low priority. The installed
 editable-Korean MVP is the starting point. Automatic-after-English remains
 deferred.
 
-**Current work:** all three relative-read fixtures passed, followed by the single
-empty-Karrot read. Karrot returned EMPTY/UNKNOWN offset/relative COLLAPSED, but
-independent selection remained INITIAL_ONLY/OLDER with LATER_SIGNAL and UNKNOWN
-composition. No insertion eligibility follows. Implement and review a separate
-metadata-only calibration, with content reads disabled, to measure live selection
-callbacks while a fixed sample is typed, selected and deleted. A write adapter
-follows only if evidence supports it. Branch: `codex/karrot-insertion`.
+**Current work:** both the relative-read and cached-selection calibrations passed
+their owned gates. Karrot's empty read had only initial selection metadata;
+the subsequent user-operated ABCD/select/delete sequence proved distinct live
+selection and composition updates in one served generation. Implement/review a
+separate manual relative insertion path behind a default-OFF, signed-owned-fixture
+flag. Its acceptance must include the normal English/Korean review return. Preserve
+usable fresh empty composers after Korean review; do not require artificial user
+typing/deletion as the product workflow. Writer implementation is underway;
+no new insertion candidate has been built or phone-tested. No Karrot insertion
+has occurred. Branch: `codex/karrot-insertion`.
 
 **November 6 local validation:** 168 unit tests passed; app assembly/lint passed
 (0 errors, 50 warnings), smoke assembly/lint passed (0 errors, 5 warnings).
@@ -69,8 +72,19 @@ cache3A3A6CC2/testsFFB584D6/probeA3295272/serviceDAB2B763/Gradle6FD7E067;
 smokeA22A6D39. Saved under ignored `app/build/relative-selection-20261106/`:
 FIXTURE_SELECTION CAAB09CD, KARROT_SELECTION 7A96B1C4, smoke1ED459AC, with
 matching signatures/configs. Ordinary debug/release rebuilt and verified OFF.
-Await fresh availability for one owned callback-transition test, then user-operated
-Karrot ABCD/select/delete stages if it passes. No additional content read is planned.
+**Cached-selection phone result:** fresh ten-minute availability began10:42:35.
+Owned calibration passed3.662s: one generation2, start1/finish0/restart0,
+callbacks0→2→4→5 for initial/typed/selected/cleared. Actual Karrot calibration
+service24978 stayed generation4, starts2/finishes0/restarts1 throughout:
+initial ZERO/UNKNOWN composition/callbacks0; typed CARET4/COMPOSING/callbacks6;
+selected RANGE_0_4/NONE_REPORTED/callbacks7; cleared ZERO/NONE_REPORTED/callbacks8.
+Changed stages were CALLBACK_CURRENT_GEN. All snapshots retained older age and
+later delivered signals; these are not remote-freshness guarantees. Every effect
+counter0, CONTENT_READ=DISABLED. Restored installed live3FE8BE0F/hash, idle
+service28758/regular flags/SwiftKey, fixture removed by10:50:47 KST. No text read,
+Insert, Copy, Send, microphone or API action. User confirmed sample deletion.
+Checkpoint `c1009f3`; compiled smokeA22A6D39 has a whitespace-only cleanup in Git
+(0C4D445B), verified by whitespace-insensitive diff before commit.
 Exact protocol: [INSTRUMENTATION](docs/INSTRUMENTATION.md#karrot-relative-read-diagnostic--november-6).
 
 **Current product direction:** Andrew proposed returning to the working manual
@@ -84,7 +98,7 @@ been superseded. Keep the automatic experiments available for later investigatio
 **Installed on Andrew's A35:** the secure manual MVP with editable Korean is
 installed and verified (SHA-256
 3FE8BE0FF5AFD51908177D81F6AF652FB6EB0C34A85CD68825731E16DA3D33EA).
-The accessibility service reconnected at PID 9329 after the latest restoration. Speech and translation are
+The accessibility service reconnected at PID 28758 after the latest restoration. Speech and translation are
 on, automatic insertion is off, the draft is empty and SwiftKey is selected.
 The fixture was removed from user 0. The previous live build D266E911 is saved.
 

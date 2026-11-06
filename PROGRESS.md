@@ -29,16 +29,12 @@ writer/mic/API/credential/clipboard effects and always reports ELIGIBLE=NEVER.
 Ordinary local debug and release configs were rebuilt and verified OFF/allfalse,
 including the new probe flag.
 
-**Current priority within the goal:** Andrew reports 반말 bypasses translation
-and returns English, while 요 shows translation and works. Investigate this
-before further compatibility phone work. Two independent source traces found
-CASUAL preserved from selection through speech review/TRANSLATING and its
-distinct 반말 request. Existing tests cover that route; no source defect has
-been reproduced and no speculative app change was made. Await the user's actual
-review-button label: `Confirm English` versus `Confirm & translate`. Existing
-code-only selected-mode events and request counters can distinguish dispatch
-from an English model response without inspecting text. The original trace was
-lost on the service restore; current baseline has no new translation requests.
+**반말 report resolved for current work:** Andrew now confirms it works and
+asked to return to Karrot. On the restored live MVP, code-only diagnostics show
+CASUAL selections and translation requests/success/errors/cancels2/2/0/0.
+No text/key was inspected. Two source reviews found both Korean modes routed
+through translation; no app change was made. The cause of the earlier report
+remains unknown, with possible confusion around English review noted by Andrew.
 
 **November 6 phone result:** after fresh five-minute availability, the first
 owned empty case stopped in 2.061s: INTERRUPTED/WINDOW_STATE_CHANGED,
@@ -48,6 +44,9 @@ service PID25058/idle/regular flags and SwiftKey; removed only the fixture.
 Harness932DBB1B is independently cleared and built with bounded setup settling
 and sanitized terminal details; saved smokev2 SHA90995B07, lint0errors5warnings.
 It retains one trigger and every product interruption guard. Not phone-tested.
+Andrew requested about ten minutes before another phone window and will announce
+availability. Do not infer readiness when that time elapses. Local source review
+mapped a separate relative proof into the existing manual transaction; see RESEARCH.
 After all three owned cases pass, have Andrew prepare an empty Karrot composer
 for one deliberate read. Diagnostic results do not grant writer eligibility.
 Exact protocol: [INSTRUMENTATION](docs/INSTRUMENTATION.md#karrot-relative-read-diagnostic--november-6).

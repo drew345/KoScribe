@@ -589,6 +589,32 @@ Prepare a separate hard no-write diagnostic and owned fixtures for this
 distinction. Preserve the existing manual writer until an alternative observer
 can prove its destination, collapsed selection, preservation and exact outcome.
 
+**Source review, proposed integration:** the manual
+`insertDraft` → `commitFreshDestination` → `verifyFreshCommit` sequence already
+owns the explicit tap, canonical saved result, host/session lifetime, queued-event
+yield, one consumed commit and terminal uncertainty. Preserve those responsibilities.
+If the measurements support an adapter, use a distinct relative proof and expected
+splice/caret comparison. Keep `EditorSnapshot`, `SessionGuard` and absolute
+`CommitConfirmation` semantics unchanged; never fill an unknown offset with zero.
+`FreshDestination`, `sameFreshTarget`, unchanged-result polling and cleanup also
+assume absolute snapshots, so replacing only `observeEditor` would be incomplete.
+
+The current `resetFreshComposition` clears callback evidence immediately before
+capture, and ordinary REVIEW selection/composition tracking retains updates only
+during a destination transaction. A relative route needs separate numeric input
+history per served generation, reset on finish/restart, with source/age/signals
+preserved. This does not authorize idle text reads. An empty, relatively collapsed
+snippet cannot by itself defeat the unavailable-selected-text ambiguity; initial
+selection, stale/unknown evidence and independent live selection remain distinct.
+The diagnostic policy must remain `ELIGIBLE=NEVER`.
+
+App-owner and independent reviews agree on this seam. It is an implementation
+dependency map, not adapter approval. First obtain usable Karrot selection and
+composition evidence. Then validate changed selection/context and exact relative
+postcommit behavior in owned fixtures before a separately prepared Karrot trial.
+No original-intent/automatic-review continuity machinery is needed for the
+explicit manual tap.
+
 ## Automatic flow and compatibility review — 2026-11-04
 
 **Decision:** Andrew reopened both issues; the selected first goal is automatic

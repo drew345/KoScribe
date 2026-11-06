@@ -44,6 +44,16 @@
   unchanged-effect assertions even on failure. Smoke assembly/lint passed
   (0errors5warnings); archived smoke-relative-read-v2.apk SHA90995B07. No second
   phone run. The five-minute window ended with the normal MVP already restored.
+- Andrew subsequently confirmed 반말 works and requested resuming Karrot.
+  Non-interacting code-only status on service25058 showed CASUAL selections and
+  translation counters2/2/0/0. No text was inspected and no mode-route patch was
+  made. Earlier cause remains unknown; English-review-step confusion was one
+  possibility Andrew raised. Resume the reviewed relative-read fixturev2 gate.
+- Andrew asked for roughly ten minutes and said he would announce availability.
+  No phone action after that reply. Meanwhile two source reviews mapped the
+  prospective relative proof into the existing manual one-commit transaction,
+  including the absolute-offset dependencies and callback-history reset. Saved
+  this proposed integration in RESEARCH; no adapter code or write approval yet.
 
 ## 2026-10-31 — Design review site revised from Andrew's feedback
 

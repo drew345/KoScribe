@@ -3416,6 +3416,7 @@ class KoScribeService : AccessibilityService() {
     override fun onCreateInputMethod(): InputMethod = TrackingInputMethod(this)
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
+        val relativeEventReceipt = if (RelativeEmptyInsertMode.enabled) SystemClock.uptimeMillis() else 0L
         if (RelativeReadProbeMode.enabled) relativeReadProbe.event(event)
         if (RelativeEmptyInsertMode.enabled && event.packageName?.toString() == RelativeEmptyInsertMode.PACKAGE) {
             when (event.eventType) {
@@ -3490,6 +3491,22 @@ class KoScribeService : AccessibilityService() {
                         event.packageName?.toString() != packageName))) {
                 finishUncertain(destination, "WINDOW_OR_FOCUS_CHANGED")
                 return
+            }
+            if (destination?.phase == DestinationPhase.OBSERVING && destination.relative != null &&
+                event.packageName?.toString() == targetPackage && event.windowId == targetWindow &&
+                (event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED ||
+                    event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED)) {
+                val frame = destination.relative
+                if (!sameFreshHost(destination)) return finishUncertain(destination, "HOST_CHANGED")
+                val binding = relativeEmptyInsert.eventBinding(frame, event)
+                if (freshDestination !== destination || destination.phase != DestinationPhase.OBSERVING) return
+                if (!sameFreshHost(destination)) return finishUncertain(destination, "HOST_CHANGED")
+                val valid = if (event.eventType == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED)
+                    frame.proof.selectionEvent(binding, frame.input.generation, event.eventTime,
+                        relativeEventReceipt, SystemClock.uptimeMillis(), event.fromIndex, event.toIndex, event.itemCount)
+                else frame.proof.textEvent(binding)
+                relativeEmptyInsert.recordEvent(frame)
+                if (!valid) return finishUncertain(destination, "RELATIVE_EVENT_${frame.proof.eventWitness}")
             }
             if (destination?.phase == DestinationPhase.PRECOMMIT &&
                 (event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
@@ -5443,8 +5460,10 @@ class KoScribeService : AccessibilityService() {
         if (transaction.relative?.proof?.commitAuthorized(SystemClock.uptimeMillis()) == false)
             return finishUncertain(transaction, "RELATIVE_COMMIT_DEADLINE")
         try {
-            commitRequestCount++
             transaction.commitRequestedUptimeMs = SystemClock.uptimeMillis()
+            if (transaction.relative?.proof?.commitDispatched(transaction.commitRequestedUptimeMs) == false)
+                return finishUncertain(transaction, "RELATIVE_COMMIT_DEADLINE")
+            commitRequestCount++
             note("FRESH_COMMIT_REQUESTED_ONCE")
             connection.commitText(result, 1, null)
         } catch (_: Exception) {
@@ -5491,24 +5510,13 @@ class KoScribeService : AccessibilityService() {
             return
         if (!sameFreshHost(transaction)) return finishUncertain(transaction, "HOST_CHANGED")
         transaction.relative?.let { frame ->
+            val readWitness = frame.proof.postReadWitness(SystemClock.uptimeMillis())
             val observed = relativeEmptyInsert.read(frame, frame.proof.result.length + 1, 1, precommit = false)
             if (freshDestination === transaction)
                 relativeEmptyInsert.recordPostRead(frame.proof.result, observed)
-            if (!sameFreshHost(transaction)) return finishUncertain(transaction, "HOST_CHANGED")
-            when (frame.proof.verdict(relativeEmptyEvidence.current(), observed, SystemClock.uptimeMillis())) {
-                RelativeEmptyPolicy.Verdict.CONFIRMED -> {
-                    relativeEmptyInsert.record("CONFIRMED", "EXACT_RELATIVE_AND_CALLBACK", frame)
-                    endFreshProof(transaction)
-                    freshDestination = null
-                    commitConfirmation = "CONFIRMED"
-                    endDraft(transaction.draftId, "INSERT_CONFIRMED", completed = true)
-                }
-                RelativeEmptyPolicy.Verdict.UNCERTAIN -> finishUncertain(transaction, "RELATIVE_POSTCONTEXT")
-                RelativeEmptyPolicy.Verdict.PENDING -> {
-                    if (poll >= 4) finishUncertain(transaction, "RELATIVE_POSTCONTEXT_TIMEOUT")
-                    else main.postDelayed({ verifyFreshCommit(transaction, poll + 1) }, 120L)
-                }
-            }
+            // Yield before either relative verdict so already queued contradictions can latch.
+            // This is bounded observed continuity, not a cross-process event-delivery barrier.
+            main.post { finishRelativeObservation(transaction, frame, observed, readWitness, poll) }
             return
         }
         val expected = transaction.expected ?: return finishUncertain(transaction, "EXPECTED_CONTEXT_LOST")
@@ -5540,6 +5548,31 @@ class KoScribeService : AccessibilityService() {
         if (!unchanged || poll >= 4)
             return finishUncertain(transaction, "POSTCONTEXT_UNCONFIRMED")
         main.postDelayed({ verifyFreshCommit(transaction, poll + 1) }, 120L)
+    }
+
+    private fun finishRelativeObservation(transaction: FreshDestination, frame: RelativeEmptyInsert.Frame,
+        observed: RelativeEmptyPolicy.Sample?, readWitness: Long?, poll: Int) {
+        if (freshDestination !== transaction || transaction.phase != DestinationPhase.OBSERVING) return
+        if (!sameFreshHost(transaction)) return finishUncertain(transaction, "HOST_CHANGED")
+        if (!frame.proof.postcommitLive(SystemClock.uptimeMillis()) ||
+                !runCatching { relativeEmptyInsert.stable(frame) }.getOrDefault(false))
+            return finishUncertain(transaction, "RELATIVE_POST_EVENT_TARGET")
+        if (freshDestination !== transaction || transaction.phase != DestinationPhase.OBSERVING) return
+        if (!sameFreshHost(transaction)) return finishUncertain(transaction, "HOST_CHANGED")
+        when (frame.proof.verdict(relativeEmptyEvidence.current(), observed, SystemClock.uptimeMillis(), readWitness)) {
+                RelativeEmptyPolicy.Verdict.CONFIRMED -> {
+                    relativeEmptyInsert.record("CONFIRMED", "EXACT_RELATIVE_AND_${frame.proof.confirmationSource}", frame)
+                    endFreshProof(transaction)
+                    freshDestination = null
+                    commitConfirmation = "CONFIRMED"
+                    endDraft(transaction.draftId, "INSERT_CONFIRMED", completed = true)
+                }
+                RelativeEmptyPolicy.Verdict.UNCERTAIN -> finishUncertain(transaction, "RELATIVE_POSTCONTEXT")
+                RelativeEmptyPolicy.Verdict.PENDING -> {
+                    if (poll >= 4) finishUncertain(transaction, "RELATIVE_POSTCONTEXT_TIMEOUT")
+                    else main.postDelayed({ verifyFreshCommit(transaction, poll + 1) }, 120L)
+                }
+            }
     }
 
     private fun finishUncertain(transaction: FreshDestination, code: String) {

@@ -2,6 +2,43 @@
 
 ## Empty-relative manual insertion — November 6
 
+**Latest archived candidate is v3; work paused after one passing positive on
+November6.** Use the v3 artifacts when Andrew resumes, not v1/v2 below:
+
+- `relative-empty-fixture-v3.apk`: SHA-256
+  `B606DD11299C08EFCD8E70DC7E1D2F6C491D2D76A4284CA086BA5CD7697ABABD`
+- `smoke-relative-empty-v3.apk`: SHA-256
+  `60CB262B0B6DBEA57F901DCFDFECB7D92D46A7400BD191CE5EBE7C52CBB228C5`
+- Saved config: `fixture-v3-BuildConfig.java`, all in ignored
+  `app/build/relative-empty-insert-20261106/`; signer matches normal live MVP.
+
+Sources policy2C43D514/readerAB75CD89/serviceBE189F37/testsB3A93EB9,
+fixture0393ED30/harness8B239F00 independently cleared. All199 units and assembly/
+lint pass; ordinary debug/release OFF verified. The first method below passed
+7.936s using natural `SELECTION_EVENT` confirmation with same generation and zero
+InputMethod callbacks. See DEVICE_TESTS. Its runtime pass does not accept the
+five remaining gates. Next session run the new hidden-suffix method first:
+
+```powershell
+adb -d shell am instrument --user 0 -w -r -e class 'com.koscribe.smoke.RelativeEmptyInsertSmokeTest#hiddenSelectedSuffixCannotConfirmApparentExactRelativeRead' -e relativeInsertHiddenSuffixReady true com.koscribe.smoke/com.koscribe.smoke.KoScribeTestRunner
+```
+
+That fixture synchronously appends/selects a suffix inside its one delegated
+commit before returning, exposing the null-selected fallback ambiguity. Require
+one product attempt and terminal UNCERTAIN, never a false confirmation or retry.
+Then run the other four pending methods individually from the table below.
+Fresh phone availability is required; restore verified normal live3FE8BE0F after
+the session. Do not rerun credential tests or infer Karrot write eligibility.
+
+V3 confirmation may use either a newer valid input callback or an exact bound
+selection event. Event source, window/root/host/served generation/EditorInfo,
+post-dispatch time and expected UTF16 caret/count must match. Only a fresh read
+started after that witness may count. Both relative routes yield once then
+recheck live frame, deadline and sticky contradictions before confirming.
+No extra content read, deadline extension, package-only selection or global
+event-delivery guarantee is introduced. Exact callback/event proof semantics
+and remaining causal limits are in RESEARCH.
+
 This candidate is limited to the signed owned fixture. Build secure API-free
 REVIEW with `-PkoscribeStartupArm=REVIEW -PkoscribeRelativeEmptyInsert=true`;
 every other feature/diagnostic flag stays OFF. Default/release stays OFF.

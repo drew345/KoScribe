@@ -39,7 +39,7 @@ class RelativeEmptyInsertSmokeTest {
     private val sourceText = "Synthetic source stays unchanged."
     private val flags = setOf("relativeInsertFreshReady", "relativeInsertClearedReady",
         "relativeInsertSelectedReady", "relativeInsertChangedReadReady",
-        "relativeInsertUncertainReady")
+        "relativeInsertUncertainReady", "relativeInsertHiddenSuffixReady")
     private lateinit var instrumentation: Instrumentation
     private var sessionStarted = false
     private var fixtureLaunched = false
@@ -144,6 +144,13 @@ class RelativeEmptyInsertSmokeTest {
         firstInsertRelative = prior
         clickOwnId("ready_insert")
         awaitConfirmed(before, fixture, prior, "INITIAL_ONLY")
+        val witnessed = relative()
+        if (witnessed.word("CONFIRMATION_SOURCE") != "SELECTION_EVENT" ||
+            witnessed.word("EVENT_WITNESS") != "EXPECTED" ||
+            witnessed.word("CURRENT_SOURCE") != "INITIAL_ONLY" ||
+            witnessed.word("GENERATION") != prior.word("GENERATION") ||
+            witnessed.word("UPDATES") != prior.word("UPDATES"))
+            fail("FRESH_CONFIRMATION_DID_NOT_USE_NATURAL_SELECTION_EVENT")
         report("FRESH_INITIAL_CONFIRMED")
     }
 
@@ -278,13 +285,48 @@ class RelativeEmptyInsertSmokeTest {
         report("ACKNOWLEDGED_UNOBSERVED_TERMINAL")
     }
 
-    private fun launchFixture(acknowledgeWithoutChange: Boolean): Fixture {
+    @Test fun hiddenSelectedSuffixCannotConfirmApparentExactRelativeRead() {
+        only("relativeInsertHiddenSuffixReady")
+        val fixture = launchFixture(false, hiddenSuffix = true)
+        val before = productState()
+        prepareEditedResult(before)
+        chooseMaskedTarget(fixture)
+        var armed = false
+        instrumentation.runOnMainSync {
+            armed = fixture.activity.armRelativeInsertHiddenSuffix()
+        }
+        assertTrue("HIDDEN_SUFFIX_NOT_ARMED", armed)
+        assertNoWrites(before, fixture)
+        clickOwnId("ready_insert")
+        await("HIDDEN_SUFFIX_COMMIT_NOT_APPLIED", 5_000) { true.takeIf {
+            fixture.activity.relativeInsertHiddenSuffixState() == "APPLIED" &&
+                fixture.activity.relativeInsertCommitCounts() == (1 to 1)
+        } }
+        assertTarget(fixture, saved + "X", saved.length, saved.length + 1)
+        await("HIDDEN_SUFFIX_NOT_TERMINAL_UNCERTAIN", 6_000) { productState().takeIf {
+            it.phase == "UNCERTAIN" && it.confirmation == "UNCERTAIN" &&
+                it.captures == before.captures + 1 && it.commits == before.commits + 1 &&
+                relative().word("STATE") == "UNCERTAIN"
+        } }
+        assertTrue("HIDDEN_SUFFIX_RESULT_NOT_RETAINED", ownId("ready_result_text")?.text?.toString() ==
+            saved && ownId("ready_insert") == null && ownId("ready_edit") == null &&
+            ownId("ready_cancel")?.let(::usable) == true)
+        SystemClock.sleep(400)
+        assertTrue("HIDDEN_SUFFIX_REARMED_OR_RETRIED", productState().commits ==
+            before.commits + 1 && fixture.activity.relativeInsertCommitCounts() == (1 to 1) &&
+            ownId("ready_insert") == null && ownId("ready_edit") == null)
+        report("HIDDEN_SELECTED_SUFFIX_UNCERTAIN")
+    }
+
+    private fun launchFixture(acknowledgeWithoutChange: Boolean,
+        hiddenSuffix: Boolean = false): Fixture {
         instrumentation.context.startActivity(Intent(instrumentation.context,
             SmokeEditorActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
             putExtra(SmokeEditorActivity.EXTRA_RELATIVE_INSERT_FIXTURE, true)
             putExtra(SmokeEditorActivity.EXTRA_RELATIVE_ACK_WITHOUT_CHANGE,
                 acknowledgeWithoutChange)
+            putExtra(SmokeEditorActivity.EXTRA_RELATIVE_HIDDEN_SUFFIX, hiddenSuffix)
             putExtra(SmokeEditorActivity.EXTRA_OMIT_PROTECTED_EDITOR, true)
         })
         fixtureLaunched = true
@@ -392,11 +434,13 @@ class RelativeEmptyInsertSmokeTest {
 
     private fun awaitConfirmed(before: Product, fixture: Fixture, prior: Relative,
         requiredOrigin: String) {
+        val requiredSource = if (requiredOrigin == "INITIAL_ONLY") "SELECTION_EVENT" else "CALLBACK"
         await("RELATIVE_INSERT_NOT_CONFIRMED", 8_000) { productState().takeIf {
             it.phase == "NONE" && it.confirmation == "CONFIRMED" && !it.cleanup &&
                 it.captures == before.captures + 1 && it.commits == before.commits + 1 &&
                 relative().let { status -> status.word("STATE") == "CONFIRMED" &&
-                    status.word("REASON") == "EXACT_RELATIVE_AND_CALLBACK" &&
+                    status.word("REASON") == "EXACT_RELATIVE_AND_$requiredSource" &&
+                    status.word("CONFIRMATION_SOURCE") == requiredSource &&
                     status.word("ORIGIN") == requiredOrigin &&
                     status.number("READS") >= prior.number("READS") + 3 }
         } }
@@ -591,7 +635,9 @@ class RelativeEmptyInsertSmokeTest {
                 "_ORIGIN_${status.word("ORIGIN")}_READS_${status.word("READS")}" +
                 "_CURRENT_${status.word("CURRENT_SOURCE")}_${status.word("CURRENT_SHAPE")}" +
                 "_${status.word("CURRENT_POSITION")}_${status.word("CURRENT_COMPOSITION")}" +
-                "_UNRESOLVED_${status.word("UNRESOLVED")}\n")
+                "_UNRESOLVED_${status.word("UNRESOLVED")}" +
+                "_EVENT_${status.word("EVENT_WITNESS")}" +
+                "_CONFIRMATION_${status.word("CONFIRMATION_SOURCE")}\n")
         })
     }
     private fun only(flag: String) = assumeTrue("WRONG_RELATIVE_INSERT_CASE",
@@ -620,6 +666,7 @@ class RelativeEmptyInsertSmokeTest {
         val product = runCatching { productState() }.getOrNull()
         var local = "OWNER_0_SOURCE_FOCUS_0_TARGET_FOCUS_0_TARGET_EMPTY_0"
         var hook = "UNAVAILABLE"
+        var suffix = "UNAVAILABLE"
         var calls = "UNKNOWN"
         instrumentation.runOnMainSync {
             val activity = SmokeEditorActivity.current.get()
@@ -630,6 +677,7 @@ class RelativeEmptyInsertSmokeTest {
                     "_TARGET_FOCUS_${bit(target?.isFocused == true)}" +
                     "_TARGET_EMPTY_${bit(target?.text?.isEmpty() == true)}"
                 hook = activity.relativeInsertFirstReadMutationState()
+                suffix = activity.relativeInsertHiddenSuffixState()
                 calls = activity.relativeInsertCommitCounts()?.let { "${it.first}_${it.second}" }
                     ?: "UNKNOWN"
             }
@@ -644,13 +692,15 @@ class RelativeEmptyInsertSmokeTest {
             "_${status?.word("CURRENT_COMPOSITION") ?: "UNAVAILABLE"}" +
             "_UNRESOLVED_${status?.word("UNRESOLVED") ?: "UNAVAILABLE"}" +
             "_POSTREAD_${status?.word("LAST_POSTREAD") ?: "UNAVAILABLE"}" +
+            "_EVENT_${status?.word("EVENT_WITNESS") ?: "UNAVAILABLE"}" +
+            "_CONFIRMATION_${status?.word("CONFIRMATION_SOURCE") ?: "UNAVAILABLE"}" +
             "_GEN_SAME_${bit(status != null && firstInsertRelative != null &&
                 status.word("GENERATION") == firstInsertRelative?.word("GENERATION"))}" +
             "_UPDATES_DELTA_${boundedDelta(status?.word("UPDATES")?.toIntOrNull(),
                 firstInsertRelative?.word("UPDATES")?.toIntOrNull())}" +
             "_DRAFT_${product?.phase ?: "UNAVAILABLE"}" +
             "_CAPTURES_${product?.captures ?: -1}_COMMITS_${product?.commits ?: -1}" +
-            "_${local}_HOOK_${hook}_FIXTURE_CALLS_${calls}" +
+            "_${local}_HOOK_${hook}_SUFFIX_${suffix}_FIXTURE_CALLS_${calls}" +
             "_${runCatching { firstInsertOracle() }.getOrDefault("FIRST_ORACLE_ERROR")}" +
             "_IME_${bit(runCatching { defaultImeVisible() }.getOrDefault(false))}" +
             "_SWIFTKEY_${bit(selectedSwiftKey())}"

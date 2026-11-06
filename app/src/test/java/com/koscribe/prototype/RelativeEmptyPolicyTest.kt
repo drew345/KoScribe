@@ -12,6 +12,146 @@ class RelativeEmptyPolicyTest {
     private fun exact(composing: Boolean = false) = RelativeEmptyPolicy.Sample(saved, -1, saved.length, saved.length, composing)
     private fun delivered(e: RelativeEmptyPolicy.Evidence, start: Int = saved.length, end: Int = start,
         candidateStart: Int = -1, candidateEnd: Int = -1) = e.update(1, start, end, candidateStart, candidateEnd)
+    private fun dispatched(e: RelativeEmptyPolicy.Evidence) = attempt(e).also {
+        assertTrue(it.reserve(e.current(), empty, 102))
+        assertTrue(it.commitDispatched(103))
+    }
+    private fun expectedEvent(proof: RelativeEmptyPolicy.Attempt, eventTime: Long = 104,
+        receipt: Long = 105, now: Long = 105, binding: RelativeEmptyPolicy.EventBinding = RelativeEmptyPolicy.EventBinding.MATCH,
+        generation: Int = 1, start: Int = saved.length, end: Int = start, count: Int = saved.length) =
+        proof.selectionEvent(binding, generation, eventTime, receipt, now, start, end, count)
+
+    @Test fun boundSelectionEventAndLaterExactReadConfirmWithoutRelabelingInitialComposition() {
+        val e = evidence()
+        val proof = dispatched(e)
+        e.textChanged() // Expected commit notifications do not change initial metadata into a callback.
+        assertTrue(expectedEvent(proof))
+        val ticket = proof.postReadWitness(106)
+        assertNotNull(ticket)
+        assertEquals(RelativeEmptyPolicy.Source.INITIAL_ONLY, e.current()!!.source)
+        assertEquals(RelativeEmptyPolicy.Composition.UNKNOWN, e.current()!!.composition)
+        assertEquals(RelativeEmptyPolicy.Verdict.CONFIRMED, proof.verdict(e.current(), exact(), 107, ticket))
+        assertEquals(RelativeEmptyPolicy.ConfirmationSource.SELECTION_EVENT, proof.confirmationSource)
+        assertFalse(proof.commitDispatched(108))
+        assertFalse(proof.reserve(e.current(), empty, 108))
+    }
+
+    @Test fun oldExactReadAndSupersededWitnessCannotSupplyLaterEventProof() {
+        val e = evidence()
+        val proof = dispatched(e)
+        val beforeEvent = proof.postReadWitness(104)
+        assertNull(beforeEvent)
+        assertTrue(expectedEvent(proof))
+        assertEquals(RelativeEmptyPolicy.Verdict.PENDING, proof.verdict(e.current(), exact(), 106, beforeEvent))
+        val oldTicket = proof.postReadWitness(106)
+        assertTrue(expectedEvent(proof, eventTime = 107, receipt = 108, now = 108))
+        assertEquals(RelativeEmptyPolicy.Verdict.PENDING, proof.verdict(e.current(), exact(), 109, oldTicket))
+        val freshTicket = proof.postReadWitness(110)
+        assertEquals(RelativeEmptyPolicy.Verdict.CONFIRMED, proof.verdict(e.current(), exact(), 111, freshTicket))
+    }
+
+    @Test fun staleSameTickFutureAndUnboundSelectionEventsCannotConfirmAnExactFallback() {
+        data class Rejection(val time: Long, val receipt: Long, val now: Long,
+            val binding: RelativeEmptyPolicy.EventBinding, val reason: RelativeEmptyPolicy.EventWitness)
+        val match = RelativeEmptyPolicy.EventBinding.MATCH
+        for (case in listOf(
+            Rejection(102, 105, 105, match, RelativeEmptyPolicy.EventWitness.STALE),
+            Rejection(103, 105, 105, match, RelativeEmptyPolicy.EventWitness.SAME_TICK),
+            Rejection(106, 105, 105, match, RelativeEmptyPolicy.EventWitness.FUTURE),
+            Rejection(104, 106, 105, match, RelativeEmptyPolicy.EventWitness.FUTURE),
+            Rejection(104, 105, 105, RelativeEmptyPolicy.EventBinding.NO_SOURCE, RelativeEmptyPolicy.EventWitness.NO_SOURCE),
+            Rejection(104, 105, 105, RelativeEmptyPolicy.EventBinding.OTHER_SOURCE, RelativeEmptyPolicy.EventWitness.OTHER_SOURCE))) {
+            val e = evidence()
+            val proof = dispatched(e)
+            assertTrue(expectedEvent(proof, case.time, case.receipt, case.now, case.binding))
+            assertEquals(case.reason, proof.eventWitness)
+            assertNull(proof.postReadWitness(106))
+            assertEquals(RelativeEmptyPolicy.Verdict.PENDING, proof.verdict(e.current(), exact(), 107))
+            assertEquals(RelativeEmptyPolicy.Verdict.UNCERTAIN, proof.verdict(e.current(), exact(), 3102))
+            assertFalse(expectedEvent(proof, eventTime = 3103, receipt = 3104, now = 3104))
+        }
+    }
+
+    @Test fun changedGenerationOrLiveFrameEndsEventAttemptBeforeAnyLaterMatchingSnapshot() {
+        for ((binding, generation) in listOf(RelativeEmptyPolicy.EventBinding.TARGET_CHANGED to 1,
+            RelativeEmptyPolicy.EventBinding.MATCH to 2)) {
+            val e = evidence()
+            val proof = dispatched(e)
+            assertFalse(expectedEvent(proof, binding = binding, generation = generation))
+            assertEquals(RelativeEmptyPolicy.EventWitness.IDENTITY_CHANGED, proof.eventWitness)
+            assertFalse(expectedEvent(proof))
+            delivered(e)
+            assertEquals(RelativeEmptyPolicy.Verdict.UNCERTAIN, proof.verdict(e.current(), exact(), 107))
+        }
+    }
+
+    @Test fun hiddenSelectedSuffixAndWrongLengthCannotUseApparentExactRelativeText() {
+        for ((start, end, count) in listOf(Triple(saved.length, saved.length + 1, saved.length + 1),
+            Triple(saved.length, saved.length, saved.length + 1), Triple(0, 0, saved.length),
+            Triple(-1, -1, saved.length))) {
+            val e = evidence()
+            val proof = dispatched(e)
+            assertFalse(expectedEvent(proof, start = start, end = end, count = count))
+            assertEquals(RelativeEmptyPolicy.EventWitness.CONTRADICTORY, proof.eventWitness)
+            assertFalse(expectedEvent(proof))
+            assertEquals(RelativeEmptyPolicy.PostRead.EXACT, RelativeEmptyPolicy.classifyPostRead(saved, exact()))
+            assertEquals(RelativeEmptyPolicy.Verdict.UNCERTAIN, proof.verdict(e.current(), exact(), 107))
+        }
+    }
+
+    @Test fun queuedContradictionsAfterReadTicketPreventBothConfirmationSources() {
+        for (mutation in listOf("SELECTION", "TEXT", "CALLBACK", "END")) {
+            val e = evidence()
+            val proof = dispatched(e)
+            assertTrue(expectedEvent(proof))
+            val ticket = proof.postReadWitness(106)
+            val read = exact()
+            when (mutation) {
+                "SELECTION" -> assertFalse(expectedEvent(proof, eventTime = 107, receipt = 108, now = 108,
+                    start = saved.length, end = saved.length + 1, count = saved.length + 1))
+                "TEXT" -> assertFalse(proof.textEvent(RelativeEmptyPolicy.EventBinding.MATCH))
+                "CALLBACK" -> { delivered(e, 0, saved.length); assertFalse(proof.selectionChanged(e.current())) }
+                "END" -> proof.end()
+            }
+            delivered(e) // A later good callback must not revive the attempted write.
+            assertFalse(proof.selectionChanged(e.current()))
+            assertEquals(RelativeEmptyPolicy.Verdict.UNCERTAIN, proof.verdict(e.current(), read, 109, ticket))
+            assertEquals(RelativeEmptyPolicy.ConfirmationSource.NONE, proof.confirmationSource)
+        }
+    }
+
+    @Test fun unknownSourceRevokesWitnessAndDeadlinesDoNotWaitForEventProof() {
+        val e = evidence()
+        val proof = dispatched(e)
+        assertTrue(expectedEvent(proof))
+        val ticket = proof.postReadWitness(106)
+        assertTrue(proof.textEvent(RelativeEmptyPolicy.EventBinding.NO_SOURCE))
+        assertEquals(RelativeEmptyPolicy.Verdict.PENDING, proof.verdict(e.current(), exact(), 107, ticket))
+        assertFalse(expectedEvent(proof, eventTime = 3101, receipt = 3102, now = 3102))
+        assertEquals(RelativeEmptyPolicy.EventWitness.EXPIRED, proof.eventWitness)
+        assertEquals(RelativeEmptyPolicy.Verdict.UNCERTAIN, proof.verdict(e.current(), exact(), 3103, ticket))
+    }
+
+    @Test fun callbackRouteStillRequiresItsOwnNewSelectionAndUsesCallbackProvenance() {
+        val e = evidence()
+        val proof = dispatched(e)
+        assertTrue(expectedEvent(proof, binding = RelativeEmptyPolicy.EventBinding.NO_SOURCE))
+        delivered(e)
+        assertEquals(RelativeEmptyPolicy.Verdict.CONFIRMED, proof.verdict(e.current(), exact(true), 107))
+        assertEquals(RelativeEmptyPolicy.ConfirmationSource.CALLBACK, proof.confirmationSource)
+    }
+
+    @Test fun acceptedEventCannotRescueMissingEmptyOrMismatchedFreshReadback() {
+        for (sample in listOf(null, empty, exact().copy(text = saved + "X"),
+            exact().copy(start = 0, end = 0), exact().copy(offset = 0))) {
+            val e = evidence()
+            val proof = dispatched(e)
+            assertTrue(expectedEvent(proof))
+            val ticket = proof.postReadWitness(106)
+            assertEquals(RelativeEmptyPolicy.Verdict.UNCERTAIN, proof.verdict(e.current(), sample, 107, ticket))
+            assertEquals(RelativeEmptyPolicy.Verdict.UNCERTAIN, proof.verdict(e.current(), exact(), 108, ticket))
+        }
+    }
 
     @Test fun postReadDiagnosticDistinguishesObservedShapesWithoutGrantingConfirmation() {
         assertEquals(RelativeEmptyPolicy.PostRead.UNAVAILABLE, RelativeEmptyPolicy.classifyPostRead(saved, null))

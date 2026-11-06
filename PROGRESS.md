@@ -2,27 +2,63 @@
 
 Updated: 2026-11-06 (Asia/Seoul).
 
-**Active goal:** make explicit manual Insert of the reviewed Korean work
+**Goal, paused at Andrew's request:** make explicit manual Insert of the reviewed Korean work
 reliably in Karrot Market on the A35. Andrew set Karrot as the priority.
 Instagram comments are the next follow-up; he previously reported success
 after tapping that field again. OpenAI dot is low priority. The installed
 editable-Korean MVP is the starting point. Automatic-after-English remains
 deferred.
 
-**Current work:** both the relative-read and cached-selection calibrations passed
-their owned gates. Karrot's empty read had only initial selection metadata;
-the subsequent user-operated ABCD/select/delete sequence proved distinct live
-selection and composition updates in one served generation. Implement/review a
-separate manual relative insertion path behind a default-OFF, signed-owned-fixture
-flag. Its acceptance must include the normal English/Korean review return. Preserve
-usable fresh empty composers after Korean review; do not require artificial user
-typing/deletion as the product workflow. The second owned diagnostic verified
-exact saved Korean, correct caret and unchanged source after one commit. Its last
-relative read was exact, but no newer InputMethod selection callback arrived;
-confirmation stayed UNCERTAIN. Normal MVP restored. Source review found no
-intended origin-service callback suppression. Assess a separately authenticated
-selection-event proof without relaxing current selection requirements. No Karrot
-insertion has occurred. Branch: `codex/karrot-insertion`.
+**Stopping point, November 6 at11:51 KST:** the final owned test passed in7.936s.
+After English review and saved Korean editing, one explicit Insert wrote the exact
+saved result into a fresh empty field and confirmed its caret using an authenticated
+selection event. The served generation stayed unchanged and InputMethod callbacks
+stayed at zero. Source text was preserved, one commit occurred, and the collapsed
+bubble/SwiftKey returned. This is the first successful owned relative insertion
+confirmation, not a Karrot acceptance result. No Karrot write has occurred.
+Branch: `codex/karrot-insertion`. Andrew requested one final check then a documented
+stop; no further checks or implementation ran afterward.
+
+**Current phone:** normal editable-Korean live MVP3FE8BE0F is restored, full installed
+hash verified, service3508 idle, speech/translation on, automatic/probes off, draftNONE,
+cleanupfalse and SwiftKey selected. The fixture is removed. The key was not changed.
+No phone test is active. The new candidate is archived, not installed for daily use.
+
+**Reproducible candidate:** ignored `app/build/relative-empty-insert-20261106/`
+contains `relative-empty-fixture-v3.apk` (B606DD11), `smoke-relative-empty-v3.apk`
+(60CB262B), and `fixture-v3-BuildConfig.java`. Full hashes/protocol are in
+[INSTRUMENTATION](docs/INSTRUMENTATION.md#empty-relative-manual-insertion--november-6).
+App policy2C43D514/readerAB75CD89/serviceBE189F37/testsB3A93EB9, fixture0393ED30,
+harness8B239F00 independently cleared. All199 unit tests pass; assembly and lint
+pass (app0errors51warnings, smoke0errors6warnings). Ordinary debug/release rebuilt
+and verified OFF/allfalse. Candidate is secure API-free REVIEW, only
+`koscribeRelativeEmptyInsert=true`, signed owned fixture only.
+
+**Resume order after Andrew asks to continue:**
+
+1. Preserve this source/artifact checkpoint and normal installed MVP. Read the
+   final v3 result in DEVICE_TESTS and event-witness contract in RESEARCH. No need
+   to repeat completed diagnostic rounds or rebuild unchanged archived artifacts.
+2. Prepare one fresh phone window for the remaining owned gates. Run
+   `hiddenSelectedSuffixCannotConfirmApparentExactRelativeRead` with sole
+   `relativeInsertHiddenSuffixReady=true` first. It must remain terminal UNCERTAIN
+   after one commit despite misleading exact relative text. This case is reviewed
+   and implemented but **not phone-tested**.
+3. If it passes, run callback-cleared empty, selected-range refusal, first-read
+   changed-field refusal, and acknowledged-without-change terminal uncertainty,
+   individually with the exact sole flags in INSTRUMENTATION. All four are also
+   **unrun on this candidate**. Stop first failure and restore normal MVP. Any code
+   correction needs independent review/build and affected acceptance again.
+4. Only after those five remaining gates pass, review a separate bounded Karrot
+   empty-composer candidate/trial. Its actual selection-event source/timing and
+   readback are unmeasured. The current candidate cannot write into Karrot.
+   Nonempty relative insertion, Instagram reliability and automatic insertion remain later.
+
+The witness requires exact source/frame/session/time and expected UTF16 caret/count,
+then a fresh existing-budget read and queued identity/contradiction recheck. It is
+bounded observed continuity, not atomic cross-process proof. Keep one attempt,
+terminal uncertainty, Copy recovery, no Send and live credential privacy.
+Earlier checkpoints below are historical evidence, not instructions to resume today.
 
 **Owned writer candidate, November 6:** explicit secure REVIEW flag
 `koscribeRelativeEmptyInsert=true`, signed fixture only. Separate relative proof,
@@ -143,7 +179,7 @@ been superseded. Keep the automatic experiments available for later investigatio
 **Installed on Andrew's A35:** the secure manual MVP with editable Korean is
 installed and verified (SHA-256
 3FE8BE0FF5AFD51908177D81F6AF652FB6EB0C34A85CD68825731E16DA3D33EA).
-The accessibility service reconnected at PID 25543 after the latest restoration. Speech and translation are
+The accessibility service reconnected at PID 3508 after the latest restoration. Speech and translation are
 on, automatic insertion is off, the draft is empty and SwiftKey is selected.
 The fixture was removed from user 0. The previous live build D266E911 is saved.
 

@@ -39,6 +39,7 @@ class SmokeEditorActivity : Activity() {
         const val EXTRA_RELATIVE_READ_FIXTURE = "com.koscribe.smoke.RELATIVE_READ_FIXTURE"
         const val EXTRA_RELATIVE_INSERT_FIXTURE = "com.koscribe.smoke.RELATIVE_INSERT_FIXTURE"
         const val EXTRA_RELATIVE_ACK_WITHOUT_CHANGE = "com.koscribe.smoke.RELATIVE_ACK_WITHOUT_CHANGE"
+        const val EXTRA_RELATIVE_HIDDEN_SUFFIX = "com.koscribe.smoke.RELATIVE_HIDDEN_SUFFIX"
         const val COMPOSED_WRONG_RESULT = "Incorrect synthetic composed result."
         @Volatile
         var current = WeakReference<SmokeEditorActivity>(null)
@@ -83,6 +84,10 @@ class SmokeEditorActivity : Activity() {
         (relativeReadEditor() as? RelativeReadEditor)?.armFirstReadMutation() == true
     fun relativeInsertFirstReadMutationState(): String =
         (relativeReadEditor() as? RelativeReadEditor)?.firstReadMutationState() ?: "UNAVAILABLE"
+    fun armRelativeInsertHiddenSuffix(): Boolean =
+        (relativeReadEditor() as? RelativeReadEditor)?.armHiddenSuffix() == true
+    fun relativeInsertHiddenSuffixState(): String =
+        (relativeReadEditor() as? RelativeReadEditor)?.hiddenSuffixState() ?: "UNAVAILABLE"
     data class RelativeInsertDiagnostic(val connections: Int, val selectionCallbacks: Int,
         val selectionCategory: String, val totalBegins: Int, val totalEnds: Int,
         val latestBegins: Int, val latestBeginReturnedTrue: Int, val latestEnds: Int,
@@ -236,7 +241,8 @@ class SmokeEditorActivity : Activity() {
         if (relativeFixtureRequested()) {
             val configured = relativeRead as? RelativeReadEditor
             if (configured == null || configured.observeCommits != relativeInsertFixture() ||
-                configured.acknowledgeWithoutChange != relativeAckWithoutChange()) {
+                configured.acknowledgeWithoutChange != relativeAckWithoutChange() ||
+                configured.hiddenSelectedSuffix != relativeHiddenSuffix()) {
                 val index = if (relativeRead == null) fixtureRoot.childCount else
                     fixtureRoot.indexOfChild(relativeRead)
                 if (relativeRead != null) fixtureRoot.removeView(relativeRead)
@@ -311,11 +317,14 @@ class SmokeEditorActivity : Activity() {
     private fun relativeAckWithoutChange(): Boolean = relativeInsertFixture() &&
         intent.getBooleanExtra(EXTRA_RELATIVE_ACK_WITHOUT_CHANGE, false)
 
+    private fun relativeHiddenSuffix(): Boolean = relativeInsertFixture() &&
+        intent.getBooleanExtra(EXTRA_RELATIVE_HIDDEN_SUFFIX, false)
+
     private fun relativeFixtureRequested(): Boolean = relativeInsertFixture() ||
         intent.getBooleanExtra(EXTRA_RELATIVE_READ_FIXTURE, false)
 
     private fun relativeReadField(): EditText = RelativeReadEditor(this, relativeInsertFixture(),
-        relativeAckWithoutChange()).apply {
+        relativeAckWithoutChange(), relativeHiddenSuffix()).apply {
         id = R.id.local_relative_read_editor
         hint = "Synthetic relative read field"
         inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
@@ -404,7 +413,7 @@ class SmokeEditorActivity : Activity() {
 
 /** Test-only served editor with deliberately incomplete public destination metadata. */
 private class RelativeReadEditor(context: Context, val observeCommits: Boolean,
-    val acknowledgeWithoutChange: Boolean) : EditText(context) {
+    val acknowledgeWithoutChange: Boolean, val hiddenSelectedSuffix: Boolean) : EditText(context) {
     private class BatchCounters {
         var begins = 0
         var beginReturnedTrue = 0
@@ -434,6 +443,33 @@ private class RelativeReadEditor(context: Context, val observeCommits: Boolean,
         private set
     private val mutationLock = Any()
     private var mutationState = "IDLE"
+    private var suffixState = "IDLE"
+    fun hiddenSuffixState(): String = synchronized(mutationLock) { suffixState }
+    fun armHiddenSuffix(): Boolean = synchronized(mutationLock) {
+        if (!observeCommits || !hiddenSelectedSuffix || acknowledgeWithoutChange ||
+            suffixState != "IDLE" || !isAttachedToWindow || !isFocused || text.isNotEmpty() ||
+            selectionStart != 0 || selectionEnd != 0) false else {
+            suffixState = "ARMED"
+            true
+        }
+    }
+
+    private fun appendHiddenSelectedSuffix() {
+        synchronized(mutationLock) {
+            if (suffixState != "ARMED") return
+            suffixState = "UNAPPLIED"
+            val owner = context as? SmokeEditorActivity
+            if (Looper.myLooper() != Looper.getMainLooper() || owner == null ||
+                SmokeEditorActivity.current.get() !== owner || owner.relativeReadEditor() !== this ||
+                !isAttachedToWindow || !isFocused || text.isEmpty() ||
+                selectionStart != text.length || selectionEnd != text.length) return
+            val suffixStart = text.length
+            // The ordinary fixture edit and selected range precede the outer batch end.
+            text.append("X")
+            setSelection(suffixStart, suffixStart + 1)
+            suffixState = "APPLIED"
+        }
+    }
     fun firstReadMutationState(): String = synchronized(mutationLock) { mutationState }
     fun armFirstReadMutation(): Boolean = synchronized(mutationLock) {
         if (!observeCommits || acknowledgeWithoutChange || mutationState != "IDLE" ||
@@ -552,7 +588,7 @@ private class RelativeReadEditor(context: Context, val observeCommits: Boolean,
                 commitCallCount++
                 if (acknowledgeWithoutChange) return true
                 val applied = delegate.commitText(text, newCursorPosition)
-                if (applied) appliedCommitCount++
+                if (applied) { appliedCommitCount++; appendHiddenSelectedSuffix() }
                 return applied
             }
 
@@ -563,7 +599,7 @@ private class RelativeReadEditor(context: Context, val observeCommits: Boolean,
                 commitCallCount++
                 if (acknowledgeWithoutChange) return true
                 val applied = delegate.commitText(text, newCursorPosition, textAttribute)
-                if (applied) appliedCommitCount++
+                if (applied) { appliedCommitCount++; appendHiddenSelectedSuffix() }
                 return applied
             }
         }

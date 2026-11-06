@@ -2,6 +2,51 @@
 
 ## Empty-relative manual insertion — November 6
 
+### Final v3 positive and stopping point
+
+Andrew requested one final implementation check then a documented stop. Reviewed
+app policy2C43D514/readerAB75CD89/serviceBE189F37/testsB3A93EB9 and fixture0393ED30/
+harness8B239F00;199 units pass, app/smoke assembly and lint0errors51/6warnings pass.
+Archived signed appB606DD11/smoke60CB262B plus config; default/release OFF verified.
+The candidate adds a separately bound selection event, a fresh read after it and
+a queued final identity/contradiction check. No extra reads/deadline or weaker
+callback contract; status retains enums, not a completed draft payload.
+
+Fresh five-minute availability began11:49:56 KST. Verified user0, awake/unlocked,
+SwiftKey and live MVP idle, then installed v3 in place. Ran only
+`RelativeEmptyInsertSmokeTest#freshUntouchedEmptyAfterEditedKoreanInsertsOnce`
+with `relativeInsertFreshReady=true`. **PASS,7.936s, one test and no failure.**
+
+```text
+STATE=CONFIRMED REASON=EXACT_RELATIVE_AND_SELECTION_EVENT
+ORIGIN=INITIAL_ONLY READS=4
+CURRENT_SOURCE=INITIAL_ONLY CURRENT_SHAPE=COLLAPSED CURRENT_POSITION=ORIGIN
+CURRENT_COMPOSITION=UNKNOWN UNRESOLVED=YES
+EVENT_WITNESS=EXPECTED CONFIRMATION_SOURCE=SELECTION_EVENT
+```
+
+The harness additionally asserted unchanged generation and input-callback count0,
+one product commit and one fixture delegated true return, exact saved edited Korean
+including emoji, exact collapsed native caret, source field unchanged, result panel
+closed and collapsed bubble/SwiftKey returned. There was no artificial target typing/
+deletion to obtain the initial proof. English review and Korean Edit→Done were real
+UI transitions; Korean text editing was a synthetic action on KoScribe's own editor,
+not physical typing. The fixed-sample recording used the mic briefly; no API,
+clipboard, Send or credential operation occurred.
+
+This proves the bounded positive only. The new hidden-selected-suffix negative,
+callback-cleared positive, selected-range negative, first-read mutation negative
+and acknowledged-unobserved negative are all **UNRUN on this candidate**. No
+Karrot write or broader compatibility acceptance follows. No extra method ran
+after the pass, honoring Andrew's stopping request.
+
+Restored live3FE8BE0F in place and verified full installed hash, service3508,
+REVIEW speech/translationtrue, recorded automatic/probesfalse, draftNONE/cleanupfalse,
+SwiftKey and fixture removal by11:51:08 KST, within the window. Normal MVP is the
+installed daily-use build. Next session starts with the pending hidden-suffix gate.
+
+### Earlier v1 and v2 confirmation failures
+
 Reviewed app780f17e (policy069E0CAE/reader45E56ACB/service08684FFB/testsD56A8198/
 Gradle40D25924) and harness1c1b66e (EFAA2297/fixture1B3AD551). All189 units pass in
 candidate and OFF builds; app lint0errors51warnings, smoke lint0errors6warnings,

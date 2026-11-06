@@ -678,6 +678,44 @@ booleans for the owned saved text/caret/source, together with passive selection,
 batch and input-connection observations. No additional content calls, forced
 callbacks, extended deadlines or weaker confirmation are authorized by this result.
 
+**Reviewed next candidate after v2:** the direct owned oracle proved exact saved
+text/caret/source and local selection change, with no input restart or outstanding
+wrapper batch-call balance, but the app's InputMethod callback remained absent.
+Both reviewers support a separate per-attempt selection-event witness. Android16
+[TextView event population](https://github.com/aosp-mirror/platform_frameworks_base/blob/android16-release/core/java/android/widget/TextView.java#L13216-L13225)
+supplies actual selection indices and text length independently of getSelectedText.
+[AccessibilityManager](https://github.com/aosp-mirror/platform_frameworks_base/blob/android16-release/core/java/android/view/accessibility/AccessibilityManager.java#L657-L666)
+sets event time at dispatch; that timestamp is not a commit or input-generation ID.
+
+Only a live attempted transaction may accept the witness: exact getSource(0)
+node equality, unchanged root/window/host/EditorInfo/generation, post-dispatch
+timestamp bounded by receipt/deadline, and from/to/itemCount equal the expected
+UTF16 result length. Confirmation needs an existing-budget exact read that starts
+after that witness. Earlier exact reads cannot be reused. Keep the callback route
+independently valid, initial compositionUNKNOWN, and global diagnostic evidence
+non-authoritative. Wrong/missing/stale/unbound evidence grants nothing; bound
+contradictions, lifecycle changes or target text changes after the witness are
+terminal. Broad CONTENT is not a field mutation by itself.
+
+Android's [replacement ordering](https://github.com/aosp-mirror/platform_frameworks_base/blob/android16-release/core/java/android/text/SpannableStringBuilder.java#L528-L531)
+notifies text watchers before span watchers, supporting this strict first owned
+candidate without a new expected-text-event exception. Actual A35 event receipt,
+source and timing remain a device gate. Pure negatives cover wrong source/session,
+old/future/same-tick events, prior-read reuse, hidden selected suffix and later
+contradictions. The phone gate must show natural-event confirmation and refusal
+of hidden selection. This is scoped editor-contract reliance, not universal
+semantic-destination proof; Karrot support needs separate measured acceptance.
+
+The hidden-suffix negative must mutate synchronously inside the fixture's one
+delegated commit before it returns. A valid earlier event could otherwise be
+paired with a later misleading exact sample before the contradictory event is
+processed. For the event route, yield one main-queue turn after the existing read,
+then recheck the unchanged witness/read ticket, live deadline/transaction and
+current host/frame identity. This processes already-queued contradictions without
+adding reads, sleeps or deadline extensions. It is not an atomic remote snapshot
+or a global event-delivery barrier; asynchronous callbacks share a related limit.
+Do not generalize the controlled owned result to arbitrary concurrent editors.
+
 ## Automatic flow and compatibility review — 2026-11-04
 
 **Decision:** Andrew reopened both issues; the selected first goal is automatic

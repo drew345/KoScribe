@@ -10,6 +10,10 @@ internal object RelativeEmptyPolicy {
     enum class Composition { UNKNOWN, NONE_REPORTED, COMPOSING, INVALID }
     enum class Verdict { CONFIRMED, PENDING, UNCERTAIN }
     enum class PostRead { EXACT, UNCHANGED_EMPTY, OTHER, UNAVAILABLE }
+    enum class EventBinding { MATCH, NO_SOURCE, OTHER_SOURCE, TARGET_CHANGED }
+    enum class EventWitness { NONE, EXPECTED, NO_SOURCE, OTHER_SOURCE, STALE, SAME_TICK,
+        FUTURE, EXPIRED, CONTRADICTORY, TEXT_AFTER_WITNESS, IDENTITY_CHANGED }
+    enum class ConfirmationSource { NONE, CALLBACK, SELECTION_EVENT }
     data class Selection(val generation: Int, val start: Int, val end: Int,
         val source: Source, val composition: Composition, val updates: Long,
         val unresolvedMutation: Boolean = false)
@@ -72,6 +76,13 @@ internal object RelativeEmptyPolicy {
         private var firstVerified = false
         private var attemptedAt: Long? = null
         private var baselineUpdates: Long? = null
+        private var dispatchedAt: Long? = null
+        private var witnessSequence = 0L
+        private var acceptedWitness: Long? = null
+        @Volatile var eventWitness = EventWitness.NONE
+            private set
+        @Volatile var confirmationSource = ConfirmationSource.NONE
+            private set
         var admissionSource: Source = selection.source
             private set
         fun end() { ended = true }
@@ -89,6 +100,62 @@ internal object RelativeEmptyPolicy {
         } == true
         fun commitAuthorized(now: Long): Boolean = !ended && attemptedAt != null &&
             now >= started && now - started < PRECOMMIT_MS
+        fun commitDispatched(now: Long): Boolean {
+            if (!commitAuthorized(now) || dispatchedAt != null) { ended = true; return false }
+            dispatchedAt = now
+            return true
+        }
+        /** Binding is established by the Android observer, never by package/range alone. */
+        fun selectionEvent(binding: EventBinding, generation: Int, eventTime: Long, receipt: Long,
+            now: Long, start: Int, end: Int, itemCount: Int): Boolean {
+            if (ended) return false
+            if (!postcommitLive(now)) return endEvent(EventWitness.EXPIRED)
+            if (generation != selection.generation || binding == EventBinding.TARGET_CHANGED)
+                return endEvent(EventWitness.IDENTITY_CHANGED)
+            if (binding != EventBinding.MATCH) {
+                acceptedWitness = null
+                eventWitness = if (binding == EventBinding.NO_SOURCE) EventWitness.NO_SOURCE else EventWitness.OTHER_SOURCE
+                return true
+            }
+            val dispatch = dispatchedAt
+            val rejected = when {
+                dispatch == null || eventTime < dispatch -> EventWitness.STALE
+                eventTime == dispatch -> EventWitness.SAME_TICK
+                eventTime > receipt || receipt > now -> EventWitness.FUTURE
+                else -> null
+            }
+            if (rejected != null) {
+                acceptedWitness = null
+                eventWitness = rejected
+                return true
+            }
+            if (start != result.length || end != result.length || itemCount != result.length)
+                return endEvent(EventWitness.CONTRADICTORY)
+            if (witnessSequence == Long.MAX_VALUE) return endEvent(EventWitness.CONTRADICTORY)
+            acceptedWitness = ++witnessSequence
+            eventWitness = EventWitness.EXPECTED
+            return true
+        }
+        /** A subsequent relevant text notification cannot be excused as our own mutation. */
+        fun textEvent(binding: EventBinding): Boolean {
+            if (ended) return false
+            if (binding == EventBinding.TARGET_CHANGED) return endEvent(EventWitness.IDENTITY_CHANGED)
+            if (acceptedWitness != null && binding == EventBinding.MATCH)
+                return endEvent(EventWitness.TEXT_AFTER_WITNESS)
+            if (binding == EventBinding.NO_SOURCE) {
+                acceptedWitness = null
+                eventWitness = EventWitness.NO_SOURCE
+            }
+            return true
+        }
+        /** Take before the content call. A prior exact sample can never acquire a later witness. */
+        fun postReadWitness(now: Long): Long? = if (postcommitLive(now)) acceptedWitness else null
+        private fun endEvent(reason: EventWitness): Boolean {
+            eventWitness = reason
+            acceptedWitness = null
+            ended = true
+            return false
+        }
         /** Observe every delivered callback, so a later matching pair cannot erase a contradiction. */
         fun selectionChanged(latest: Selection?): Boolean {
             if (ended) return false
@@ -107,7 +174,7 @@ internal object RelativeEmptyPolicy {
             attemptedAt = now // Consume before editor IPC.
             return true
         }
-        fun verdict(latest: Selection?, sample: Sample?, now: Long): Verdict {
+        fun verdict(latest: Selection?, sample: Sample?, now: Long, readWitness: Long? = null): Verdict {
             val attempted = attemptedAt ?: return Verdict.UNCERTAIN
             if (ended || now < attempted || now - attempted >= POSTCOMMIT_MS || latest == null ||
                 latest.generation != selection.generation || sample == null || sample.offset != -1 ||
@@ -119,9 +186,17 @@ internal object RelativeEmptyPolicy {
             if (updated && (!expectedCaret || latest.composition == Composition.INVALID))
                 return terminal(Verdict.UNCERTAIN)
             val exact = sample.text == result && sample.start == result.length
-            if (exact && updated) return terminal(Verdict.CONFIRMED)
+            val witnessed = readWitness != null && readWitness == acceptedWitness
+            if (exact && updated) {
+                confirmationSource = ConfirmationSource.CALLBACK
+                return terminal(Verdict.CONFIRMED)
+            }
+            if (exact && witnessed) {
+                confirmationSource = ConfirmationSource.SELECTION_EVENT
+                return terminal(Verdict.CONFIRMED)
+            }
             // Old initial/callback metadata is pending, not a new contradictory caret report.
-            if (exact || (empty(sample) && !updated)) return Verdict.PENDING
+            if (exact || (empty(sample) && !updated && !witnessed)) return Verdict.PENDING
             return terminal(Verdict.UNCERTAIN)
         }
         private fun terminal(verdict: Verdict): Verdict { ended = true; return verdict }

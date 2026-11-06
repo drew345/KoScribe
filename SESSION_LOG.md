@@ -145,6 +145,29 @@
   SwiftKey and fixture removal verified by11:31:52. The restore exceeded the
   three-minute window due to the prompt; no further test ran. Next read-only
   review assesses a bound selection-event alternative before implementation.
+- Checkpoint0059d1b records v2 source/results after staged privacy/secret scan.
+  Both architecture and independent review support an owned per-attempt selection
+  event witness. Began app/pure-test and fixture changes: exact source/frame/session/
+  time, expected UTF16 caret/count, fresh read after witness, sticky contradictions.
+  Existing callback route/read budget/deadline/one-commit remain. Add natural event
+  positive and hidden-selected-suffix negative. No new build/phone result yet;
+  normal MVP remains installed and Karrot eligibility is unchanged.
+- Andrew requested one more implementation test then a documented stop. Finished
+  event-witness app and harness, fixed diagnostic payload retention and added same-
+  generation provenance. Astra cleared app2C43D514/AB75CD89/BE189F37/B3A93EB9,
+  fixture0393ED30/harness8B239F00. All199 units pass; app/smoke assembly and lint
+  pass0errors51/6warnings. Archived v3 appB606DD11/smoke60CB262B/config/signatures;
+  ordinary debug/release rebuilt/verified OFF. No policy exception for late text
+  mutations; both relative confirmation routes now use the queued final recheck.
+- Final five-minute window11:49:56: ONLY untouched-empty first method ran and
+  **passed7.936s**. CONFIRMED/EXACT_RELATIVE_AND_SELECTION_EVENT, INITIAL_ONLY,
+  reads4, EVENT_EXPECTED/SELECTION_EVENT. Harness verified same generation,
+  callbackdelta0, exact saved Korean/caret/source preservation, one commit,
+  bubble/SwiftKey return and cleanup. Hidden-suffix plus four other gates remain
+  UNRUN; no Karrot write. Restored verified installed live3FE8BE0F, idle service3508/
+  normal flags/SwiftKey, removed fixture by11:51:08. Stopped device/implementation
+  work as requested. PROGRESS now gives exact archived artifacts and resume order;
+  first next gate is hidden-suffix refusal. Goal paused for another day, incomplete.
 
 ## 2026-10-31 — Design review site revised from Andrew's feedback
 

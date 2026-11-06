@@ -11,6 +11,7 @@ import android.os.SystemClock
 import android.os.UserHandle
 import android.text.Spanned
 import android.view.Display
+import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import android.view.inputmethod.EditorInfo
@@ -37,11 +38,18 @@ internal class RelativeEmptyInsert(
     @Volatile private var outcome = "STATE=IDLE REASON=NONE ORIGIN=NONE"
     @Volatile private var reads = 0
     @Volatile private var lastPostRead: RelativeEmptyPolicy.PostRead? = null
+    @Volatile private var eventWitness = RelativeEmptyPolicy.EventWitness.NONE
+    @Volatile private var confirmationSource = RelativeEmptyPolicy.ConfirmationSource.NONE
     fun recordPostRead(result: String, sample: RelativeEmptyPolicy.Sample?) {
         lastPostRead = RelativeEmptyPolicy.classifyPostRead(result, sample)
     }
     fun record(state: String, reason: String, frame: Frame? = null) {
+        if (frame != null) recordEvent(frame)
         outcome = "STATE=$state REASON=$reason ORIGIN=${frame?.proof?.admissionSource ?: "NONE"}"
+    }
+    fun recordEvent(frame: Frame) {
+        eventWitness = frame.proof.eventWitness
+        confirmationSource = frame.proof.confirmationSource
     }
     fun status(): String {
         val latest = evidence()
@@ -57,7 +65,9 @@ internal class RelativeEmptyInsert(
             " CURRENT_POSITION=$position CURRENT_COMPOSITION=${latest?.composition ?: "UNKNOWN"}" +
             " GENERATION=${latest?.generation ?: -1} UPDATES=${latest?.updates ?: 0}" +
             " UNRESOLVED=${if (latest?.unresolvedMutation == true) "YES" else "NO"}" +
-            " LAST_POSTREAD=${lastPostRead ?: "NONE"} SCOPE=SIGNED_FIXTURE_ONLY"
+            " LAST_POSTREAD=${lastPostRead ?: "NONE"}" +
+            " EVENT_WITNESS=$eventWitness CONFIRMATION_SOURCE=$confirmationSource" +
+            " SCOPE=SIGNED_FIXTURE_ONLY"
     }
     private fun ready(): Boolean = RelativeEmptyInsertMode.enabled &&
         Process.myUserHandle() == UserHandle.getUserHandleForUid(Process.ROOT_UID) &&
@@ -73,6 +83,8 @@ internal class RelativeEmptyInsert(
 
     fun capture(result: String): Frame? {
         lastPostRead = null
+        eventWitness = RelativeEmptyPolicy.EventWitness.NONE
+        confirmationSource = RelativeEmptyPolicy.ConfirmationSource.NONE
         return runCatching { captureFrame(result) }.getOrElse {
             record("REFUSED", "METADATA_UNAVAILABLE")
             null
@@ -125,6 +137,25 @@ internal class RelativeEmptyInsert(
             node.className?.toString() == frame.nodeClass && node.viewIdResourceName == frame.nodeViewId &&
             node.uniqueId == frame.nodeUnique && currentMatches(frame)
     }
+
+    /** Current source identity only; never inspect event text or treat a parent as the field. */
+    fun eventBinding(frame: Frame, event: AccessibilityEvent): RelativeEmptyPolicy.EventBinding = runCatching {
+        if (event.packageName?.toString() != RelativeEmptyInsertMode.PACKAGE || event.windowId != frame.window)
+            return RelativeEmptyPolicy.EventBinding.OTHER_SOURCE
+        if (!frame.proof.postcommitLive(SystemClock.uptimeMillis()) || !stable(frame) ||
+            !frame.proof.postcommitLive(SystemClock.uptimeMillis()))
+            return RelativeEmptyPolicy.EventBinding.TARGET_CHANGED
+        val source = event.getSource(0)
+        if (!frame.proof.postcommitLive(SystemClock.uptimeMillis()) || !stable(frame) ||
+            !frame.proof.postcommitLive(SystemClock.uptimeMillis()))
+            return RelativeEmptyPolicy.EventBinding.TARGET_CHANGED
+        when {
+            source == null -> RelativeEmptyPolicy.EventBinding.NO_SOURCE
+            source == frame.node && source.windowId == frame.window &&
+                source.packageName?.toString() == RelativeEmptyInsertMode.PACKAGE -> RelativeEmptyPolicy.EventBinding.MATCH
+            else -> RelativeEmptyPolicy.EventBinding.OTHER_SOURCE
+        }
+    }.getOrDefault(RelativeEmptyPolicy.EventBinding.TARGET_CHANGED)
 
     fun read(frame: Frame, before: Int, after: Int, precommit: Boolean): RelativeEmptyPolicy.Sample? = runCatching {
         fun live(): Boolean = if (precommit) frame.proof.precommitLive(SystemClock.uptimeMillis())

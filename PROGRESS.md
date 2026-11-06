@@ -9,14 +9,13 @@ after tapping that field again. OpenAI dot is low priority. The installed
 editable-Korean MVP is the starting point. Automatic-after-English remains
 deferred.
 
-**Current work:** the hard no-write relative-read diagnostic is built and
-independently cleared. The old unknown-offset result skipped relative-selection
-classification; this probe separates selection, offset, empty/nonempty payload,
-composition and independent selection evidence. Three owned cases cover empty,
-middle cursor and a selected emoji whose unavailable selected-text response
-appears collapsed. Actual remote metadata omissions are checked. A fixture is
-not a full Karrot virtual-container reproduction. A write adapter follows only
-if measured evidence supports it. Work is isolated on `codex/karrot-insertion`.
+**Current work:** all three relative-read fixtures passed, followed by the single
+empty-Karrot read. Karrot returned EMPTY/UNKNOWN offset/relative COLLAPSED, but
+independent selection remained INITIAL_ONLY/OLDER with LATER_SIGNAL and UNKNOWN
+composition. No insertion eligibility follows. Implement and review a separate
+metadata-only calibration, with content reads disabled, to measure live selection
+callbacks while a fixed sample is typed, selected and deleted. A write adapter
+follows only if evidence supports it. Branch: `codex/karrot-insertion`.
 
 **November 6 local validation:** 168 unit tests passed; app assembly/lint passed
 (0 errors, 50 warnings), smoke assembly/lint passed (0 errors, 5 warnings).
@@ -41,14 +40,37 @@ owned empty case stopped in 2.061s: INTERRUPTED/WINDOW_STATE_CHANGED,
 CALL=NOT_STARTED. All legacy effect counters remained zero; no other case or
 Karrot read ran. Restored live3FE8BE0F in place, verified installed hash,
 service PID25058/idle/regular flags and SwiftKey; removed only the fixture.
-Harness932DBB1B is independently cleared and built with bounded setup settling
-and sanitized terminal details; saved smokev2 SHA90995B07, lint0errors5warnings.
-It retains one trigger and every product interruption guard. Not phone-tested.
-Andrew requested about ten minutes before another phone window and will announce
-availability. Do not infer readiness when that time elapses. Local source review
-mapped a separate relative proof into the existing manual transaction; see RESEARCH.
-After all three owned cases pass, have Andrew prepare an empty Karrot composer
-for one deliberate read. Diagnostic results do not grant writer eligibility.
+**Second phone run, November 6:** Andrew announced readiness at10:17 KST.
+Reviewed harness932DBB1B/smokev2 90995B07 failed the initial combined
+fixture/focus/SwiftKey check after9.474s, before its setup-idle wait or diagnostic
+trigger. Product NO_REQUEST/CALL=NOT_STARTED; all effect counters0. Stopped and
+restored live3FE8BE0F, verified hash, idle service28207/regular flags and SwiftKey,
+then removed the fixture by10:19:52 KST. Investigating owned setup ordering and
+separating readiness conditions in the report; do not infer which condition failed.
+The product probe and insertion guards were unchanged; no Karrot read ran in that session.
+Local source review mapped a separate relative proof into the existing manual
+transaction; see RESEARCH. This remains dependent on measured evidence.
+
+**Third phone session, November 6:** after fresh ten-minute availability,
+app18FE04FD with independently cleared harness3572B5D2/smokev3 CB426C29 passed
+empty3.282s, middle2.272s and selected2.466s. Each observed one read, unchanged
+fixture/counters and the required relative/independent-selection classifications.
+Standalone status dumps twice timed out after fixture teardown; the instrumented
+checks themselves passed and no content request was repeated. Installed reviewed
+KARROTC46B46FF; own status responded normally. Andrew prepared an empty composer.
+One read on service6327 produced the result above, STYLE=UNSTYLED,
+AGREEMENT=SHAPE_AGREES and ELIGIBLE=NEVER, with all effect counters0. Restored
+installed live3FE8BE0F/hash, idle service9329/regular flags/SwiftKey; fixture removed
+by10:30:24 KST, within the window. No insertion, API, mic or clipboard action.
+Next calibration needs its own reviewed/built candidate and fresh availability.
+That candidate is now built and independently cleared: 176 unit tests pass,
+app lint0errors50warnings, smoke lint0errors5warnings, both assembled. App source
+cache3A3A6CC2/testsFFB584D6/probeA3295272/serviceDAB2B763/Gradle6FD7E067;
+smokeA22A6D39. Saved under ignored `app/build/relative-selection-20261106/`:
+FIXTURE_SELECTION CAAB09CD, KARROT_SELECTION 7A96B1C4, smoke1ED459AC, with
+matching signatures/configs. Ordinary debug/release rebuilt and verified OFF.
+Await fresh availability for one owned callback-transition test, then user-operated
+Karrot ABCD/select/delete stages if it passes. No additional content read is planned.
 Exact protocol: [INSTRUMENTATION](docs/INSTRUMENTATION.md#karrot-relative-read-diagnostic--november-6).
 
 **Current product direction:** Andrew proposed returning to the working manual
@@ -62,7 +84,7 @@ been superseded. Keep the automatic experiments available for later investigatio
 **Installed on Andrew's A35:** the secure manual MVP with editable Korean is
 installed and verified (SHA-256
 3FE8BE0FF5AFD51908177D81F6AF652FB6EB0C34A85CD68825731E16DA3D33EA).
-The accessibility service reconnected at PID 12646. Speech and translation are
+The accessibility service reconnected at PID 9329 after the latest restoration. Speech and translation are
 on, automatic insertion is off, the draft is empty and SwiftKey is selected.
 The fixture was removed from user 0. The previous live build D266E911 is saved.
 

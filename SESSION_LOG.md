@@ -54,6 +54,36 @@
   prospective relative proof into the existing manual one-commit transaction,
   including the absolute-offset dependencies and callback-history reset. Saved
   this proposed integration in RESEARCH; no adapter code or write approval yet.
+- At10:17 KST Andrew announced phone readiness. The revised empty test stopped
+  after9.474s at its combined fixture/focus/SwiftKey readiness check, before the
+  one-read trigger. Product NO_REQUEST/CALL=NOT_STARTED; effects0. Stopped and
+  restored installed live3FE8BE0F/hash, service28207 idle/regular flags/SwiftKey,
+  removed fixture by10:19:52. No Karrot read. Split the opaque readiness report
+  and investigate setup ordering before another reviewed candidate.
+- Corrected the owned harness to wait for window/field focus before its single
+  SwiftKey request; added fixed readiness categories. Review cleared3572B5D2;
+  smoke assembly/lint0errors5warnings passed, archived v3CB426C29. A compile-only
+  interpolation error was corrected before the final build.
+- Third session after fresh ten-minute availability: all three owned read cases
+  passed (empty3.282s, middle2.272s, selected2.466s). Two supplemental standalone
+  status dumps timed out after teardown; completed instrumented assertions passed,
+  and no content request was repeated. Installed reviewed KARROTC46B46FF and
+  Andrew prepared an empty composer. The sole read returned EMPTY/offsetUNKNOWN/
+  relativeCOLLAPSED, but independent selectionINITIAL_ONLY/OLDER, compUNKNOWN,
+  LATER_SIGNAL, styleUNSTYLED. All effects0. Restored verified live3FE8BE0F,
+  service9329/regular flags/SwiftKey and removed fixture by10:30:24 KST.
+- Both reviewers agree this resolves the old missing classification but not
+  selection freshness. Next implement/review a content-read-disabled calibration
+  of cached selection callbacks during fixed ABCD typing/select-all/deletion.
+  Owned gate first, then fresh availability for user-operated Karrot stages.
+- Built and independently cleared the metadata-only app/cache and owned callback
+  calibration. 176 units pass, app lint0errors50warnings, smoke lint0errors5warnings,
+  both assembled. Saved FIXTURE_SELECTION CAAB09CD, KARROT_SELECTION7A96B1C4,
+  smoke1ED459AC in ignored relative-selection-20261106 with matching signers/configs.
+  App source3A3A6CC2/FFB584D6/A3295272/DAB2B763/6FD7E067, smokeA22A6D39.
+  Ordinary debug/release rebuilt/verified OFF. Asked fresh ten-minute availability
+  for owned gate then user-operated ABCD/select/delete metadata snapshots. No
+  content-read command, writer or new phone action in this preparation.
 
 ## 2026-10-31 — Design review site revised from Andrew's feedback
 

@@ -25,6 +25,59 @@ action occurred. The next harness revision will settle setup events before its
 single trigger and report code-only terminal state/reason/call on failure;
 product terminal interruption remains unchanged.
 
+Second session at10:17 KST used the same product18FE04FD and reviewed
+harness932DBB1B/smokev2 90995B07 after Andrew announced readiness. The initial
+combined `MASKED_SERVED_EDITOR_AND_SWIFTKEY_NOT_READY` check timed out after9.474s,
+before the new idle wait or any diagnostic trigger. Its composite boolean did
+not retain which readiness condition was false. Product status was NO_REQUEST,
+CALL=NOT_STARTED; all legacy effect counters0, draftNONE/cleanupfalse. No other
+case or Karrot read was run. Restored and verified installed live3FE8BE0F,
+idle service28207/regular flags and SwiftKey, removed fixture by10:19:52 KST.
+Further harness work must expose individual readiness conditions and inspect
+owned window-focus/keyboard setup without weakening product interruption.
+
+Third session began10:25:32 KST after Andrew provided up to ten minutes, including
+the empty-Karrot check if the owned tests passed. Product18FE04FD plus reviewed
+harness3572B5D2/smokev3 CB426C29 passed all three exact sole-flag methods:
+
+| Case | Time | Asserted result |
+| --- | --- | --- |
+| Empty | 3.282s | EMPTY, offsetUNKNOWN, relativeCOLLAPSED, independentCOLLAPSED, SHAPE_AGREES |
+| Middle | 2.272s | NONEMPTY, offsetUNKNOWN, relativeCOLLAPSED, independentCOLLAPSED, SHAPE_AGREES |
+| Selected emoji | 2.466s | NONEMPTY, offsetUNKNOWN, relativeCOLLAPSED, independentSELECTED, SHAPE_CONTRADICTS |
+
+Each method reported OBSERVED/READ_COMPLETE/CALL_RETURNED and checked unchanged
+fixture content/selection and effect counters. Two supplemental standalone
+service-status dumps after fixture teardown timed out; the instrumented read/
+counter checks completed normally and no content request was repeated. These
+results support diagnostic discrimination, not a full Karrot editor simulation.
+
+Installed KARROT arm C46B46FF, service6327. Its own status responded normally,
+showing NO_REQUEST and all effects0. Andrew explicitly prepared an empty Karrot
+composer with SwiftKey. Preflight status confirmed current inputKARROT. One
+`--relative-editor-read-once` returned RUNNING, then read-free status at10:29:06:
+
+```text
+STATE=OBSERVED REASON=READ_COMPLETE PAYLOAD=EMPTY OFFSET=UNKNOWN
+RELATIVE=COLLAPSED STYLE=UNSTYLED INPUT_SELECTION=COLLAPSED
+INPUT_SOURCE=INITIAL_ONLY INPUT_AGE=OLDER INPUT_COMPOSITION=UNKNOWN
+INPUT_SIGNAL=LATER_SIGNAL AGREEMENT=SHAPE_AGREES ELIGIBLE=NEVER
+CALL=RETURNED CURRENT_INPUT_STARTED=YES CURRENT_INPUT_PACKAGE=KARROT
+```
+
+All destination capture/commit/original/automatic/recording/translation counters0,
+draftNONE/cleanupfalse. The read matched bounded pre/post served metadata, but
+the independent selection was only the starting EditorInfo after later signals;
+there was no current-generation selection update. UNSTYLED does not prove no
+composition. No writer eligibility is established. Do not repeat the empty read;
+the next diagnostic question is live callback viability during controlled edits.
+
+Restored live3FE8BE0F and verified installed hash, service9329 connected/idle,
+REVIEW speech/translationtrue, all experimentsfalse and SwiftKey. Removed only
+fixture from user0 by10:30:24 KST. No API, mic, clipboard, insertion, Send,
+screenshots or credential actions. User-operated fixed-sample selection
+calibration is a separate upcoming reviewed scope.
+
 ## 2026-11-04 — Final sleep checkpoint: focus-loss accepted, poll root missing
 
 Source service39EC2A5DFD48D2C88783007F096302034CCF8C0EFFFAD2AB9C550290C8C1F4A3,

@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 internal object RelativeReadProbeMode {
     val enabled: Boolean get() = BuildConfig.DEBUG && BuildConfig.RELATIVE_READ_PROBE_ARM != "OFF"
+    val selectionOnly: Boolean get() = enabled && RelativeProbeAccess.selectionOnly(BuildConfig.RELATIVE_READ_PROBE_ARM)
 }
 
 /** A deliberate one-read diagnostic. This class has no draft, microphone, clipboard or writer API. */
@@ -52,17 +53,30 @@ internal class RelativeReadProbe(
     private val active = AtomicReference<Token?>(null)
     private val last = AtomicReference<Token?>(null)
     private val selections = RelativeSelectionEvidence() // main thread only
+    private val calibration = RelativeSelectionCalibration()
     @Volatile private var readiness = "CURRENT_INPUT_STARTED=NO CURRENT_INPUT_PACKAGE=NONE"
-    private val target: String get() = if (BuildConfig.RELATIVE_READ_PROBE_ARM == "FIXTURE")
+    private val target: String get() = if (BuildConfig.RELATIVE_READ_PROBE_ARM in setOf("FIXTURE", "FIXTURE_SELECTION"))
         "com.koscribe.smoke" else "com.towneers.www"
 
-    fun inputStarted(generation: Int, info: EditorInfo) {
+    fun inputStarted(generation: Int, info: EditorInfo, restarting: Boolean) {
         if (!RelativeReadProbeMode.enabled) return
         interrupt("INPUT_START")
         readiness = "CURRENT_INPUT_STARTED=YES CURRENT_INPUT_PACKAGE=" + when (info.packageName) {
             "com.koscribe.smoke" -> "FIXTURE"
             "com.towneers.www" -> "KARROT"
             else -> "OTHER"
+        }
+        if (RelativeReadProbeMode.selectionOnly) {
+            val packageKind = when (info.packageName) {
+                "com.koscribe.smoke" -> RelativeSelectionCalibration.Package.FIXTURE
+                "com.towneers.www" -> RelativeSelectionCalibration.Package.KARROT
+                else -> RelativeSelectionCalibration.Package.OTHER
+            }
+            if (info.packageName == target && safeType(info.inputType))
+                calibration.start(generation, packageKind, restarting, info.initialSelStart,
+                    info.initialSelEnd, SystemClock.uptimeMillis())
+            else calibration.outOfScope(packageKind)
+            return
         }
         if (info.packageName == target)
             selections.start(generation, info.initialSelStart, info.initialSelEnd, SystemClock.uptimeMillis())
@@ -72,15 +86,32 @@ internal class RelativeReadProbe(
         if (!RelativeReadProbeMode.enabled) return
         interrupt("INPUT_FINISH")
         readiness = "CURRENT_INPUT_STARTED=NO CURRENT_INPUT_PACKAGE=NONE"
+        if (RelativeReadProbeMode.selectionOnly) calibration.finish()
         selections.clear()
     }
     fun selection(generation: Int, start: Int, end: Int, candidateStart: Int, candidateEnd: Int) {
         if (!RelativeReadProbeMode.enabled) return
+        if (RelativeReadProbeMode.selectionOnly) {
+            calibration.update(generation, start, end, candidateStart, candidateEnd, SystemClock.uptimeMillis())
+            return
+        }
         selections.update(generation, start, end, candidateStart, candidateEnd, SystemClock.uptimeMillis())
         interrupt("INPUT_SELECTION")
     }
     fun event(event: AccessibilityEvent) {
         if (!RelativeReadProbeMode.enabled) return
+        if (RelativeReadProbeMode.selectionOnly) {
+            if (event.packageName?.toString() == target) {
+                val signal = when (event.eventType) {
+                    AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED -> RelativeSelectionCalibration.Signal.TEXT
+                    AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED -> RelativeSelectionCalibration.Signal.SELECTION
+                    AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> RelativeSelectionCalibration.Signal.CONTENT
+                    else -> RelativeSelectionCalibration.Signal.NONE
+                }
+                calibration.signal(signal)
+            }
+            return
+        }
         val reason = when (event.eventType) {
             AccessibilityEvent.TYPE_WINDOWS_CHANGED -> "WINDOWS_CHANGED"
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> "WINDOW_STATE_CHANGED"
@@ -105,9 +136,19 @@ internal class RelativeReadProbe(
         (last.get()?.let { "RELATIVE_READ_V1 ${it.code.get()} CALL=${it.call.get()}" }
             ?: "RELATIVE_READ_V1 STATE=NO_REQUEST ELIGIBLE=NEVER CALL=NOT_STARTED") + " $readiness"
 
+    /** Only an immutable cached callback snapshot and a local clock; no input() or Android editor access. */
+    fun selectionStatus(): String = if (RelativeReadProbeMode.selectionOnly)
+        calibration.snapshot().code(SystemClock.uptimeMillis())
+        else "RELATIVE_SELECTION_V1 STATE=DISABLED CONTENT_READ=DISABLED ELIGIBLE=NEVER"
+
     /** Called only by the explicit dump command. Status and idle observation never read text. */
-    fun request(): String {
-        if (!RelativeReadProbeMode.enabled) return status()
+    fun request(): String = RelativeProbeAccess.requestContent(BuildConfig.DEBUG,
+        BuildConfig.RELATIVE_READ_PROBE_ARM,
+        if (RelativeReadProbeMode.selectionOnly)
+            "RELATIVE_READ_V1 STATE=REFUSED REASON=SELECTION_ONLY CONTENT_READ=DISABLED ELIGIBLE=NEVER CALL=NOT_STARTED"
+        else status()) { requestRead() }
+
+    private fun requestRead(): String {
         val token = Token(SystemClock.uptimeMillis() + 3000L)
         if (!active.compareAndSet(null, token)) return "RELATIVE_READ_V1 STATE=BUSY ELIGIBLE=NEVER"
         last.set(token)

@@ -2310,6 +2310,10 @@ class KoScribeService : AccessibilityService() {
             writer.println(relativeReadProbe.status())
             return
         }
+        if (args.size == 1 && args[0] == "--relative-editor-selection-status") {
+            writer.println(relativeReadProbe.selectionStatus())
+            return
+        }
         if (args.size == 1 && args[0] == "--karrot-editor-probe-metadata-once") {
             writer.println(karrotServiceProbeOnce())
             return
@@ -3057,7 +3061,7 @@ class KoScribeService : AccessibilityService() {
             if (startupExperiment == StartupExperiment.REVIEW) {
                 generation++
                 composition.reset()
-                if (RelativeReadProbeMode.enabled) relativeReadProbe.inputStarted(generation, attribute)
+                if (RelativeReadProbeMode.enabled) relativeReadProbe.inputStarted(generation, attribute, restarting)
                 stableSession?.inputStarted(attribute, generation, restarting)
                 trackAutoInputStarted(attribute, generation, restarting)
                 abortPostCommitProbe("INPUT_STARTED")

@@ -64,7 +64,7 @@ require(karrotNoReadProbe != "true" ||
 val reviewSurfaceProbe = providers.gradleProperty("koscribeReviewSurfaceProbe").orElse("OFF").get()
 val stableOverlayAuto = providers.gradleProperty("koscribeStableOverlayAuto").orElse("false").get()
 val relativeReadProbe = providers.gradleProperty("koscribeRelativeReadProbe").orElse("OFF").get()
-require(relativeReadProbe in setOf("OFF", "FIXTURE", "KARROT"))
+require(relativeReadProbe in setOf("OFF", "FIXTURE", "KARROT", "FIXTURE_SELECTION", "KARROT_SELECTION"))
 require(relativeReadProbe == "OFF" || (startupExperimentArm == "REVIEW" &&
     reviewSurfaceProbe == "OFF" && stableOverlayAuto == "false" &&
     listOf(visualTest, speechInput, translationInput, autoInsert, karrotServiceProbe,

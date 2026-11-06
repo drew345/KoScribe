@@ -1,5 +1,61 @@
 # Synthetic cross-app instrumentation smoke test
 
+## Cached selection calibration — November 6
+
+Use secure REVIEW with `-PkoscribeRelativeReadProbe=FIXTURE_SELECTION` or
+`KARROT_SELECTION`. Every other feature/experiment remains OFF. These arms
+hard-disable the content-read request before token allocation or editor access.
+The only calibration command is:
+
+```powershell
+adb -d shell dumpsys activity service com.koscribe.prototype/.KoScribeService --relative-editor-selection-status
+```
+
+It reads an immutable cache populated by supplied input-start/finish/selection
+callbacks and target event categories, plus the local clock. It does not fetch
+the current connection, roots, nodes, event sources, editor text or credentials.
+Only safe configured-target input types are tracked. Status reports current
+generation, INITIAL_ONLY versus CALLBACK_CURRENT_GEN, collapsed/selected shape,
+origin/nonzero/range category, composition, lifecycle/update counts and delivered
+signal ordering. Latest sample only; counters saturate explicitly. The bounded
+sample-pair labels ZERO, CARET4 and RANGE_0_4 describe callback coordinates;
+CARET4 does not claim the field ends there. Every result is ELIGIBLE=NEVER.
+
+After review/build, first run this exact owned case and sole flag with the
+FIXTURE_SELECTION arm and matching smoke APK:
+
+```powershell
+adb -d shell am instrument --user 0 -w -r -e class 'com.koscribe.smoke.RelativeSelectionSmokeTest#currentGenerationSelectionCallbacksTrackOwnedChangesWithoutContentRead' -e relativeSelectionReady true com.koscribe.smoke/com.koscribe.smoke.KoScribeTestRunner
+```
+
+The harness uses the reviewed focused-window/SwiftKey setup. Its own direct
+fixture oracle starts empty, edits the Editable to ABCD with caret4, selects0..4,
+then clears to0..0. It never calls product callbacks or IMM.updateSelection.
+Each changed stage requires a newly delivered selection callback in the same
+generation with unchanged start/finish/restart counts, the matching pair/shape,
+and unchanged effect counters. Its report preserves fixed callback fields and
+separate stage labels. Failed setup reports code-only local/remote/IME evidence.
+Stop at the first failure and restore the saved live MVP.
+
+After that gate passes, use KARROT_SELECTION during fresh phone availability.
+Andrew operates the field; the agent only requests cached snapshots:
+
+| Stage | User action | Expected independently reported pair |
+| --- | --- | --- |
+| Empty | Open an empty composer and show SwiftKey | ZERO; initial-only is an observation here |
+| Typed | Type public sample `ABCD` and leave the caret after it | New callback, COLLAPSED/NONZERO/CARET4 |
+| Selected | Select exactly all four sample characters | New callback, SELECTED/RANGE/RANGE_0_4 |
+| Cleared | Delete the selection back to empty | New callback, COLLAPSED/ORIGIN/ZERO |
+
+Confirm each user stage before its snapshot. Do not treat accessibility content
+events, a new initial EditorInfo or matching shapes without new callbacks as
+successful live updates. Keep composition and signal order visible. No content
+read, Insert, Copy, Send, app-field automation or conversation inspection belongs
+to this calibration. A missing/stale/contradictory callback leaves evidence
+unresolved; a pass supports designing an owned adapter gate, not a Karrot write.
+Restore and verify live3FE8BE0F in place and remove only the owned fixture after
+the session, as described in the relative-read protocol below.
+
 ## Karrot relative-read diagnostic — November 6
 
 This is a hard no-write diagnostic for the active manual-insertion goal.
@@ -36,7 +92,18 @@ The November 6 revised harness waits for 500ms without accessibility events
 before the sole trigger. This does not prove the product's event queue is empty;
 any interruption still fails. Failures include sanitized state/reason/call codes
 and check unchanged effect counters. The initial phone run was interrupted by a
-window-state event before reading; the revised timing needs device validation.
+window-state event before reading.
+The second run failed earlier at combined readiness, before that wait. Source
+review found the keyboard request could run before the fixture window gained
+focus. Android's [keyboard visibility guidance](https://developer.android.com/develop/ui/views/touch-and-input/keyboard-input/visibility)
+requires a focused window and connected editor; an early request can be ignored.
+Gate the fixture's single request on owned window readiness and report each
+readiness dimension separately. This is a setup correction; the earlier
+combined result does not prove which dimension failed.
+Reviewed harness3572B5D2/smokev3 CB426C29 passed all three cases on November6.
+The subsequent single empty-Karrot read completed but had only initial selection
+evidence. Both results and limitations are recorded in DEVICE_TESTS. The next
+experiment is a separate metadata-only callback calibration, not another empty read.
 
 Only after those checks pass, install the KARROT arm in place and have Andrew
 prepare an empty Karrot composer with SwiftKey visible. Never inspect conversation

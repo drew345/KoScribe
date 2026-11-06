@@ -34,6 +34,7 @@ class RelativeEditorReadSmokeTest {
     private val flags = listOf("relativeEmptyReady", "relativeMiddleReady", "relativeSelectedReady")
     private lateinit var instrumentation: Instrumentation
     private var launchedFixture = false
+    private var showRequestAccepted: Boolean? = null
 
     private data class Case(val flag: String, val text: String, val start: Int, val end: Int,
         val payload: String, val inputSelection: String, val agreement: String)
@@ -88,14 +89,15 @@ class RelativeEditorReadSmokeTest {
         assumeTrue("WRONG_RELATIVE_READ_CASE",
             InstrumentationRegistry.getArguments().getString(case.flag) == "true")
         val editor = launchAndSeed(case)
-        await("MASKED_SERVED_EDITOR_AND_SWIFTKEY_NOT_READY") {
-            true.takeIf { maskedRemoteNodeReady() && defaultDisplayImeVisible() &&
-                selectedSwiftKey() && directFixtureMatches(editor, case) }
-        }
-        await("PROBE_INPUT_NOT_STARTED_FOR_FIXTURE") {
-            val status = status()
-            true.takeIf { status["CURRENT_INPUT_STARTED"] == "YES" &&
-                status["CURRENT_INPUT_PACKAGE"] == "FIXTURE" }
+        awaitInitialReadiness(editor, case)
+        try {
+            await("PROBE_INPUT_NOT_STARTED_FOR_FIXTURE") {
+                val status = status()
+                true.takeIf { status["CURRENT_INPUT_STARTED"] == "YES" &&
+                    status["CURRENT_INPUT_PACKAGE"] == "FIXTURE" }
+            }
+        } catch (_: AssertionError) {
+            failReadiness("PROBE_INPUT_NOT_STARTED_FOR_FIXTURE", editor, case)
         }
         // The fixture launch and SwiftKey focus can publish late window events. Settle those
         // before spending the sole diagnostic read; product interruption rules remain strict.
@@ -104,8 +106,10 @@ class RelativeEditorReadSmokeTest {
         } catch (_: java.util.concurrent.TimeoutException) {
             throw AssertionError("FIXTURE_WINDOW_EVENTS_NOT_IDLE_BEFORE_READ")
         }
-        assertTrue("FIXTURE_PROOF_CHANGED_AFTER_IDLE", maskedRemoteNodeReady() &&
-            defaultDisplayImeVisible() && selectedSwiftKey() && directFixtureMatches(editor, case))
+        val settledWindows = automation().windows
+        assertTrue("FIXTURE_PROOF_CHANGED_AFTER_IDLE", maskedRemoteNodeReady(settledWindows) &&
+            defaultDisplayImeVisible(settledWindows) && selectedSwiftKey() &&
+            directFixtureMatches(editor, case))
         val ready = status()
         assertTrue("SERVED_INPUT_CHANGED_AFTER_IDLE", ready["CURRENT_INPUT_STARTED"] == "YES" &&
             ready["CURRENT_INPUT_PACKAGE"] == "FIXTURE")
@@ -150,17 +154,141 @@ class RelativeEditorReadSmokeTest {
         val activity = await("RELATIVE_FIXTURE_NOT_AVAILABLE") {
             SmokeEditorActivity.current.get()?.takeIf { it.relativeReadEditor() != null }
         }
+        try {
+            await("OWN_FIXTURE_WINDOW_NOT_FOCUSED") {
+                true.takeIf { ownedWindowReady(activity) }
+            }
+        } catch (_: AssertionError) {
+            failReadiness("OWN_FIXTURE_WINDOW_NOT_FOCUSED", activity.relativeReadEditor(), case)
+        }
         lateinit var editor: EditText
         instrumentation.runOnMainSync {
+            assertTrue("OWN_FIXTURE_CHANGED_BEFORE_IME_REQUEST",
+                SmokeEditorActivity.current.get() === activity &&
+                    activity.window.decorView.hasWindowFocus())
             editor = activity.relativeReadEditor() ?: throw AssertionError("RELATIVE_EDITOR_MISSING")
             editor.setText(case.text)
             editor.setSelection(case.start, case.end)
-            editor.requestFocus()
-            (activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
-                .showSoftInput(editor, InputMethodManager.SHOW_IMPLICIT)
+            assertTrue("OWN_FIELD_FOCUS_FAILED_BEFORE_IME_REQUEST",
+                editor.requestFocus() && editor.isFocused && editor.isAttachedToWindow &&
+                    editor.windowToken != null && activity.window.decorView.hasWindowFocus() &&
+                    SmokeEditorActivity.current.get() === activity)
+            showRequestAccepted =
+                (activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                    .showSoftInput(editor, InputMethodManager.SHOW_IMPLICIT)
         }
         return editor
     }
+
+    private fun ownedWindowReady(activity: SmokeEditorActivity): Boolean {
+        var ready = false
+        instrumentation.runOnMainSync {
+            val decor = activity.window.decorView
+            val candidate = activity.relativeReadEditor()
+            ready = SmokeEditorActivity.current.get() === activity && candidate != null &&
+                decor.isAttachedToWindow && decor.hasWindowFocus() &&
+                decor.display?.displayId == Display.DEFAULT_DISPLAY &&
+                candidate.isAttachedToWindow && candidate.windowToken != null &&
+                candidate.width > 0 && candidate.height > 0
+        }
+        return ready
+    }
+
+    private fun awaitInitialReadiness(editor: EditText, case: Case) {
+        val end = SystemClock.elapsedRealtime() + 8_000L
+        while (SystemClock.elapsedRealtime() < end) {
+            val currentWindows = automation().windows
+            if (maskedRemoteNodeReady(currentWindows) &&
+                defaultDisplayImeVisible(currentWindows) && selectedSwiftKey() &&
+                directFixtureMatches(editor, case)) return
+            SystemClock.sleep(80)
+        }
+        failReadiness("MASKED_SERVED_EDITOR_AND_SWIFTKEY_NOT_READY", editor, case)
+    }
+
+    private fun failReadiness(code: String, editor: EditText?, case: Case): Nothing {
+        val evidence = readinessEvidence(editor, case)
+        instrumentation.sendStatus(2, Bundle().apply {
+            putString("stream", "RELATIVE_READ_PRETRIGGER_${code}_$evidence\n")
+        })
+        throw AssertionError("${code}_$evidence")
+    }
+
+    private fun readinessEvidence(editor: EditText?, case: Case): String {
+        var local = "LOCAL_UNAVAILABLE"
+        instrumentation.runOnMainSync {
+            val activity = SmokeEditorActivity.current.get()
+            val decor = activity?.window?.decorView
+            val candidate = activity?.relativeReadEditor()
+            local = "LOCAL_OWNER_${bit(activity != null && candidate != null && candidate === editor)}" +
+                "_DECOR_ATTACHED_${bit(decor?.isAttachedToWindow == true)}" +
+                "_WINDOW_FOCUS_${bit(decor?.hasWindowFocus() == true)}" +
+                "_FIELD_ATTACHED_${bit(candidate?.isAttachedToWindow == true)}" +
+                "_FIELD_SHOWN_${bit(candidate?.isShown == true)}" +
+                "_FIELD_FOCUS_${bit(candidate?.isFocused == true)}" +
+                "_TOKEN_${bit(candidate?.windowToken != null)}" +
+                "_SIZE_${bit(candidate != null && candidate.width > 0 && candidate.height > 0)}" +
+                "_TEXT_MATCH_${bit(candidate?.text?.toString() == case.text)}" +
+                "_SELECTION_MATCH_${bit(candidate?.selectionStart == case.start &&
+                    candidate?.selectionEnd == case.end)}" +
+                "_TYPE_TEXT_${bit(candidate != null &&
+                    (candidate.inputType and InputType.TYPE_MASK_CLASS) == InputType.TYPE_CLASS_TEXT)}"
+        }
+        val windows = automation().windows
+        val focusedApps = windows.filter {
+            it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.isFocused
+        }
+        val imeCount = windows.count {
+            it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD &&
+                it.displayId == Display.DEFAULT_DISPLAY
+        }
+        val remote = when {
+            focusedApps.isEmpty() -> "APP_NONE"
+            focusedApps.size > 1 -> "APP_MULTIPLE"
+            focusedApps.single().displayId != Display.DEFAULT_DISPLAY -> "APP_OTHER_DISPLAY"
+            else -> {
+                val window = focusedApps.single()
+                val root = window.getRoot(0)
+                when {
+                    root == null -> "ROOT_MISSING"
+                    root.packageName?.toString() != fixture -> "ROOT_OTHER_PACKAGE"
+                    root.windowId != window.id -> "ROOT_WINDOW_MISMATCH"
+                    else -> {
+                        val node = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+                        if (node == null) "NODE_MISSING" else
+                            "NODE_PRESENT_PKG_${bit(node.packageName?.toString() == fixture)}" +
+                                "_WINDOW_${bit(node.windowId == window.id)}" +
+                                "_FOCUS_${bit(node.isFocused)}" +
+                                "_EDITABLE_${bit(node.isEditable)}" +
+                                "_ENABLED_${bit(node.isEnabled)}" +
+                                "_VISIBLE_${bit(node.isVisibleToUser)}" +
+                                "_PASSWORD_${bit(node.isPassword)}" +
+                                "_TYPE_ZERO_${bit(node.inputType == InputType.TYPE_NULL)}" +
+                                "_RESOURCE_ABSENT_${bit(node.viewIdResourceName.isNullOrBlank())}" +
+                                "_SELECTION_UNKNOWN_${bit(node.textSelectionStart == -1 &&
+                                    node.textSelectionEnd == -1)}"
+                    }
+                }
+            }
+        }
+        val served = runCatching { status() }.getOrNull()
+        val started = when (served?.get("CURRENT_INPUT_STARTED")) {
+            "YES" -> "YES"; "NO" -> "NO"; else -> "UNKNOWN"
+        }
+        val packageCode = when (served?.get("CURRENT_INPUT_PACKAGE")) {
+            "FIXTURE" -> "FIXTURE"; "KARROT" -> "KARROT"; "OTHER" -> "OTHER"
+            "NONE" -> "NONE"; else -> "UNKNOWN"
+        }
+        val show = when (showRequestAccepted) {
+            true -> "ACCEPTED"; false -> "DECLINED"; null -> "NOT_REQUESTED"
+        }
+        return "${local}_FOCUSED_APPS_${focusedApps.size.coerceAtMost(9)}" +
+            "_REMOTE_${remote}_IME_COUNT_${imeCount.coerceAtMost(9)}" +
+            "_SWIFTKEY_${bit(selectedSwiftKey())}_SHOW_$show" +
+            "_INPUT_STARTED_${started}_INPUT_PACKAGE_$packageCode"
+    }
+
+    private fun bit(value: Boolean): Int = if (value) 1 else 0
 
     private fun directFixtureMatches(editor: EditText, case: Case): Boolean {
         var matches = false
@@ -173,8 +301,9 @@ class RelativeEditorReadSmokeTest {
         return matches
     }
 
-    private fun maskedRemoteNodeReady(): Boolean {
-        val focused = automation().windows.filter {
+    private fun maskedRemoteNodeReady(
+        currentWindows: List<AccessibilityWindowInfo> = automation().windows): Boolean {
+        val focused = currentWindows.filter {
             it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.isFocused &&
                 it.displayId == Display.DEFAULT_DISPLAY
         }
@@ -190,7 +319,8 @@ class RelativeEditorReadSmokeTest {
             node.textSelectionEnd == -1
     }
 
-    private fun defaultDisplayImeVisible(): Boolean = automation().windows.any {
+    private fun defaultDisplayImeVisible(
+        currentWindows: List<AccessibilityWindowInfo> = automation().windows): Boolean = currentWindows.any {
         it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD &&
             it.displayId == Display.DEFAULT_DISPLAY
     }

@@ -570,6 +570,25 @@ destination. Further adapter design would have to use separate relative
 selection/context evidence and exact postcommit verification, initially in
 an owned fixture; no Karrot write is justified by this read alone.
 
+## Karrot relative selection review — 2026-11-06
+
+The old Karrot read used `getSurroundingText(1, 1, 0)`. Its classifier returned
+OFFSET_UNKNOWN before classifying selection, so the recorded result leaves
+relative selection and composing state unmeasured. The new goal needs those
+dimensions recorded independently, together with session continuity and
+separate selection-callback evidence.
+
+Android's default surrounding-text implementation can return an unknown
+absolute offset while retaining selection coordinates relative to the returned
+text. It also converts an unavailable selected-text response to empty text.
+That fallback can therefore lose the distinction between an empty selection
+and unavailable selection evidence. An offset of -1 alone settles neither
+insertion eligibility nor refusal. [Android 16 InputConnection implementation](https://github.com/aosp-mirror/platform_frameworks_base/blob/android16-release/core/java/android/view/inputmethod/InputConnection.java#L362-L383)
+
+Prepare a separate hard no-write diagnostic and owned fixtures for this
+distinction. Preserve the existing manual writer until an alternative observer
+can prove its destination, collapsed selection, preservation and exact outcome.
+
 ## Automatic flow and compatibility review — 2026-11-04
 
 **Decision:** Andrew reopened both issues; the selected first goal is automatic

@@ -9,6 +9,15 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
 
 ## Work authorization and model roles
 
+- On 2026-11-06 Andrew explicitly reopened compatibility work and asked to set
+  a new goal. Prioritize manual Insert into Karrot Market from the editable
+  Korean MVP. Instagram comments are the next reliability follow-up, with the
+  previously successful field reselection recorded. OpenAI dot is low priority.
+  Start from the measured Karrot metadata and unknown-offset connection results,
+  review a compatible approach and test in owned fixtures. Prepare concrete
+  scoped phone checks before taking over the device. The automatic-after-English
+  experiment remains deferred. Keep the installed manual MVP, SwiftKey, existing
+  text, one-commit/no-Send and credential/privacy safeguards.
 - On 2026-11-05, after the automatic mid-caret experiment refused before write,
   Andrew proposed returning to the proven manual workflow and checking/editing
   the Korean on the result screen. This manual MVP is the current priority.

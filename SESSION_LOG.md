@@ -1,5 +1,16 @@
 # Session log
 
+## 2026-11-06 — Karrot manual insertion goal
+
+- Andrew requested a new goal for compatibility, prioritizing Karrot Market
+  and placing OpenAI dot low. Instagram comments were the other documented
+  failure; the later successful field reselection remains relevant.
+- Set the goal for explicit manual insertion from the editable-Korean MVP.
+  Created branch `codex/karrot-insertion`. Started independent architecture
+  and safety reviews of the missing Karrot editor metadata and unknown-offset
+  connection result, plus an inventory of reusable owned fixtures. No new
+  device action or insertion occurred at goal setup.
+
 ## 2026-10-31 — Design review site revised from Andrew's feedback
 
 - Andrew corrected the first site's plain-K current bubble and preferred a

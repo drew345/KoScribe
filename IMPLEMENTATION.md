@@ -5,6 +5,14 @@ Planning baseline: 2026-10-23. Andrew authorized Phase 1 implementation on
 
 ## Confirmed product choices
 
+November 6 active goal: make manual Insert work reliably in Karrot Market
+using the editable-Korean MVP. Start with a verified empty composer, and
+support existing text only with demonstrated preservation and cursor proof.
+First review the missing node metadata and unknown-offset observations, then
+build an owned fixture for the selected approach. Follow with scoped, unsent
+Karrot acceptance and a usable installed build. Instagram comments are
+secondary, OpenAI dot low priority, and automatic insertion remains deferred.
+
 Installed November 5: the manual MVP with Korean visible and
 editable on the result panel. The approved English triggers one translation.
 Edit and Done update the current result locally. Insert checks the destination

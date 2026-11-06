@@ -1,6 +1,6 @@
 # Changes proposed for later
 
-Updated: 2026-11-05 (Asia/Seoul).
+Updated: 2026-11-06 (Asia/Seoul).
 
 Andrew is trying the current MVP and will report anything needing an immediate
 fix. This is the standing list of later improvements and unfinished acceptance
@@ -52,9 +52,12 @@ build and measured results remain in [PROGRESS.md](PROGRESS.md).
    to background operation, not to the insertion method (see docs/RESEARCH.md).
 
 6. **Better compatibility with unsupported editors, including Karrot, OpenAI dot and Instagram comments.**
+   Reopened as the active goal on November 6. Karrot is the first priority,
+   Instagram comment reliability the next follow-up, and OpenAI dot low priority.
+   Current implementation and device evidence belong in PROGRESS.
    Andrew reported OpenAI dot as another failing destination on November4; no
    focused-editor diagnosis has yet established its cause. This remains a
-   separate follow-up to the selected automatic-flow goal. The
+   follow-up within the new compatibility goal. The
    current metadata probe found that Karrot does not expose the focused/editable
    field information guarded Insert requires. Keep Copy & close followed by
    normal Paste as the MVP route. Any future integration needs preservation and

@@ -1,6 +1,21 @@
 # Current progress
 
-Updated: 2026-11-05 (Asia/Seoul).
+Updated: 2026-11-06 (Asia/Seoul).
+
+**Active goal:** make explicit manual Insert of the reviewed Korean work
+reliably in Karrot Market on the A35. Andrew set Karrot as the priority.
+Instagram comments are the next follow-up; he previously reported success
+after tapping that field again. OpenAI dot is low priority. The installed
+editable-Korean MVP is the starting point. Automatic-after-English remains
+deferred.
+
+**Current work:** build and independently review a hard no-write relative-read
+diagnostic. The old unknown-offset result skipped relative-selection
+classification. The new probe will classify selection, offset, empty/nonempty
+payload, composing state and independent selection evidence separately.
+Owned fixtures will cover collapsed and selected text behind Karrot-like
+container metadata. A write adapter follows only if the evidence supports it.
+Work is isolated on `codex/karrot-insertion`.
 
 **Current product direction:** Andrew proposed returning to the working manual
 workflow after the automatic insertion experiments. Proceed with the manual MVP:

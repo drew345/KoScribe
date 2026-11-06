@@ -20,8 +20,11 @@ Gradle40D25924. Candidate and ordinary OFF builds pass189 tests; candidate
 assembly/lint0errors51warnings. Saved app/config in ignored
 `app/build/relative-empty-insert-20261106/relative-empty-fixture-v1.apk`, SHA-256
 `978EF1B500EB930A7963B164094E63BC9E97294E71CB05CC176DCD4B7A8D1A85`.
-App signer matches the normal MVP. Final smoke review/build and device gate are
-pending; do not use the archived app as a daily-use build.
+App signer matches the normal MVP. Final harnessEFAA2297/fixture1B3AD551 are
+independently cleared; smoke assembly/lint0errors6warnings passed. Saved smoke
+`smoke-relative-empty-v1.apk` in the same directory, SHA-256
+`2A87967F892A7D0C02E1BAE13DC050DE8168A27E9871041C8367890DDB26D393`, matching signer.
+Device gate is pending; do not use the archived app as a daily-use build.
 
 The planned compact gate covers untouched initial-only empty insertion after
 English review/Korean Edit→Done, callback-cleared empty insertion, hidden selected
@@ -33,6 +36,24 @@ Korean editing is synthetic on KoScribe's own editor with SwiftKey selected and
 visible. Fixed sample recording briefly uses the mic but makes no API call.
 No clipboard, Send or credential action belongs to the gate. Obtain fresh phone
 availability after the exact smoke build/review; stop on the first failure.
+
+Run these exact methods individually, in order, using class prefix
+`com.koscribe.smoke.RelativeEmptyInsertSmokeTest#` and only the listed case flag:
+
+| Method | Sole flag |
+| --- | --- |
+| `freshUntouchedEmptyAfterEditedKoreanInsertsOnce` | `relativeInsertFreshReady` |
+| `callbackClearedEmptyInsertsOnce` | `relativeInsertClearedReady` |
+| `selectedRangeWithNullSelectedTextRefusesBeforeCommit` | `relativeInsertSelectedReady` |
+| `firstReadOrdinaryTargetChangeRefusesBeforeCommit` | `relativeInsertChangedReadReady` |
+| `acknowledgedWithoutVisibleChangeIsTerminalOneAttempt` | `relativeInsertUncertainReady` |
+
+Use `am instrument --user 0 -w -r -e class '<class>#<method>' -e <flag> true`
+with runner `com.koscribe.smoke/com.koscribe.smoke.KoScribeTestRunner`. Each method
+uses a fresh draft and counter baseline. Subsequent methods accept prior terminal
+relative status only after strict draft/recording/cleanup checks. Do not run the
+entire suite or any credential tests. Capture each result before continuing;
+a skip/assumption is not a pass. No reinstall/reset between passing methods.
 
 Read-free code status is `--relative-empty-insert-status` on the own service.
 It reports fixed state/reason/admission source and numeric selection categories,

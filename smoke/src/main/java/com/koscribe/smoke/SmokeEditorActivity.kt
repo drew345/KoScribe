@@ -24,6 +24,8 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import java.lang.ref.WeakReference
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /** One standard editor containing only synthetic fixture text; no send action. */
 class SmokeEditorActivity : Activity() {
@@ -35,6 +37,8 @@ class SmokeEditorActivity : Activity() {
         const val EXTRA_STABLE_AUTO_FIXTURE = "com.koscribe.smoke.STABLE_AUTO_FIXTURE"
         const val EXTRA_MANUAL_RESULT_FIXTURE = "com.koscribe.smoke.MANUAL_RESULT_FIXTURE"
         const val EXTRA_RELATIVE_READ_FIXTURE = "com.koscribe.smoke.RELATIVE_READ_FIXTURE"
+        const val EXTRA_RELATIVE_INSERT_FIXTURE = "com.koscribe.smoke.RELATIVE_INSERT_FIXTURE"
+        const val EXTRA_RELATIVE_ACK_WITHOUT_CHANGE = "com.koscribe.smoke.RELATIVE_ACK_WITHOUT_CHANGE"
         const val COMPOSED_WRONG_RESULT = "Incorrect synthetic composed result."
         @Volatile
         var current = WeakReference<SmokeEditorActivity>(null)
@@ -71,6 +75,14 @@ class SmokeEditorActivity : Activity() {
     fun stableAutoAlternateEditor(): EditText? = findViewById(R.id.stable_auto_alternate_editor)
     fun manualResultTargetEditor(): EditText? = findViewById(R.id.local_result_target_editor)
     fun relativeReadEditor(): EditText? = findViewById(R.id.local_relative_read_editor)
+    /** Fixture-process oracle only; never exposed to KoScribe's eligibility policy. */
+    fun relativeInsertCommitCounts(): Pair<Int, Int>? =
+        (relativeReadEditor() as? RelativeReadEditor)?.takeIf { it.observeCommits }
+            ?.let { it.commitCallCount to it.appliedCommitCount }
+    fun armRelativeInsertFirstReadMutation(): Boolean =
+        (relativeReadEditor() as? RelativeReadEditor)?.armFirstReadMutation() == true
+    fun relativeInsertFirstReadMutationState(): String =
+        (relativeReadEditor() as? RelativeReadEditor)?.firstReadMutationState() ?: "UNAVAILABLE"
     /** Immutable fixture-only draft ownership for this view's entire lifetime. */
     fun stableAutoDraftToken(): Any? =
         (stableAutoEditor() as? StableAutoEditor)?.logicalDraft
@@ -151,7 +163,7 @@ class SmokeEditorActivity : Activity() {
         }
         if (intent.getBooleanExtra(EXTRA_MANUAL_RESULT_FIXTURE, false))
             root.addView(manualResultTargetField(), LinearLayout.LayoutParams(-1, -2))
-        if (intent.getBooleanExtra(EXTRA_RELATIVE_READ_FIXTURE, false))
+        if (relativeFixtureRequested())
             root.addView(relativeReadField(), LinearLayout.LayoutParams(-1, -2))
         if (composedFixtures()) {
             root.addView(composedEditor(R.id.local_composed_match_editor, false),
@@ -213,9 +225,16 @@ class SmokeEditorActivity : Activity() {
                 LinearLayout.LayoutParams(-1, -2))
         } else if (manualTarget != null) fixtureRoot.removeView(manualTarget)
         val relativeRead = relativeReadEditor()
-        if (intent.getBooleanExtra(EXTRA_RELATIVE_READ_FIXTURE, false)) {
-            if (relativeRead == null) fixtureRoot.addView(relativeReadField(),
-                LinearLayout.LayoutParams(-1, -2))
+        if (relativeFixtureRequested()) {
+            val configured = relativeRead as? RelativeReadEditor
+            if (configured == null || configured.observeCommits != relativeInsertFixture() ||
+                configured.acknowledgeWithoutChange != relativeAckWithoutChange()) {
+                val index = if (relativeRead == null) fixtureRoot.childCount else
+                    fixtureRoot.indexOfChild(relativeRead)
+                if (relativeRead != null) fixtureRoot.removeView(relativeRead)
+                fixtureRoot.addView(relativeReadField(), index,
+                    LinearLayout.LayoutParams(-1, -2))
+            }
         } else if (relativeRead != null) fixtureRoot.removeView(relativeRead)
         val protectedField = fixtureRoot.findViewById<EditText>(R.id.local_protected_editor)
         if (manual || intent.getBooleanExtra(EXTRA_OMIT_PROTECTED_EDITOR, false)) {
@@ -278,7 +297,17 @@ class SmokeEditorActivity : Activity() {
         importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
     }
 
-    private fun relativeReadField(): EditText = RelativeReadEditor(this).apply {
+    private fun relativeInsertFixture(): Boolean =
+        intent.getBooleanExtra(EXTRA_RELATIVE_INSERT_FIXTURE, false)
+
+    private fun relativeAckWithoutChange(): Boolean = relativeInsertFixture() &&
+        intent.getBooleanExtra(EXTRA_RELATIVE_ACK_WITHOUT_CHANGE, false)
+
+    private fun relativeFixtureRequested(): Boolean = relativeInsertFixture() ||
+        intent.getBooleanExtra(EXTRA_RELATIVE_READ_FIXTURE, false)
+
+    private fun relativeReadField(): EditText = RelativeReadEditor(this, relativeInsertFixture(),
+        relativeAckWithoutChange()).apply {
         id = R.id.local_relative_read_editor
         hint = "Synthetic relative read field"
         inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
@@ -366,7 +395,48 @@ class SmokeEditorActivity : Activity() {
 }
 
 /** Test-only served editor with deliberately incomplete public destination metadata. */
-private class RelativeReadEditor(context: Context) : EditText(context) {
+private class RelativeReadEditor(context: Context, val observeCommits: Boolean,
+    val acknowledgeWithoutChange: Boolean) : EditText(context) {
+    @Volatile var commitCallCount = 0
+        private set
+    @Volatile var appliedCommitCount = 0
+        private set
+    private val mutationLock = Any()
+    private var mutationState = "IDLE"
+    fun firstReadMutationState(): String = synchronized(mutationLock) { mutationState }
+    fun armFirstReadMutation(): Boolean = synchronized(mutationLock) {
+        if (!observeCommits || acknowledgeWithoutChange || mutationState != "IDLE" ||
+            !isAttachedToWindow || !isFocused || text.isNotEmpty() || selectionStart != 0 ||
+            selectionEnd != 0) false else {
+            mutationState = "ARMED"
+            true
+        }
+    }
+
+    private fun applyFirstReadMutation(): Boolean {
+        val onMain = { synchronized(mutationLock) {
+            if (mutationState == "PENDING") {
+                val owner = context as? SmokeEditorActivity
+                if (owner == null || SmokeEditorActivity.current.get() !== owner ||
+                    owner.relativeReadEditor() !== this || !isAttachedToWindow || !isFocused ||
+                    text.isNotEmpty() || selectionStart != 0 || selectionEnd != 0) {
+                    mutationState = "UNAPPLIED"
+                } else {
+                    // Ordinary fixture Editable change emits a real accessibility text event.
+                    text.replace(0, 0, "X")
+                    mutationState = "APPLIED"
+                }
+            }
+        } }
+        if (Looper.myLooper() == Looper.getMainLooper()) onMain() else {
+            val done = CountDownLatch(1)
+            Handler(Looper.getMainLooper()).post { try { onMain() } finally { done.countDown() } }
+            if (!done.await(500L, TimeUnit.MILLISECONDS)) synchronized(mutationLock) {
+                if (mutationState == "PENDING") mutationState = "TIMED_OUT"
+            }
+        }
+        return synchronized(mutationLock) { mutationState == "APPLIED" }
+    }
     override fun onInitializeAccessibilityNodeInfo(info: AccessibilityNodeInfo) {
         super.onInitializeAccessibilityNodeInfo(info)
         // Model the measured Karrot node flags while the actual view stays input focused.
@@ -390,8 +460,37 @@ private class RelativeReadEditor(context: Context) : EditText(context) {
                 val before = getTextBeforeCursor(beforeLength, flags) ?: return null
                 val after = getTextAfterCursor(afterLength, flags) ?: return null
                 val selected = getSelectedText(flags) ?: ""
-                return SurroundingText(TextUtils.concat(before, selected, after), before.length,
+                val sample = SurroundingText(TextUtils.concat(before, selected, after), before.length,
                     before.length + selected.length, -1)
+                val armed = synchronized(mutationLock) {
+                    if (mutationState == "ARMED" && sample.text.isEmpty() &&
+                        sample.selectionStart == 0 && sample.selectionEnd == 0) {
+                        mutationState = "PENDING"
+                        true
+                    } else false
+                }
+                if (armed && !applyFirstReadMutation()) return null
+                return sample
+            }
+
+            override fun commitText(text: CharSequence?, newCursorPosition: Int): Boolean {
+                if (!observeCommits) return delegate.commitText(text, newCursorPosition)
+                commitCallCount++
+                if (acknowledgeWithoutChange) return true
+                val applied = delegate.commitText(text, newCursorPosition)
+                if (applied) appliedCommitCount++
+                return applied
+            }
+
+            override fun commitText(text: CharSequence, newCursorPosition: Int,
+                textAttribute: TextAttribute?): Boolean {
+                if (!observeCommits) return delegate.commitText(text, newCursorPosition,
+                    textAttribute)
+                commitCallCount++
+                if (acknowledgeWithoutChange) return true
+                val applied = delegate.commitText(text, newCursorPosition, textAttribute)
+                if (applied) appliedCommitCount++
+                return applied
             }
         }
     }

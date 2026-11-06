@@ -113,6 +113,13 @@
   fixture978EF1B5/config; ordinary debug/release rebuilt and verified OFF/allfalse.
   Smoke harness still under review. No new phone action; live3FE8BE0F remains
   installed. Next gate uses fixed samples/own editor, then restores that MVP.
+- App/source checkpoint780f17e. Fixed harness preflight for sequential terminal
+  statuses and tightened cleanup so draftNONE cannot mask active recording.
+  Astra/xhigh cleared final harnessEFAA2297/fixture1B3AD551; final smoke assembly
+  and lint0errors6warnings passed. Archived smoke2A87967F with matching signer.
+  Asked fresh five-minute availability for five exact owned methods, fixed sample
+  mic/noAPI/noClipboard, stop first failure and restore live3FE8BE0F. No phone
+  action since the calibration restoration.
 
 ## 2026-10-31 — Design review site revised from Andrew's feedback
 

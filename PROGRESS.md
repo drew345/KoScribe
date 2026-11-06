@@ -16,8 +16,8 @@ selection and composition updates in one served generation. Implement/review a
 separate manual relative insertion path behind a default-OFF, signed-owned-fixture
 flag. Its acceptance must include the normal English/Korean review return. Preserve
 usable fresh empty composers after Korean review; do not require artificial user
-typing/deletion as the product workflow. The app candidate is implemented,
-independently cleared and built; smoke harness review is underway. No new writer
+typing/deletion as the product workflow. The app and five-case harness are
+implemented, independently cleared and built; fresh phone availability is pending. No new writer
 phone test or Karrot insertion has occurred. Branch: `codex/karrot-insertion`.
 
 **Owned writer candidate, November 6:** explicit secure REVIEW flag
@@ -30,8 +30,11 @@ candidate assembly/lint0errors51warnings pass (one new nonexhaustive event-switc
 warning). Astra/xhigh cleared policy069E0CAE/reader45E56ACB/service08684FFB/
 testsD56A8198/Gradle40D25924. Saved `app/build/relative-empty-insert-20261106/`
 `relative-empty-fixture-v1.apk` SHA978EF1B5 and config, signer matches MVP.
-Ordinary debug/release rebuilt and verified OFF/allfalse. Await final smoke
-review/build, then fresh phone availability for the bounded owned-only gate.
+Ordinary debug/release rebuilt and verified OFF/allfalse. Final harnessEFAA2297
+and fixture1B3AD551 independently cleared; smoke assembly/lint0errors6warnings
+pass. Saved smoke-relative-empty-v1.apk SHA2A87967F with matching signature.
+Asked fresh five-minute phone availability for the bounded owned-only gate;
+stop first failure and restore normal MVP3FE8BE0F afterward.
 
 **November 6 local validation:** 168 unit tests passed; app assembly/lint passed
 (0 errors, 50 warnings), smoke assembly/lint passed (0 errors, 5 warnings).

@@ -1,5 +1,30 @@
 # Phase 1 device acceptance record
 
+## Karrot relative-read fixture — November 6
+
+Andrew confirmed the A35 unlocked and free for five minutes. At 09:54 KST,
+user0, awake/unlocked, SwiftKey selected and the normal MVP idle were verified.
+Installed reviewed FIXTURE18FE04FD and smokeF90717A9 in place, then ran only
+`RelativeEditorReadSmokeTest#emptyCollapsedHasUnknownAbsoluteOffset` with
+`relativeEmptyReady=true`.
+
+The test failed after2.061s with `RELATIVE_READ_NOT_OBSERVED`. Read-free product
+status showed `STATE=INTERRUPTED REASON=WINDOW_STATE_CHANGED CALL=NOT_STARTED`,
+`ELIGIBLE=NEVER`. The first trigger never reached its content request. Window
+origin/timing was not retained, so this does not establish which UI changed.
+All destination capture, commit, original-intent, automatic-attempt, recording
+proof and translation request counters remained0. DraftNONE/cleanupfalse.
+Stopped at that first failure; no middle/selected case or Karrot read ran.
+
+Restored editable-Korean live3FE8BE0F in place. Verified the installed APK's full
+hash, service25058 connected/idle, REVIEW, speech/translationtrue, every
+automatic/old probefalse, and SwiftKey retained. Removed only the smoke package
+from user0. Restoration completed by09:55:42 KST, within the availability
+window. No microphone, API, clipboard, insertion, Send, screenshot or credential
+action occurred. The next harness revision will settle setup events before its
+single trigger and report code-only terminal state/reason/call on failure;
+product terminal interruption remains unchanged.
+
 ## 2026-11-04 — Final sleep checkpoint: focus-loss accepted, poll root missing
 
 Source service39EC2A5DFD48D2C88783007F096302034CCF8C0EFFFAD2AB9C550290C8C1F4A3,

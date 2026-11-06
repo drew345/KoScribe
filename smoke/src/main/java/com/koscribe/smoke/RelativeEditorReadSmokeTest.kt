@@ -97,6 +97,18 @@ class RelativeEditorReadSmokeTest {
             true.takeIf { status["CURRENT_INPUT_STARTED"] == "YES" &&
                 status["CURRENT_INPUT_PACKAGE"] == "FIXTURE" }
         }
+        // The fixture launch and SwiftKey focus can publish late window events. Settle those
+        // before spending the sole diagnostic read; product interruption rules remain strict.
+        try {
+            automation().waitForIdle(500L, 3_000L)
+        } catch (_: java.util.concurrent.TimeoutException) {
+            throw AssertionError("FIXTURE_WINDOW_EVENTS_NOT_IDLE_BEFORE_READ")
+        }
+        assertTrue("FIXTURE_PROOF_CHANGED_AFTER_IDLE", maskedRemoteNodeReady() &&
+            defaultDisplayImeVisible() && selectedSwiftKey() && directFixtureMatches(editor, case))
+        val ready = status()
+        assertTrue("SERVED_INPUT_CHANGED_AFTER_IDLE", ready["CURRENT_INPUT_STARTED"] == "YES" &&
+            ready["CURRENT_INPUT_PACKAGE"] == "FIXTURE")
         val before = counters()
         val started = command("--relative-editor-read-once")
         val terminal = setOf("OBSERVED", "REFUSED", "INTERRUPTED", "TIMEOUT", "UNAVAILABLE")
@@ -106,7 +118,13 @@ class RelativeEditorReadSmokeTest {
             await("RELATIVE_READ_DID_NOT_FINISH", 5_000) {
                 status().takeIf { it["STATE"] in terminal }
             }
-        assertTrue("RELATIVE_READ_NOT_OBSERVED", result["STATE"] == "OBSERVED")
+        val outcome = "STATE_${result["STATE"] ?: "MISSING"}" +
+            "_REASON_${result["REASON"] ?: "MISSING"}_CALL_${result["CALL"] ?: "MISSING"}"
+        instrumentation.sendStatus(2, Bundle().apply {
+            putString("stream", "RELATIVE_READ_TERMINAL_$outcome\n")
+        })
+        assertTrue("WRITER_OR_RECORDING_EFFECT_$outcome", counters() == before)
+        assertTrue("RELATIVE_READ_NOT_OBSERVED_$outcome", result["STATE"] == "OBSERVED")
         assertTrue("RELATIVE_READ_PAYLOAD_SHAPE_CHANGED", result["PAYLOAD"] == case.payload &&
             result["OFFSET"] == "UNKNOWN" && result["RELATIVE"] == "COLLAPSED")
         assertTrue("INDEPENDENT_SELECTION_DISAGREES", result["INPUT_SELECTION"] ==
@@ -116,7 +134,6 @@ class RelativeEditorReadSmokeTest {
             result["CALL"] == "RETURNED")
         assertTrue("FIXTURE_CHANGED_DURING_READ", directFixtureMatches(editor, case))
         assertTrue("MASKED_NODE_CHANGED_DURING_READ", maskedRemoteNodeReady())
-        assertTrue("WRITER_OR_RECORDING_EFFECT", counters() == before)
         instrumentation.sendStatus(2, Bundle().apply {
             putString("stream", "RELATIVE_FIXTURE_${case.flag}_OBSERVED_NO_WRITE\n")
         })

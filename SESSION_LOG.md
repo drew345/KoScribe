@@ -25,6 +25,25 @@
   restoration baseline. The one-button automatic work remains deferred.
 - Rebuilt ordinary local debug and release config as OFF/allfalse, including the
   new probe. No generated APK, personal data or credential is staged or published.
+- Andrew provided five-minute phone availability. First empty owned case failed
+  in2.061s with INTERRUPTED/WINDOW_STATE_CHANGED, CALL=NOT_STARTED and all effect
+  counters0. Stopped as planned; no other case/Karrot read. Restored live3FE8BE0F,
+  verified installed hash, idle service25058, ordinary flags and SwiftKey; removed
+  the fixture. Actual window-event origin is unmeasured. Reviewing fixture setup
+  timing without relaxing the probe's terminal interruption.
+- Andrew reported that 반말 returns English as if translation is bypassed while
+  요 translates. Prioritized tracing/fixing that manual MVP route before further
+  compatibility phone work. Cause is not yet established.
+- Both app owner and independent reviewer found CASUAL preserved end to end,
+  including its TRANSLATING transition and distinct 반말 prompt. Existing tests
+  exercise that route; no app fix is justified yet. Asked which review button
+  appeared. Current post-restoration code-only counters show no new requests,
+  so they cannot explain the earlier report. No transcript/key was read.
+- Harness932DBB1B independently cleared: bounded setup-event quiet wait before
+  the sole trigger, fresh fixture proof afterward, sanitized terminal codes and
+  unchanged-effect assertions even on failure. Smoke assembly/lint passed
+  (0errors5warnings); archived smoke-relative-read-v2.apk SHA90995B07. No second
+  phone run. The five-minute window ended with the normal MVP already restored.
 
 ## 2026-10-31 — Design review site revised from Andrew's feedback
 

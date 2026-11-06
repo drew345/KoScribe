@@ -31,6 +31,12 @@ It reproduces the default-like unknown-offset surrounding-text response with
 selected text unavailable. Tests check actual remote metadata, SwiftKey, served
 input, unchanged fixture text/selection and unchanged legacy effect counters.
 They launch and finish only their owned fixture. Stop on the first failure.
+The November 6 revised harness waits for 500ms without accessibility events
+(3s maximum) after setup, then rechecks the fixture/node/IME/served-input proof
+before the sole trigger. This does not prove the product's event queue is empty;
+any interruption still fails. Failures include sanitized state/reason/call codes
+and check unchanged effect counters. The initial phone run was interrupted by a
+window-state event before reading; the revised timing needs device validation.
 
 Only after those checks pass, install the KARROT arm in place and have Andrew
 prepare an empty Karrot composer with SwiftKey visible. Never inspect conversation

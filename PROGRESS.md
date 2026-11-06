@@ -29,11 +29,27 @@ writer/mic/API/credential/clipboard effects and always reports ELIGIBLE=NEVER.
 Ordinary local debug and release configs were rebuilt and verified OFF/allfalse,
 including the new probe flag.
 
-**Next phone step:** awaiting Andrew's fresh availability for three no-write
-owned cases. No November 6 phone action has occurred. Stop at first failure,
-restore live3FE8BE0F in place and remove only the owned fixture. After all three
-pass, ask Andrew to prepare an empty Karrot composer for one deliberate read.
-No new Karrot insertion is authorized by the diagnostic results themselves.
+**Current priority within the goal:** Andrew reports 반말 bypasses translation
+and returns English, while 요 shows translation and works. Investigate this
+before further compatibility phone work. Two independent source traces found
+CASUAL preserved from selection through speech review/TRANSLATING and its
+distinct 반말 request. Existing tests cover that route; no source defect has
+been reproduced and no speculative app change was made. Await the user's actual
+review-button label: `Confirm English` versus `Confirm & translate`. Existing
+code-only selected-mode events and request counters can distinguish dispatch
+from an English model response without inspecting text. The original trace was
+lost on the service restore; current baseline has no new translation requests.
+
+**November 6 phone result:** after fresh five-minute availability, the first
+owned empty case stopped in 2.061s: INTERRUPTED/WINDOW_STATE_CHANGED,
+CALL=NOT_STARTED. All legacy effect counters remained zero; no other case or
+Karrot read ran. Restored live3FE8BE0F in place, verified installed hash,
+service PID25058/idle/regular flags and SwiftKey; removed only the fixture.
+Harness932DBB1B is independently cleared and built with bounded setup settling
+and sanitized terminal details; saved smokev2 SHA90995B07, lint0errors5warnings.
+It retains one trigger and every product interruption guard. Not phone-tested.
+After all three owned cases pass, have Andrew prepare an empty Karrot composer
+for one deliberate read. Diagnostic results do not grant writer eligibility.
 Exact protocol: [INSTRUMENTATION](docs/INSTRUMENTATION.md#karrot-relative-read-diagnostic--november-6).
 
 **Current product direction:** Andrew proposed returning to the working manual

@@ -29,6 +29,10 @@ failure occurred before Insert; a reviewed passive Copy-control wait corrected
 the test. Final smoke74167290 passed assembly/lint0errors5warnings. Full measured
 results and exact cause are in DEVICE_TESTS and RESEARCH.
 
+**Real-app follow-up:** Andrew reported on November17 that Insert worked in
+KakaoTalk after the correction. This is user-confirmed behavior; no additional
+agent-operated trial or conversation inspection was performed.
+
 **Artifacts/signing:** ignored `app/build/insertion-regression-20261117/` holds
 signed `correction-sample-review-verified-signer.apk` (BDC56A80) and
 `correction-live-review-verified-signer.apk` (A6B10E5F), plus prior live3FE8BE0F
@@ -37,8 +41,8 @@ and freshly verified against the installed public certificate; backup is present
 Do not use the differently signed prototype backup or `unmatched-signer` APKs.
 Ordinary debug/release were rebuilt and verified OFF/allfalse after archiving.
 
-**Remaining:** Andrew can check the corrected normal workflow in previously
-supported apps. No real-app insertion was tested this session; Karrot and
+**Remaining:** other previously supported apps are not yet user-confirmed after
+this correction. No agent-operated real-app trial was run; Karrot and
 automatic insertion remain deferred. Any further agent-operated phone test
 needs fresh availability and a concrete bounded scope. Source work stays on
 `codex/insertion-regression` in this worktree; main's app source is older than

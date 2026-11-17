@@ -2550,3 +2550,9 @@ and verified the installed public APK hash. Service23968 was idle, draftNONE,
 cleanupfalse; speech/translation true, auto/probes false. App-data inode894546
 and SwiftKey were preserved; microphone was not running. Removed only the smoke
 helper from user0. The saved prior live3FE8BE0F remains the rollback artifact.
+
+**User follow-up, November17:** Andrew reported that Insert worked in KakaoTalk
+after this correction. This is user-confirmed real-app behavior, not an
+agent-observed insertion trial. No conversation content was inspected or saved,
+and no additional phone action was performed to verify his report. Other apps
+remain unconfirmed after this update.

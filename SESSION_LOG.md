@@ -22,8 +22,10 @@
   App data preserved, service idle, speech/translation on, auto/probes off,
   SwiftKey selected and microphone stopped. Removed the smoke helper. No API-key
   read/change, clipboard, paid API, messaging-app insertion or Send occurred.
-- External daily-use behavior remains for Andrew to check. No Karrot/automatic
-  scope reopened. PROGRESS is current; DEVICE_TESTS/RESEARCH hold evidence.
+- Andrew subsequently reported that Insert worked in KakaoTalk. Recorded as
+  user-confirmed behavior, without an agent-operated trial or conversation
+  inspection. Other apps remain unconfirmed; no Karrot/automatic scope reopened.
+  PROGRESS is current; DEVICE_TESTS/RESEARCH hold evidence.
 
 ## 2026-11-17 — Investigate all-app manual insertion regression
 

@@ -1,8 +1,27 @@
 # Current progress
 
-Updated: 2026-11-06 (Asia/Seoul).
+Updated: 2026-11-17 (Asia/Seoul).
 
-## Main checkout and paused Karrot work
+## Current: Android 17 Insert correction installed
+
+The all-app refusal was reproduced in the controlled editor and traced to
+Android17 adding an accessibility suggestion flag to EditorInfo while the node
+retains its original type. The narrow compatibility correction is on
+`codex/insertion-regression`, checkpoint `1594a00726d27c3557e4c44a69ddcf0dd71387c3`.
+See [its current state and evidence](https://github.com/drew345/KoScribe/blob/1594a00726d27c3557e4c44a69ddcf0dd71387c3/PROGRESS.md).
+
+The corrected normal speech/translation APK is installed and hash-verified:
+`A6B10E5F9FDABD0AE8B9C4F07820367048CB2F28A9D0639B7B5E3C47E192F23B`.
+Controlled insertion/preservation/refusal/terminality checks passed; both app
+variants passed163 unit tests. SwiftKey and app data are preserved, original
+signer verified, test helper removed. No external-app insertion was tested this
+session; Andrew can check the normal workflow. This was not a computer handoff.
+
+This checkout remains on main, whose app source is older than the installed
+MVP. Do not rebuild/install it as the current product. Continue implementation
+on `codex/insertion-regression`; paused Karrot and automatic work remain deferred.
+
+## Historical November 6 checkout and paused Karrot work
 
 Andrew requested leaving this laptop on `main` while preserving the unfinished
 debugging effort. The checkout is now on `main`; no implementation was merged

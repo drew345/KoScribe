@@ -2501,3 +2501,52 @@ were unchanged; speech/translation enabled, auto disabled, SwiftKey selected.
 The original product signing file is needed before testing a product candidate;
 do not install the locally built unmatched-signer sample. See PROGRESS for
 signer verification and the ordered resume plan.
+
+### Root cause and corrected candidate, later on November 17
+
+Andrew supplied the original signing file through DeveloperStuff. A fresh public
+certificate check matched the installed signer `a02165d3...62e004`; no private key
+contents or stored API credential were exposed. He authorized continuing in the
+controlled editor. Final no-write metadata smoke289588E3 passed in1.478s: field,
+window, package, focus, editable/enabled, expected text type and before/after
+refresh identity all matched.
+
+The correctly re-signed diagnostic sample48177D97 reproduced refusal in14.491s,
+capture1/commit0, with matching window/class/variation but unequal exact type.
+The XOR diagnostic9F12B767 reproduced it in13.606s and measured `0x00200000`.
+Both finished with draftNONE/cleanupfalse and microphone stopped. Android17's
+documented EditorInfo-only suggestion-selection flag explains this difference;
+see RESEARCH. No messaging app was inspected or written.
+
+Sol implemented the directional API37+ type agreement; Astra cleared exact
+service3B620DE4/helperC96FF88E/tests734FD1F8 and SessionGuardTest3DCC220B.
+Both secure sample/live variants passed163 unit tests, assembly and lint
+(0errors49warnings). All original destination/password/selection/context checks,
+exact session snapshots, one attempt and terminal uncertainty remain.
+The signed correction sample SHA-256 is
+`BDC56A80D8EF7E597081351B4253DB5ED000E4B31433AB7BC1AC4178812F03DC`.
+
+| Controlled case | Time | Measured outcome |
+| --- | --- | --- |
+| Unedited Korean at chosen middle caret | 6.830s | One confirmed commit, exact text/caret and both surrounding sides preserved; source field unchanged. |
+| Saved edited Korean with emoji | 5.961s | One confirmed commit of the saved result to the chosen field; source, surrounding text and caret verified. |
+| Selected range | 5.099s | `SELECTION_NOT_COLLAPSED`, no commit, selection/draft preserved and result retained. |
+| Acknowledged but unchanged commit fixture | 5.379s | One attempted commit, fixture unchanged, terminal uncertainty and no retry. Actual cause was `WINDOW_OR_FOCUS_CHANGED`; this is interruption coverage, not an isolated readback-timeout measurement. |
+| Korean into empty field | 5.217s | One confirmed commit with exact fixed Korean and caret. |
+
+The first edited-case run stopped before Insert in5.376s at a redundant Copy
+readiness check, with counters unchanged1/1. A reviewed smoke-only change added
+a bounded passive wait for the exact own control; no Copy/scroll/Insert retry was
+added. Final harnessB226DC73/smoke74167290 passed; product code stayed unchanged.
+Final cumulative captures5/commits4, CONFIRMED, draftNONE and cleanupfalse;
+microphone stopped after every case. No clipboard action or paid API request.
+Astra accepted this bounded gate for the normal live correction. Previously
+supported external apps still need fresh user experience; no Karrot or automatic
+insertion scope was resumed.
+
+Installed the reviewed normal live correction, full SHA-256
+`A6B10E5F9FDABD0AE8B9C4F07820367048CB2F28A9D0639B7B5E3C47E192F23B`,
+and verified the installed public APK hash. Service23968 was idle, draftNONE,
+cleanupfalse; speech/translation true, auto/probes false. App-data inode894546
+and SwiftKey were preserved; microphone was not running. Removed only the smoke
+helper from user0. The saved prior live3FE8BE0F remains the rollback artifact.

@@ -40,6 +40,16 @@ class SessionGuardTest {
         assertEquals(GuardDecision.Refused(GuardFailure.CONTEXT_CHANGED), guard.check(session.id, editor.copy(surroundingText = "BEFOREafter"), 200))
     }
 
+    @Test fun snapshotInputTypeChangeStillRefusesAfterCrossChannelAgreement() {
+        val guard = SessionGuard()
+        val session = guard.begin(OutputMode.ENGLISH, editor, 100)!!
+        assertTrue(guard.publish(session.id, "hello"))
+        // Cross-channel node/EditorInfo compatibility never normalizes stored snapshots.
+        assertEquals(GuardDecision.Refused(GuardFailure.TARGET_CHANGED),
+            guard.reserveCommit(session.id, editor.copy(inputType = editor.inputType or 0x00200000), 200))
+        assertFalse(session.attempted)
+    }
+
     @Test fun missingIdentityCompositionInvalidationAndExpiryRefuse() {
         val guard = SessionGuard()
         assertNull(guard.begin(OutputMode.ENGLISH, editor.copy(uniqueNodeId = ""), 100))

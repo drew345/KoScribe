@@ -2,7 +2,49 @@
 
 Updated: 2026-11-17 (Asia/Seoul).
 
-## Active investigation: previously supported destinations refuse Insert
+## Android 17 Insert correction installed
+
+**Current phone:** normal speech/translation MVP with the reviewed correction,
+installed SHA-256
+`A6B10E5F9FDABD0AE8B9C4F07820367048CB2F28A9D0639B7B5E3C47E192F23B`.
+Service23968 is bound and idle, draftNONE/cleanupfalse; speech/translation on,
+auto/visual/all experiments off, SwiftKey selected and microphone not running.
+App-data inode894546 is preserved; the live API key was never read or changed.
+Removed the smoke helper from user0. No test is running.
+
+**Cause/fix:** Android17 adds `0x00200000` to EditorInfo for accessibility
+suggestion-selection reporting while the node retains its original input type.
+The owned reproduction measured exactly that XOR. The API37+ directional
+comparison now accepts only this addition; all other bits, exact session
+snapshots, destination/password/caret/context checks and one-attempt/terminal
+uncertainty rules remain. Sol/xhigh implemented; Astra/xhigh cleared
+service3B620DE4/helperC96FF88E and the bounded phone gate.
+
+**Validation:** both sample/live variants passed163 units, assembly and lint
+(0errors49warnings). Owned unedited middle, saved edited Korean and empty-field
+insertion passed; selection refused without writing; an interrupted attempted
+commit remained terminal with no retry. That uncertainty case is interruption
+coverage, not an isolated readback-timeout test. One earlier edited-case harness
+failure occurred before Insert; a reviewed passive Copy-control wait corrected
+the test. Final smoke74167290 passed assembly/lint0errors5warnings. Full measured
+results and exact cause are in DEVICE_TESTS and RESEARCH.
+
+**Artifacts/signing:** ignored `app/build/insertion-regression-20261117/` holds
+signed `correction-sample-review-verified-signer.apk` (BDC56A80) and
+`correction-live-review-verified-signer.apk` (A6B10E5F), plus prior live3FE8BE0F
+for rollback. The original signing file was copied to Cryptomator DeveloperStuff
+and freshly verified against the installed public certificate; backup is present.
+Do not use the differently signed prototype backup or `unmatched-signer` APKs.
+Ordinary debug/release were rebuilt and verified OFF/allfalse after archiving.
+
+**Remaining:** Andrew can check the corrected normal workflow in previously
+supported apps. No real-app insertion was tested this session; Karrot and
+automatic insertion remain deferred. Any further agent-operated phone test
+needs fresh availability and a concrete bounded scope. Source work stays on
+`codex/insertion-regression` in this worktree; main's app source is older than
+the installed MVP and must not be rebuilt/installed as its replacement.
+
+## Earlier November 17 investigation notes (historical, before correction)
 
 **User report:** manual Insert now preserves the result and offers Copy, with
 a cannot-verify-destination message, even in KakaoTalk and other previously

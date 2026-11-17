@@ -670,10 +670,10 @@ or ownership is a failed precondition; do not claim a metadata comparison ran.
 The final independently reviewed harness SHA-256 is
 `74B32D4697AA8B5CB716E7A029B6D698DA05BD49E46ED32A2A7D08F816AFE20A`;
 local APK is `289588E3C57510F1AEDBF592C69D80EF63EB553A0B95E8375BB4FA489E0B4B1A`.
-It has not been phone-run. Rebuilding/signing on another computer may change the
+It subsequently passed on the phone in1.478s. Rebuilding/signing elsewhere may change the
 APK hash; record and inspect that build rather than assuming byte identity.
 
-The service diagnostic source SHA-256 is
+The initial diagnostics-only service source SHA-256 was
 `A2E5E767A0875D41435F7F4641622993D1BB9895BF64C4C94D6A9FD026F29269`.
 It adds `Last editor mismatch` with fixed stage/bit details at the existing
 refusal points. All insertion guards and result recovery remain unchanged.
@@ -683,3 +683,24 @@ The local `diagnostic-review-api-free-unmatched-signer.apk` (ACF25A4F) is not
 installable over the product; never uninstall or clear product data to bypass
 that mismatch. A correctly signed candidate needs secure REVIEW, speech/
 translation/auto/visual/all other experiments false and review surface probe OFF.
+
+The later Android17 correction is documented in RESEARCH and DEVICE_TESTS.
+Its bounded phone gate used the signed API-free correction sampleBDC56A80,
+then the normal liveA6B10E5F was installed after independent acceptance. The
+methods below were run individually, with the matching sole readiness argument;
+do not run the entire class/suite. These completed gates are historical evidence,
+not a request to repeat them on project load.
+
+| Exact method | Sole readiness argument |
+| --- | --- |
+| `ManualResultEditSmokeTest#uneditedPreparedKoreanIsVisibleAndInsertsOnce` | `manualResultUneditedReady=true` |
+| `ManualResultEditSmokeTest#editedKoreanInsertsOnlyFinalResultIntoChosenField` | `manualResultEditedReady=true` |
+| `ReviewFlowSmokeTest#selectedRangeRefusesAndPreservesResult` | `reviewSelectionReady=true` |
+| `ReviewFlowSmokeTest#acknowledgedButUnchangedCommitIsTerminallyUncertain` | `reviewUncertainReady=true` |
+| `ReviewFlowSmokeTest#fixedKoreanSampleInsertsIntoEmptyFixture` | `reviewKoreanReady=true` |
+
+Prefix each method with `com.koscribe.smoke.` for `-e class`. These tests require
+the secure API-free REVIEW sample, not the live speech/translation APK. The final
+edited-case harnessB226DC73/smoke74167290 waits passively for the exact Copy
+control without clicking it or retrying Insert. The uncertainty run's actual
+terminal cause was WINDOW_OR_FOCUS_CHANGED, not an isolated readback timeout.

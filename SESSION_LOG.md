@@ -1,5 +1,30 @@
 # Session log
 
+## 2026-11-17 — Android 17 Insert regression corrected and installed
+
+- Andrew supplied the original signing file through DeveloperStuff. A fresh
+  public certificate check matched the installed app; backup is now present.
+  He authorized continuing with that signer and the controlled test editor.
+- Owned metadata test passed1.478s. Two diagnostics-only manual tests refused
+  before write, finally measuring type XOR0x00200000. Official Android17 TextView
+  adds that suggestion flag to EditorInfo while node metadata stays raw.
+- Sol implemented the narrow API37+ directional comparison; Astra cleared
+  service3B620DE4/helperC96FF88E. All other insertion guards and exact session
+  snapshots remain. Both sample/live variants passed163 units, assembly and
+  lint0errors49warnings. Ordinary debug/release rebuilt OFF/allfalse afterward.
+- Corrected sampleBDC56A80 passed unedited middle6.830s, saved edited Korean5.961s,
+  selection refusal5.099s, terminal uncertainty5.379s and empty Korean5.217s.
+  The uncertainty cause was window/focus interruption, not isolated readback
+  timeout. An earlier edited-case harness failure occurred before Insert; a
+  reviewed passive own-control wait fixed that test (smoke74167290).
+- Installed the normal live correction in place; full installed hash
+  `A6B10E5F9FDABD0AE8B9C4F07820367048CB2F28A9D0639B7B5E3C47E192F23B` verified.
+  App data preserved, service idle, speech/translation on, auto/probes off,
+  SwiftKey selected and microphone stopped. Removed the smoke helper. No API-key
+  read/change, clipboard, paid API, messaging-app insertion or Send occurred.
+- External daily-use behavior remains for Andrew to check. No Karrot/automatic
+  scope reopened. PROGRESS is current; DEVICE_TESTS/RESEARCH hold evidence.
+
 ## 2026-11-17 — Investigate all-app manual insertion regression
 
 - User report/authorization: previously supported editors now refuse Insert

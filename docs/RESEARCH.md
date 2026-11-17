@@ -2,6 +2,28 @@
 
 ## November 17 insertion regression investigation
 
+**Measured cause, later in the same session:** the owned no-write field check
+reported normal text metadata before/after refresh. The unchanged manual writer
+then refused the owned fixed-sample insertion with matching window, class and
+variation but unequal raw input types. A second diagnostics-only run measured
+the exact XOR `0x00200000`; both refused before any commit.
+
+Android17 introduces
+[`TYPE_TEXT_FLAG_ENABLE_TEXT_SUGGESTION_SELECTED`](https://developer.android.com/reference/android/text/InputType#TYPE_TEXT_FLAG_ENABLE_TEXT_SUGGESTION_SELECTED)
+(`0x00200000`, API37), used for conversion-candidate selection information for
+accessibility. The pinned
+[Android17 release TextView source](https://android.googlesource.com/platform/frameworks/base/+/refs/tags/android-17.0.0_r1/core/java/android/widget/TextView.java#10172)
+sets EditorInfo from the editor's type, then adds this flag when the accessibility
+feature is enabled; node construction still exposes the editor's underlying
+input type. This explains the exact observed cross-channel mismatch. The earlier
+review of broad behavior-change documentation below did not reveal this detail.
+
+The narrow correction is directional: on API37+, safe text EditorInfo may have
+this one additional flag compared with its accessibility node. No other differing
+bit, class, variation, password, reverse direction or old-platform case is
+accepted by the exception. Keep exact input-session/snapshot comparisons across
+the transaction. Device acceptance of the correction is recorded separately.
+
 Measured on the A35: Android 17/API37, One UI property `90000`; the unchanged
 accepted manual MVP refuses before commit with `NODE_EDITOR_MISMATCH`. The
 installed APK matches the November 5/6 baseline. This is an OS-version

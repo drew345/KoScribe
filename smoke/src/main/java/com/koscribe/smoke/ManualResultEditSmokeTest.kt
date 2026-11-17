@@ -132,7 +132,7 @@ class ManualResultEditSmokeTest {
         editOwnResult(editedKorean)
         clickOwnId("ready_result_done")
         assertPreview(editedKorean, before, naturalKeyboard = false)
-        assertTrue("UNEDITED_COPY_CONTROL_NOT_REACHABLE", reachableOwnId("ready_copy") != null)
+        awaitEditedCopyControlAfterPreview()
         chooseTargetAfterDone(fixture, editedKorean)
         assertNoProductWrite(before)
         clickOwnId("ready_insert") // One explicit manual transaction only.
@@ -264,6 +264,25 @@ class ManualResultEditSmokeTest {
         if (naturalKeyboard) await("SWIFTKEY_OR_PREVIEW_LOST_AFTER_CONTROLS", 2_000) {
             true.takeIf { previewWithSwiftKey(expected) }
         }
+    }
+
+    /** Recheck the saved-result Copy action without scrolling or changing the destination. */
+    private fun awaitEditedCopyControlAfterPreview() {
+        val end = SystemClock.elapsedRealtime() + 2_000L
+        while (SystemClock.elapsedRealtime() < end) {
+            ownId("ready_copy")?.takeIf {
+                it.isVisibleToUser && it.isEnabled && it.isClickable
+            }?.let { return }
+            SystemClock.sleep(80)
+        }
+        val ready = state().phase == "READY"
+        val copy = ownId("ready_copy")
+        val insert = ownId("ready_insert")
+        throw AssertionError("UNEDITED_COPY_CONTROL_NOT_REACHABLE" +
+            "_READY_${if (ready) 1 else 0}" +
+            "_COPY_PRESENT_${if (copy != null) 1 else 0}" +
+            "_COPY_VISIBLE_${if (copy?.isVisibleToUser == true) 1 else 0}" +
+            "_INSERT_PRESENT_${if (insert != null) 1 else 0}")
     }
 
     private fun assertLongPreviewWithKeyboard(fixture: Fixture, before: State) {

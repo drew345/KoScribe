@@ -5566,7 +5566,8 @@ class KoScribeService : AccessibilityService() {
         }
         val nodeSame = focus == probe.node
         val editorSame = info.fieldId == probe.fieldId && info.inputType == probe.inputType &&
-            focus.inputType == probe.inputType && focus.windowId == probe.windowId
+            EditorInputTypeAgreement.matches(focus.inputType, probe.inputType,
+                Build.VERSION.SDK_INT) && focus.windowId == probe.windowId
         if (!nodeSame || !editorSame) {
             stop("IDENTITY_MISMATCH_N${nodeSame.b()}_E${editorSame.b()}")
             return
@@ -5597,7 +5598,9 @@ class KoScribeService : AccessibilityService() {
         val focusRefreshDuration = SystemClock.uptimeMillis() - focusRefreshStart
         if (!refreshed || focus != probe.node || focus.packageName?.toString() != "com.koscribe.smoke" ||
             focus.windowId != probe.windowId || !focus.isFocused || !focus.isEditable ||
-            !focus.isEnabled || focus.isPassword || focus.inputType != probe.inputType ||
+            !focus.isEnabled || focus.isPassword ||
+            !EditorInputTypeAgreement.matches(focus.inputType, probe.inputType,
+                Build.VERSION.SDK_INT) ||
             method.generation != probe.generation ||
             method.currentInputEditorInfo?.fieldId != probe.fieldId ||
             method.currentInputEditorInfo?.packageName != "com.koscribe.smoke") {
@@ -5938,13 +5941,18 @@ class KoScribeService : AccessibilityService() {
         if (startupExperiment == StartupExperiment.REVIEW) {
             val focusWindowMatches = focus.windowId == focusedWindow.id
             val focusType = focus.inputType
-            if (!focusWindowMatches || focusType != info.inputType)
+            val typeMatches = EditorInputTypeAgreement.matches(focusType, info.inputType,
+                Build.VERSION.SDK_INT)
+            if (!focusWindowMatches || !typeMatches)
                 return mismatch("FOCUS_EDITOR", "_WINDOW_${focusWindowMatches.b()}" +
                 "_TYPE_CLASS_${((focusType and InputType.TYPE_MASK_CLASS) ==
                     (info.inputType and InputType.TYPE_MASK_CLASS)).b()}" +
                 "_TYPE_VARIATION_${((focusType and InputType.TYPE_MASK_VARIATION) ==
                     (info.inputType and InputType.TYPE_MASK_VARIATION)).b()}" +
-                "_TYPE_EXACT_${(focusType == info.inputType).b()}")
+                "_TYPE_EXACT_${(focusType == info.inputType).b()}" +
+                // XOR reveals differing type flags without exporting either full type value.
+                "_TYPE_XOR_${Integer.toHexString(focusType xor info.inputType).uppercase().padStart(8, '0')}")
+            if (focusType != info.inputType) note("OBS_EDITOR_INFO_A11Y_TYPE_FLAG")
         }
         if (startupExperiment == StartupExperiment.REVIEW && !focus.isEnabled)
             return refuse(ObservationCode.NODE_DISABLED)
@@ -6020,7 +6028,8 @@ class KoScribeService : AccessibilityService() {
                 !focus.isEnabled || focus.isPassword || !safeInputType(focus.inputType) ||
                 focus.windowId != focusedWindow.id ||
                 focus.packageName?.toString() != info.packageName ||
-                focus.inputType != info.inputType)
+                !EditorInputTypeAgreement.matches(focus.inputType, info.inputType,
+                    Build.VERSION.SDK_INT))
                 return refuse(ObservationCode.POSTCOMMIT_TARGET_CHANGED)
             note("POSTCOMMIT_FOCUS_REFRESHED")
         }

@@ -643,3 +643,43 @@ then continue. The draft's existing three-minute deadline still applies; no
 ended draft is reused. Do not auto-poll screenshots while awaiting a reply:
 foreground metadata alone does not exclude an incoming-call/notification overlay.
 Stop visual work on an interruption and resume only when Andrew says ready.
+
+## All-app insertion regression: owned metadata check (November 17)
+
+Use branch `codex/insertion-regression`, based on accepted manual MVP9aee9cf.
+This check can run against the unchanged live product APK with a separately
+signed smoke APK. It does not click a product control or read editor text.
+It focuses only a freshly created owned fixture, requests its keyboard, binds
+root access to that fixture's known window ID, and emits fixed metadata bits
+before/after one same-node refresh. It preserves accessibility services and
+finishes the captured fixture in bounded cleanup. No mic/API/key/clipboard/
+commit/Send action is performed. It is not an insertion acceptance test.
+
+Build `:smoke:assembleDebug :smoke:lintDebug`, verify the current source and
+artifact, then confirm exactly one authorized unlocked physical phone in user0,
+SwiftKey selected and no active KoScribe draft/recording. Never run a whole suite.
+
+```powershell
+adb -d install --user 0 -r smoke/build/outputs/apk/debug/smoke-debug.apk
+adb -d shell am instrument --user 0 -w -r -e class 'com.koscribe.smoke.OwnedFocusedMetadataSmokeTest#focusedFixtureNodeBeforeAndAfterRefresh' -e ownedFocusedMetadataReady true com.koscribe.smoke/com.koscribe.smoke.KoScribeTestRunner
+```
+
+Both the exact method and sole opt-in are enforced. Interpret the reported
+`koscribe_owned_focused_metadata` code, not JUnit OK alone. Missing fixture focus
+or ownership is a failed precondition; do not claim a metadata comparison ran.
+The final independently reviewed harness SHA-256 is
+`74B32D4697AA8B5CB716E7A029B6D698DA05BD49E46ED32A2A7D08F816AFE20A`;
+local APK is `289588E3C57510F1AEDBF592C69D80EF63EB553A0B95E8375BB4FA489E0B4B1A`.
+It has not been phone-run. Rebuilding/signing on another computer may change the
+APK hash; record and inspect that build rather than assuming byte identity.
+
+The service diagnostic source SHA-256 is
+`A2E5E767A0875D41435F7F4641622993D1BB9895BF64C4C94D6A9FD026F29269`.
+It adds `Last editor mismatch` with fixed stage/bit details at the existing
+refusal points. All insertion guards and result recovery remain unchanged.
+Before any product update, verify the signer against the installed certificate
+recorded in PROGRESS and preserve the accepted live APK for restoration.
+The local `diagnostic-review-api-free-unmatched-signer.apk` (ACF25A4F) is not
+installable over the product; never uninstall or clear product data to bypass
+that mismatch. A correctly signed candidate needs secure REVIEW, speech/
+translation/auto/visual/all other experiments false and review surface probe OFF.

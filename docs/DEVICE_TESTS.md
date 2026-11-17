@@ -2474,3 +2474,29 @@ As requested, installed the secure live speech/translation MVP in place and
 verified its bytes against 3FE8BE0FF5AFD51908177D81F6AF652FB6EB0C34A85CD68825731E16DA3D33EA.
 Service PID 12646, speech/translation on, auto off, empty draft, cleanup clear,
 SwiftKey selected. Removed the fixture and verified its absence for user 0.
+
+## All-app insertion regression on November 17
+
+Andrew reported cannot-verify-destination refusal across formerly supported
+apps, including KakaoTalk. Read-only inspection measured Android17/API37,
+One UI property90000, buildCP2A.260605.016.A356EXXUBEZJ2 and security patch2026-10-05.
+SwiftKey remained selected and KoScribe's service was bound. Installed public
+APK SHA-256 exactly matched accepted MVP
+`3FE8BE0FF5AFD51908177D81F6AF652FB6EB0C34A85CD68825731E16DA3D33EA`.
+Own code-only trace showed repeated NODE_EDITOR_MISMATCH, captures11/commits0.
+This is precommit refusal; the exact failed predicate and OS-update causality
+remain unmeasured.
+
+One independently reviewed no-write metadata run on older smoke6293C153 ended
+in4.169s with `OWNED_FOCUSED_META_FIXTURE_FOCUS_MISSING`. It did not read node
+metadata or establish a positive result despite JUnit OK. The phone was found
+locked afterward. Final reviewed smoke289588E3 is unrun: Andrew requested the
+cross-computer handoff after unlocking and before another test.
+
+No product APK replacement, microphone/API request, clipboard action,
+conversation inspection or insertion occurred. Removed only the smoke package
+from user0 at handoff. Live service/draftNONE/cleanupfalse and counters11/0
+were unchanged; speech/translation enabled, auto disabled, SwiftKey selected.
+The original product signing file is needed before testing a product candidate;
+do not install the locally built unmatched-signer sample. See PROGRESS for
+signer verification and the ordered resume plan.

@@ -2085,6 +2085,8 @@ class KoScribeService : AccessibilityService() {
     }
     @Volatile
     private var observationCode = ObservationCode.NOT_CHECKED
+    @Volatile
+    private var editorMismatchDetail = "NONE"
     private val trace = ArrayDeque<String>()
     private var traceSequence = 0
     private val invalidationCodes = mutableSetOf<String>()
@@ -2244,6 +2246,7 @@ class KoScribeService : AccessibilityService() {
         (if (BuildConfig.STABLE_OVERLAY_AUTO)
             "Stable overlay precommit trace: ${stableLastPrecommitTrace?.summary() ?: "NONE"}\n" else "") +
         "Last observation: ${observationCode.name}\n" +
+        "Last editor mismatch: $editorMismatchDetail\n" +
             "First invalidation: ${lastInvalidationCode ?: "none"}\n" +
             "First content timing: ${firstTargetContentTimeCode ?: "none"}\n" +
             "First content state: ${firstTargetContentStateCode ?: "none"}\n" +
@@ -5879,6 +5882,13 @@ class KoScribeService : AccessibilityService() {
             StableFixtureField.PACKAGE else null, requiredStableField: Boolean = false): Observation? {
         if (startupExperiment == StartupExperiment.RESELECT) destinationCaptureCount++
         observationCode = ObservationCode.NOT_CHECKED
+        editorMismatchDetail = "NONE"
+        // Fixed metadata bits only. This never reads editor contents, package identities or IDs.
+        fun mismatch(stage: String, flags: String = ""): Observation? {
+            editorMismatchDetail = "$stage$flags"
+            note("OBS_EDITOR_MISMATCH_$editorMismatchDetail")
+            return refuse(ObservationCode.NODE_EDITOR_MISMATCH)
+        }
         val locked = (getSystemService(KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked
         if (locked) return refuse(ObservationCode.LOCKED)
         val method = inputMethod as? TrackingInputMethod
@@ -5887,9 +5897,9 @@ class KoScribeService : AccessibilityService() {
         val info = method.currentInputEditorInfo ?: return refuse(ObservationCode.NO_EDITOR_INFO)
         if (BuildConfig.STABLE_OVERLAY_AUTO && packageManager.checkSignatures(packageName,
                 StableFixtureField.PACKAGE) != android.content.pm.PackageManager.SIGNATURE_MATCH)
-            return refuse(ObservationCode.NODE_EDITOR_MISMATCH)
+            return mismatch("FIXTURE_SIGNATURE")
         if (requiredPackage != null && info.packageName != requiredPackage)
-            return refuse(ObservationCode.NODE_EDITOR_MISMATCH)
+            return mismatch("REQUIRED_PACKAGE")
         val observedGeneration = method.generation
         val observedFieldId = info.fieldId
         val observedInputType = info.inputType
@@ -5909,32 +5919,47 @@ class KoScribeService : AccessibilityService() {
         val focusedWindow = focusedWindows.single()
         val root = focusedWindow.getRoot(0) ?: return refuse(ObservationCode.NO_FOCUSED_NODE)
         if (!root.refresh()) return refuse(ObservationCode.NO_FOCUSED_NODE)
-        if (startupExperiment == StartupExperiment.REVIEW &&
-            (root.windowId != focusedWindow.id ||
-                root.packageName?.toString() != info.packageName))
-            return refuse(ObservationCode.NODE_EDITOR_MISMATCH)
+        if (startupExperiment == StartupExperiment.REVIEW) {
+            val rootWindowMatches = root.windowId == focusedWindow.id
+            val rootPackageMatches = root.packageName?.toString() == info.packageName
+            if (!rootWindowMatches || !rootPackageMatches)
+                return mismatch("ROOT", "_WINDOW_${rootWindowMatches.b()}" +
+                    "_PACKAGE_${rootPackageMatches.b()}")
+        }
         val focus = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
             ?: return refuse(ObservationCode.NO_FOCUSED_NODE)
-        if (!focus.isFocused || !focus.isEditable ||
-            focus.packageName?.toString() != info.packageName)
-            return refuse(ObservationCode.NODE_EDITOR_MISMATCH)
-        if (startupExperiment == StartupExperiment.REVIEW &&
-            (focus.windowId != focusedWindow.id || focus.inputType != info.inputType))
-            return refuse(ObservationCode.NODE_EDITOR_MISMATCH)
+        val focusFocused = focus.isFocused
+        val focusEditable = focus.isEditable
+        val focusPackageMatches = focus.packageName?.toString() == info.packageName
+        if (!focusFocused || !focusEditable || !focusPackageMatches)
+            return mismatch("FOCUS", "_FOCUSED_${focusFocused.b()}" +
+                "_EDITABLE_${focusEditable.b()}" +
+                "_PACKAGE_${focusPackageMatches.b()}")
+        if (startupExperiment == StartupExperiment.REVIEW) {
+            val focusWindowMatches = focus.windowId == focusedWindow.id
+            val focusType = focus.inputType
+            if (!focusWindowMatches || focusType != info.inputType)
+                return mismatch("FOCUS_EDITOR", "_WINDOW_${focusWindowMatches.b()}" +
+                "_TYPE_CLASS_${((focusType and InputType.TYPE_MASK_CLASS) ==
+                    (info.inputType and InputType.TYPE_MASK_CLASS)).b()}" +
+                "_TYPE_VARIATION_${((focusType and InputType.TYPE_MASK_VARIATION) ==
+                    (info.inputType and InputType.TYPE_MASK_VARIATION)).b()}" +
+                "_TYPE_EXACT_${(focusType == info.inputType).b()}")
+        }
         if (startupExperiment == StartupExperiment.REVIEW && !focus.isEnabled)
             return refuse(ObservationCode.NODE_DISABLED)
         if (focus.isPassword || !safeInputType(focus.inputType))
             return refuse(ObservationCode.PROTECTED_OR_NON_TEXT_NODE)
         if (requiredStableField && (focus.viewIdResourceName != StableFixtureField.ID ||
             stableFieldResource(info.fieldId) != StableFixtureField.ID))
-            return refuse(ObservationCode.NODE_EDITOR_MISMATCH)
+            return mismatch("STABLE_FIELD")
         val initialUnique = focus.uniqueId?.takeIf(String::isNotBlank) ?: "source-node"
         if (requiredPackage != null && (!method.currentInputStarted ||
             method.generation != observedGeneration || method.currentInputEditorInfo !== info ||
             info.fieldId != observedFieldId || info.inputType != observedInputType ||
             root.packageName?.toString() != requiredPackage ||
             focus.packageName?.toString() != requiredPackage))
-            return refuse(ObservationCode.NODE_EDITOR_MISMATCH)
+            return mismatch("REQUIRED_SESSION_BEFORE_READ")
         val surrounding = try {
             connection.getSurroundingText(beforeCount, afterCount,
                 InputConnection.GET_TEXT_WITH_STYLES)
@@ -5947,7 +5972,7 @@ class KoScribeService : AccessibilityService() {
                 info.inputType != observedInputType ||
                 !runCatching { focus.refresh() }.getOrDefault(false) ||
                 focus.packageName?.toString() != requiredPackage)
-                return refuse(ObservationCode.NODE_EDITOR_MISMATCH)
+                return mismatch("REQUIRED_SESSION_AFTER_READ")
             val currentWindow = windows.filter {
                 it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.isFocused
             }.singleOrNull()
@@ -5956,7 +5981,7 @@ class KoScribeService : AccessibilityService() {
                 currentRoot?.packageName?.toString() != requiredPackage ||
                 currentRoot.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) != focus ||
                 !focus.isFocused || focus.windowId != focusedWindow.id)
-                return refuse(ObservationCode.NODE_EDITOR_MISMATCH)
+                return mismatch("REQUIRED_WINDOW_AFTER_READ")
         }
         if (postCommit && startupExperiment == StartupExperiment.REVIEW) {
             val transaction = freshDestination

@@ -1,5 +1,30 @@
 # Planning research
 
+## November 17 insertion regression investigation
+
+Measured on the A35: Android 17/API37, One UI property `90000`; the unchanged
+accepted manual MVP refuses before commit with `NODE_EDITOR_MISMATCH`. The
+installed APK matches the November 5/6 baseline. This is an OS-version
+correlation, not proof of an Android or Samsung defect.
+
+The installed source uses one coarse code for mismatched root window/package,
+focused/editable/package metadata, or exact node/EditorInfo input type/window.
+All of these checks precede surrounding-text reads. Granular fixed-code
+diagnostics can isolate the predicate without reading additional text or
+weakening insertion eligibility.
+
+Independent review found no documented blanket node/input-type change in the
+[Android 17 changes for all apps](https://developer.android.com/about/versions/17/behavior-changes-all)
+or [target-17 changes](https://developer.android.com/about/versions/17/behavior-changes-17).
+Current [AOSP TextView](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/main/core/java/android/widget/TextView.java)
+still derives node and EditorInfo input types from its editor; this is background
+source evidence, not verification of Samsung's implementation. Do not broadly
+mask type flags or change accessibility-tool classification without measured
+evidence. A same-node refresh comparison in the owned fixture is diagnostic
+only and does not grant insertion permission.
+
+## Original planning evidence
+
 Checked 2026-10-23. Documentation findings and the explicitly labeled installed
 permission audit below are separate evidence. Recheck dynamic API/platform facts
 when implementation begins.

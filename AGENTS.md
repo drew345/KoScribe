@@ -9,6 +9,16 @@ and `docs/RESEARCH.md` when a technical decision needs its evidence.
 
 ## Work authorization and model roles
 
+- On 2026-11-17 Andrew requested investigating and correcting manual Insert
+  failing across previously supported apps, including KakaoTalk. This work is
+  isolated on `codex/insertion-regression` from accepted MVP checkpoint
+  `9aee9cf` (app source `d40cd21`); the main checkout and paused Karrot work at
+  `dc7f6a0` remain preserved. Diagnose the existing manual path first; do not
+  resume automatic insertion or the unaccepted Karrot writer. Andrew made the
+  USB-connected phone available for controlled tests, starting in the owned
+  fixture. Preserve the installed APK and live key; no uninstall/data clearing,
+  real conversation inspection, Send, or uncertain-write retry. Record fresh
+  results before claiming compatibility or installing a correction for use.
 - On 2026-11-05, after the automatic mid-caret experiment refused before write,
   Andrew proposed returning to the proven manual workflow and checking/editing
   the Korean on the result screen. This manual MVP is the current priority.

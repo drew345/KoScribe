@@ -1,5 +1,46 @@
 # Session log
 
+## 2026-11-17 — Investigate all-app manual insertion regression
+
+- User report/authorization: previously supported editors now refuse Insert
+  with destination-verification guidance and Copy recovery. Andrew requested
+  diagnosis/correction and made the USB-connected A35 available for controlled
+  tests starting in the owned fixture.
+- Source finding: main predates the installed editable-Korean MVP. Fetched the
+  preserved Karrot branch for its handoff, then created a separate regression
+  worktree from accepted checkpoint `9aee9cf`; main and paused Karrot work remain
+  untouched. Sol/xhigh handles diagnostics/test code, Astra/xhigh independent
+  review, root alone operates the phone.
+- Measured read-only phone evidence: Android 17/API37, One UI property90000;
+  installed APK exactly matches saved MVP3FE8BE0F, service bound, SwiftKey
+  selected. Own diagnostics show repeated NODE_EDITOR_MISMATCH, 11 destination
+  captures, zero commits. This is a precommit refusal; update causality and the
+  specific failed predicate are not yet measured.
+- Preserved the public APK with full SHA verification without reading app
+  private data or the saved API key. Local JDK/SDK and original debug signing
+  file were missing; prepared tools. The prototype signing backup Andrew named
+  differs from KoScribe's signer; he can retrieve the original on the other
+  development computer. Its backup remains unconfirmed; back it up in Cryptomator
+  DeveloperStuff when recovered. No product installation or key mutation occurred.
+- Sol added fixed-code mismatch detail without weakening a guard, plus an owned
+  metadata harness. Astra independently cleared final serviceA2E5E767/harness74B32D46.
+  159 units passed; app lint0errors49warnings, smoke lint0errors5warnings; builds
+  passed. Diagnostic sampleACF25A4F is signed incorrectly for the installed app
+  and must not be installed over it. Final smoke289588E3 remains unrun.
+- Older reviewed smoke6293C153 stopped with FIXTURE_FOCUS_MISSING in4.169s before
+  any node metadata read; later phone inspection found it locked. Do not call
+  the JUnit OK a positive diagnostic result or infer an OS cause. No mic/API,
+  clipboard, product insertion or real-conversation inspection occurred.
+- Andrew requested saving a handoff to continue on the original computer.
+  Removed only the smoke helper; live MVP/service/SwiftKey unchanged, draftNONE,
+  cleanupfalse and capture/commit counters still11/0. Nothing is running.
+- **Resume:** use `codex/insertion-regression`, first verify the original debug
+  signer's public SHA-256 `a02165d3f755d445fefb156ba1d7ce5b895ded557fffdb5db046bb267862e004`,
+  back up its private file outside Git, then rebuild/run the final owned metadata
+  test with fresh phone availability. After that, use a correctly signed secure
+  sample to identify the exact mismatch and develop a measured fix. PROGRESS
+  holds the full ordered handoff; INSTRUMENTATION holds the exact test command.
+
 ## 2026-10-31 — Design review site revised from Andrew's feedback
 
 - Andrew corrected the first site's plain-K current bubble and preferred a

@@ -1,6 +1,89 @@
 # Current progress
 
-Updated: 2026-11-05 (Asia/Seoul).
+Updated: 2026-11-17 (Asia/Seoul).
+
+## Active investigation: previously supported destinations refuse Insert
+
+**User report:** manual Insert now preserves the result and offers Copy, with
+a cannot-verify-destination message, even in KakaoTalk and other previously
+working editors. A major Android/Samsung update is suspected, not established
+as the cause. Andrew requested testing, debugging and correction and confirmed
+the USB-connected phone available for controlled tests on November 17.
+
+**Measured before any phone change:** A35/SM-A356E reports Android 17, SDK 37,
+One UI property `90000`, build `CP2A.260605.016.A356EXXUBEZJ2`, security patch
+2026-10-05. SwiftKey is selected and KoScribe's accessibility service is bound.
+The installed APK exactly matches the accepted manual MVP SHA-256
+`3FE8BE0FF5AFD51908177D81F6AF652FB6EB0C34A85CD68825731E16DA3D33EA`.
+Its code-only trace has repeated `NODE_EDITOR_MISMATCH`, 11 destination captures
+and **0 commit requests**. Speech/translation remain enabled, automatic/probes
+disabled. This establishes precommit refusal; it does not identify the failing
+node/root/type predicate or establish update causality.
+
+**Working source:** separate worktree
+`C:/AI/Codex/Worktrees/KoScribe-insertion-regression`, branch
+`codex/insertion-regression`, based on accepted checkpoint `9aee9cf` (unchanged
+app source from `d40cd21`). The original project checkout remains on `main`.
+Fetched `origin/codex/karrot-insertion` at `dc7f6a0` read-only for its handoff;
+its experimental writer and outstanding acceptance work are not resumed here.
+
+**Preservation/tooling:** copied only the installed public APK to ignored
+`app/build/insertion-regression-20261117/installed-baseline.apk`, verified the
+full hash above. No private app data/key read. Prepared Microsoft JDK21.0.13,
+Android SDK36/Build Tools36.0.0 and Gradle8.13 on this computer. Its new local
+debug signer does **not** match the installed product. The prototype signing
+backup Andrew identified also has a different certificate. Andrew can retrieve
+the original from the development computer; original signing backup is still
+unconfirmed. Back it up separately in Cryptomator DeveloperStuff when found.
+
+**Implemented, not installed:** granular fixed-code mismatch stage/bit diagnostics,
+with the same refusal predicates and Copy guidance. Added a no-write owned-node
+metadata test. Sol/xhigh implemented, Astra/xhigh independently cleared exact
+service source `A2E5E767` and final harness `74B32D46`. All159 units passed;
+app lint0errors49warnings and smoke lint0errors5warnings; both APKs assembled.
+Final smoke APK `289588E3` is archived locally. The API-free REVIEW diagnostic
+APK `ACF25A4F` has the **wrong signer; do not install it over the product**.
+Its filename explicitly says `unmatched-signer`. All experiments/auto/visual/
+speech/translation are false, REVIEW_SURFACE_PROBE=OFF. No insertion correction
+has been implemented or verified.
+
+**Phone test/handoff:** one older reviewed metadata harness (`6293C153`) returned
+`FIXTURE_FOCUS_MISSING` in4.169s, before reading node metadata. JUnit's OK is not
+a positive result. The phone was found locked afterward; this may explain the
+precondition failure but is not a measured cause at test time. Andrew unlocked
+it, then requested this cross-computer handoff before the final harness ran.
+The final `289588E3` harness is **unrun**. Removed only `com.koscribe.smoke` from
+user0. KoScribe is unchanged: service bound, draftNONE, cleanupfalse,
+captures11/commits0, live speech/translation on, auto off, SwiftKey selected.
+No test is running; no microphone/API/clipboard/real-app insertion occurred.
+
+**Exact next actions on the original development computer:**
+
+1. Read the current `main` handoff, fetch `codex/insertion-regression`, and use
+   a clean checkout/worktree of that branch. Do not build/install old main or
+   resume `codex/karrot-insertion`. Existing local changes must be preserved.
+2. Locate the original Android debug signing file (normally
+   `C:/Users/andrew/.android/debug.keystore`). Verify its **public certificate**
+   SHA-256 is `a02165d3f755d445fefb156ba1d7ce5b895ded557fffdb5db046bb267862e004`.
+   Keep the private file outside Git and back it up in DeveloperStuff under a
+   KoScribe-specific name. Do not substitute the differently signed prototype
+   backup, uninstall KoScribe, clear its data, or extract its live API key.
+3. Rebuild the final smoke harness locally (ignored APKs do not travel in Git),
+   confirm fresh phone availability/unlocked state and SwiftKey, then run only
+   the exact no-write metadata method in the November17 INSTRUMENTATION section.
+   A failed precondition is not evidence about the insertion defect.
+4. After signer verification, preserve/hash the installed MVP and build a signed
+   secure REVIEW/API-free diagnostic candidate. Use the owned fixed-sample
+   manual flow to obtain the new `Last editor mismatch` detail at refusal.
+   Restore the accepted live APK after the controlled session; do not leave a
+   sample or differently signed build installed for daily use.
+5. Correct only the measured incompatibility, independently review and run
+   relevant preservation/refusal/uncertainty gates, then separately prepare a
+   bounded previously supported-app check. Keep destination/caret/context and
+   password checks, one attempt, terminal uncertainty and no Send. No global
+   input-type masking or permission workaround is justified by current evidence.
+
+## Historical accepted baseline (November 5)
 
 **Current product direction:** Andrew proposed returning to the working manual
 workflow after the automatic insertion experiments. Proceed with the manual MVP:

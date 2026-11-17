@@ -31,15 +31,17 @@
   any node metadata read; later phone inspection found it locked. Do not call
   the JUnit OK a positive diagnostic result or infer an OS cause. No mic/API,
   clipboard, product insertion or real-conversation inspection occurred.
-- Andrew requested saving a handoff to continue on the original computer.
+- Andrew requested a session note, then clarified that the other computer must
+  **only copy the original signing file into DeveloperStuff**. He will return
+  to this chat for continued debugging; no development handoff is intended.
   Removed only the smoke helper; live MVP/service/SwiftKey unchanged, draftNONE,
   cleanupfalse and capture/commit counters still11/0. Nothing is running.
-- **Resume:** use `codex/insertion-regression`, first verify the original debug
+- **Continue here after the copy:** keep `codex/insertion-regression`, verify the original debug
   signer's public SHA-256 `a02165d3f755d445fefb156ba1d7ce5b895ded557fffdb5db046bb267862e004`,
   back up its private file outside Git, then rebuild/run the final owned metadata
   test with fresh phone availability. After that, use a correctly signed secure
   sample to identify the exact mismatch and develop a measured fix. PROGRESS
-  holds the full ordered handoff; INSTRUMENTATION holds the exact test command.
+  holds the current-computer next steps; INSTRUMENTATION holds the exact test command.
 
 ## 2026-10-31 — Design review site revised from Andrew's feedback
 

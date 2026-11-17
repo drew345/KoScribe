@@ -2490,8 +2490,9 @@ remain unmeasured.
 One independently reviewed no-write metadata run on older smoke6293C153 ended
 in4.169s with `OWNED_FOCUSED_META_FIXTURE_FOCUS_MISSING`. It did not read node
 metadata or establish a positive result despite JUnit OK. The phone was found
-locked afterward. Final reviewed smoke289588E3 is unrun: Andrew requested the
-cross-computer handoff after unlocking and before another test.
+locked afterward. Final reviewed smoke289588E3 is unrun: Andrew requested a
+session note after unlocking and before another test. He clarified that the
+other computer only supplies the original signing file; debugging continues here.
 
 No product APK replacement, microphone/API request, clipboard action,
 conversation inspection or insertion occurred. Removed only the smoke package

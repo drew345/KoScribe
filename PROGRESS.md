@@ -47,37 +47,43 @@ Its filename explicitly says `unmatched-signer`. All experiments/auto/visual/
 speech/translation are false, REVIEW_SURFACE_PROBE=OFF. No insertion correction
 has been implemented or verified.
 
-**Phone test/handoff:** one older reviewed metadata harness (`6293C153`) returned
+**Phone test/checkpoint:** one older reviewed metadata harness (`6293C153`) returned
 `FIXTURE_FOCUS_MISSING` in4.169s, before reading node metadata. JUnit's OK is not
 a positive result. The phone was found locked afterward; this may explain the
 precondition failure but is not a measured cause at test time. Andrew unlocked
-it, then requested this cross-computer handoff before the final harness ran.
+it, then requested a session note before the final harness ran. He clarified:
+the other computer is needed **only to copy the original signing file into
+DeveloperStuff**. Development remains in this chat/on this computer; he will
+return here after the copy. This is not a full handoff.
 The final `289588E3` harness is **unrun**. Removed only `com.koscribe.smoke` from
 user0. KoScribe is unchanged: service bound, draftNONE, cleanupfalse,
 captures11/commits0, live speech/translation on, auto off, SwiftKey selected.
 No test is running; no microphone/API/clipboard/real-app insertion occurred.
 
-**Exact next actions on the original development computer:**
+**Other computer's only task:** locate its original Android debug signing file
+(normally `C:/Users/andrew/.android/debug.keystore`), verify public certificate
+SHA-256 `a02165d3f755d445fefb156ba1d7ce5b895ded557fffdb5db046bb267862e004`,
+then copy it into Cryptomator DeveloperStuff under Android-Signing with the
+KoScribe-specific filename `KoScribe-debug.keystore`. Preserve the original;
+do not overwrite a different existing file. The prototype backup is a different
+signer. Do not develop, switch branches, install/test, touch the phone/API key,
+or start a sync/handoff workflow on that computer. Keep private files outside Git.
 
-1. Read the current `main` handoff, fetch `codex/insertion-regression`, and use
-   a clean checkout/worktree of that branch. Do not build/install old main or
-   resume `codex/karrot-insertion`. Existing local changes must be preserved.
-2. Locate the original Android debug signing file (normally
-   `C:/Users/andrew/.android/debug.keystore`). Verify its **public certificate**
-   SHA-256 is `a02165d3f755d445fefb156ba1d7ce5b895ded557fffdb5db046bb267862e004`.
-   Keep the private file outside Git and back it up in DeveloperStuff under a
-   KoScribe-specific name. Do not substitute the differently signed prototype
-   backup, uninstall KoScribe, clear its data, or extract its live API key.
-3. Rebuild the final smoke harness locally (ignored APKs do not travel in Git),
+**Continue here after Andrew returns with the copied file:**
+
+1. Verify its public certificate matches the installed app before using it.
+   Keep the live key and app data intact. Work stays on `codex/insertion-regression`
+   in this worktree; do not build/install old main or resume paused Karrot work.
+2. Use the final reviewed smoke harness,
    confirm fresh phone availability/unlocked state and SwiftKey, then run only
    the exact no-write metadata method in the November17 INSTRUMENTATION section.
    A failed precondition is not evidence about the insertion defect.
-4. After signer verification, preserve/hash the installed MVP and build a signed
+3. After signer verification, preserve/hash the installed MVP and build a signed
    secure REVIEW/API-free diagnostic candidate. Use the owned fixed-sample
    manual flow to obtain the new `Last editor mismatch` detail at refusal.
    Restore the accepted live APK after the controlled session; do not leave a
    sample or differently signed build installed for daily use.
-5. Correct only the measured incompatibility, independently review and run
+4. Correct only the measured incompatibility, independently review and run
    relevant preservation/refusal/uncertainty gates, then separately prepare a
    bounded previously supported-app check. Keep destination/caret/context and
    password checks, one attempt, terminal uncertainty and no Send. No global

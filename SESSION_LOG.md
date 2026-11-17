@@ -1,5 +1,22 @@
 # Session log
 
+## 2026-11-17 — Other computer: copy the signing file only
+
+Andrew will return to the current chat for KoScribe debugging. This is **not a
+development handoff**. On the original development computer, do only this:
+
+1. Locate `C:/Users/andrew/.android/debug.keystore`, the signing file used for
+   the installed KoScribe APK. Verify its public certificate SHA-256 is
+   `a02165d3f755d445fefb156ba1d7ce5b895ded557fffdb5db046bb267862e004`.
+2. Copy that file into the unlocked Cryptomator **DeveloperStuff** folder,
+   under **Android-Signing**, named **KoScribe-debug.keystore**, so it becomes
+   available on the current computer. Preserve the original; do not overwrite
+   an existing different file. The existing `prototype-debug.jks` is a
+   different signer and is not the file needed.
+3. Confirm the copy is available, then stop. Do not switch development branches,
+   build/install/test the app, touch the phone/API key, or start a sync/handoff
+   workflow. Never print the signing file's private contents or commit it to Git.
+
 ## 2026-11-06 — Park checkout on main; preserve paused debugging branch
 
 - Andrew requested leaving the laptop on `main` while keeping the unfinished
